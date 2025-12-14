@@ -42,8 +42,8 @@ func run(m *testing.M) error {
 	mysqlConfig := c.MySQLConfig()
 
 	resource, err := pool.Run("mysql", "latest", []string{
-		"MYSQL_ROOT_PASSWORD=" + mysqlConfig.Passwd,
-		"MYSQL_DATABASE=" + mysqlConfig.DBName,
+		"NS_MARIANS_MARIADB_PASSWORDWORD=" + mysqlConfig.Passwd,
+		"NS_MARIADB_DATABASE=" + mysqlConfig.DBName,
 	})
 	if err != nil {
 		return fmt.Errorf("start mysql docker: %w", err)

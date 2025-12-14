@@ -10,11 +10,11 @@ import (
 
 type Config struct {
 	AppAddr string `env:"APP_ADDR" default:":8080"`
-	DBUser  string `env:"DB_USER" default:"root"`
-	DBPass  string `env:"DB_PASS" default:"pass"`
-	DBHost  string `env:"DB_HOST" default:"localhost"`
-	DBPort  int    `env:"DB_PORT" default:"3306"`
-	DBName  string `env:"DB_NAME" default:"app"`
+	DBUser  string `env:"NS_MARIADB_USER" default:"root"`
+	DBPass  string `env:"NS_MARIADB_PASSWORD" default:"pass"`
+	DBHost  string `env:"NS_MARIADB_HOSTNAME" default:"localhost"`
+	DBPort  int    `env:"NS_MARIADB_PORT" default:"3306"`
+	DBName  string `env:"NS_MARIADB_DATABASE" default:"app"`
 }
 
 func (c *Config) Parse() {
