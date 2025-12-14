@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS ticket_tags (
 
 CREATE TABLE IF NOT EXISTS notes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    ticket_id INT UNSIGNED,
+    ticket_id INT UNSIGNED NOT NULL,
     type ENUM('outgoing', 'incoming', 'other') NOT NULL,
     status ENUM('draft', 'waiting_review', 'waiting_sent', 'sent', 'canceled') NOT NULL,
     author VARCHAR(64) NOT NULL,
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS note_review_assignees (
 
 CREATE TABLE IF NOT EXISTS reviews (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    note_id INT UNSIGNED,
+    note_id INT UNSIGNED NOT NULL,
     type ENUM('approve', 'cr', 'comment') NOT NULL,
     status ENUM('active', 'stale') NOT NULL,
     weight INT NOT NULL DEFAULT 0,
