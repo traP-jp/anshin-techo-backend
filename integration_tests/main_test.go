@@ -8,9 +8,9 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/ory/dockertest/v3"
-	"github.com/ras0q/go-backend-template/infrastructure/config"
-	"github.com/ras0q/go-backend-template/infrastructure/database"
-	"github.com/ras0q/go-backend-template/infrastructure/injector"
+	"github.com/traP-jp/anshin-techo-backend/infrastructure/config"
+	"github.com/traP-jp/anshin-techo-backend/infrastructure/database"
+	"github.com/traP-jp/anshin-techo-backend/infrastructure/injector"
 )
 
 var globalServer http.Handler

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ras0q/go-backend-template/internal/api"
-	"github.com/ras0q/go-backend-template/internal/repository"
+	"github.com/traP-jp/anshin-techo-backend/internal/api"
+	"github.com/traP-jp/anshin-techo-backend/internal/repository"
 )
 
 // POST /api/v1/users

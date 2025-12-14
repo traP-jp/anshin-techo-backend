@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/ras0q/go-backend-template/internal/api"
+	"github.com/traP-jp/anshin-techo-backend/internal/api"
 )
 
 // GET /api/v1/ping

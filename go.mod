@@ -1,6 +1,6 @@
-module github.com/ras0q/go-backend-template
+module github.com/traP-jp/anshin-techo-backend
 
-go 1.24.2
+go 1.25.5
 
 require (
 	github.com/go-faster/errors v0.7.1

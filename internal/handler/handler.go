@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/ras0q/go-backend-template/internal/api"
-	"github.com/ras0q/go-backend-template/internal/repository"
-	"github.com/ras0q/go-backend-template/internal/service/photo"
+	"github.com/traP-jp/anshin-techo-backend/internal/api"
+	"github.com/traP-jp/anshin-techo-backend/internal/repository"
+	"github.com/traP-jp/anshin-techo-backend/internal/service/photo"
 )
 
 type Handler struct {

@@ -1,15 +1,15 @@
 module integrationtests
 
-go 1.24.2
+go 1.25.5
 
-replace github.com/ras0q/go-backend-template => ../
+replace github.com/traP-jp/anshin-techo-backend => ../
 
 require (
 	github.com/google/uuid v1.6.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/ory/dockertest/v3 v3.12.0
-	github.com/ras0q/go-backend-template v0.0.0
+	github.com/traP-jp/anshin-techo-backend v0.0.0
 	gotest.tools/v3 v3.5.1
 )
 
