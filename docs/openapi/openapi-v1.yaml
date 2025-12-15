@@ -26,11 +26,13 @@ components:
     # --- Enums ---
     TicketStatus:
       type: string
-      enum: [not_planned, writing, sent, milestone_scheduled, completed, forgotten]
+      enum: [not_planned,not_written,waiting_review,waiting_sent , sent, milestone_scheduled, completed, forgotten]
       description: |-
         チケットの進行状況
         - not_planned: 方針決定待ち
-        - writing: 文面作成中 (メール未送信)
+        - not_written: メールが書かれていない
+        - waiting_review: レビューを待っている
+        - waiting_sent: レビューが終わっている
         - sent: 相手の対応待ち (送信済み)
         - milestone_scheduled: 次のアクション決定済み
         - completed: 完了
@@ -64,23 +66,14 @@ components:
         traq_id:
           type: string
           description: "traQ ID (例: ramdos)"
-        is_admin:
-          type: boolean
-          description: "本職・補佐フラグ (管理者権限)"
+        role:
+          type: string
+          enum: [manager, assistant, member]
+          description: "ユーザーの役割 (manager: 本職, assistant: 補佐, member: その他)"
       required:
         - traq_id
-        - is_admin
+        - role
 
-    TicketSecret:
-      type: object
-      additionalProperties:
-        type: string
-      description: |-
-        黒塗り復元用のKey-Valueストア。
-        権限がある場合のみ中身が返却される。
-        Example: { "x8Dj": "株式会社Hoge", "9kL2": "090-xxxx-xxxx" }
-      example:
-        x8Dj: "株式会社Hoge"
 
     Ticket:
       type: object
@@ -125,10 +118,6 @@ components:
         created_at:
           type: string
           format: date-time
-        deleted_at:
-          type: string
-          format: date-time
-          nullable: true
         updated_at:
           type: string
           format: date-time
@@ -152,7 +141,7 @@ components:
           $ref: "#/components/schemas/NoteType"
         status:
           $ref: "#/components/schemas/NoteStatus"
-        author_traq_id:
+        author:
           type: string
           description: "作成者"
         content:
@@ -170,7 +159,7 @@ components:
         - ticket_id
         - type
         - content
-        - author_traq_id
+        - author
 
     Review:
       type: object
@@ -181,7 +170,7 @@ components:
         note_id:
           type: integer
           format: int64
-        reviewer_traq_id:
+        reviewer:
           type: string
           description: "レビュワー"
         type:
@@ -204,7 +193,7 @@ components:
       required:
         - id
         - note_id
-        - reviewer_traq_id
+        - reviewer
         - type
         - weight
 
@@ -213,7 +202,7 @@ components:
     traQAuth:
       type: apiKey
       in: header
-      name: X-TRAQ-ID
+      name: X-Forwarded-User
       description: "traQ IDをヘッダーに付与して認証"
 
 security:
@@ -317,13 +306,43 @@ paths:
     post:
       tags:
         - Tickets
-      summary: "空のチケットを新規作成"
-      description: |-
-        入力なしで空のチケットを1件作成する。作成時点では以下が自動設定される。
-        - status: not_planned
-        - title: 空文字列または仮タイトル
-        - assignee: null
-        詳細情報は PATCH /tickets/{ticketId} で更新する。
+      summary: "チケット新規作成"
+      description: "新規チケットを作成する。"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                status:
+                  $ref: "#/components/schemas/TicketStatus"
+                assignee:
+                  type: string
+                  description: "主担当 (traQ ID)"
+                sub_assignees:
+                  type: array
+                  items:
+                    type: string
+                  description: "副担当リスト (traQ ID)"
+                stakeholders:
+                  type: array
+                  items:
+                    type: string
+                  description: "その他関係者 (traQ ID)"
+                due:
+                  type: string
+                  format: date
+                tags:
+                  type: array
+                  items:
+                    type: string
+                secrets:
+                  $ref: "#/components/schemas/TicketSecret"
       responses:
         "201":
           description: "作成成功"
@@ -351,13 +370,22 @@ paths:
       description: |-
         権限(担当/副担当/関係者/本職)がある場合、secrets に実データが含まれる。
         権限がない場合、secrets は空またはダミーとなる。
+        チケットに紐づくノート一覧(notes)も同時に返却される。
       responses:
         "200":
           description: "成功"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Ticket"
+                allOf:
+                  - $ref: "#/components/schemas/Ticket"
+                  - type: object
+                    properties:
+                      notes:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Note"
+                        description: "このチケットに紐づくノート一覧"
         "404":
           description: "チケットが見つからない"
 
@@ -434,7 +462,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [type, content]
+              required: [type, content, mention_notification]
               properties:
                 type:
                   $ref: "#/components/schemas/NoteType"
