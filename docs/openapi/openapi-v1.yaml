@@ -1,131 +1,635 @@
-openapi: 3.1.0
+openapi: 3.0.1
 info:
-  title: Go Backend Template API
+  title: 冬ハッカソン02班 API
+  description: |-
+    2025冬ハッカソン02班 渉外チケット管理システム API仕様書。
+    外部とのメールやり取り、案件進捗、レビューフローを管理するためのサービス。
+
   version: 1.0.0
+servers:
+  - url: "http://localhost:8080/api"
+    description: "Development Server"
+
+tags:
+  - name: Tickets
+    description: "チケット（案件）の作成・取得・編集"
+  - name: Notes
+    description: "ノート（メール/メッセージ）の管理"
+  - name: Reviews
+    description: "発信ノートへのレビュー・承認"
+  - name: Users
+    description: "ユーザー情報・権限管理"
+  - name: Config
+    description: "システム設定"
+
+components:
+  schemas:
+    # --- Enums ---
+    TicketStatus:
+      type: string
+      enum: [not_planned, not_written, waiting_review, waiting_sent, sent, milestone_scheduled, completed, forgotten]
+      description: |-
+        チケットの進行状況
+        - not_planned: 方針決定待ち
+        - not_written: メールが書かれていない
+        - waiting_review: レビューを待っている
+        - waiting_sent: レビューが終わっている
+        - sent: 相手の対応待ち (送信済み)
+        - milestone_scheduled: 次のアクション決定済み
+        - completed: 完了
+        - forgotten: 忘れ去られた状態
+
+    NoteType:
+      type: string
+      enum: [outgoing, incoming, other]
+      description: "ノートの種類 (発信/受信/その他)"
+
+    NoteStatus:
+      type: string
+      enum: [draft, waiting_review, waiting_sent, sent, canceled]
+      description: |-
+        Outgoing(発信)ノートの状態管理用
+        - draft: 下書き
+        - waiting_review: 添削待ち
+        - waiting_sent: 承認完了・送信待ち (Weight >= 5)
+        - sent: 送信済み (手動完了)
+        - canceled: 破棄
+
+    ReviewType:
+      type: string
+      enum: [approve, change_request, comment]
+      description: "レビューの種類"
+
+    # --- Models ---
+    User:
+      type: object
+      properties:
+        traq_id:
+          type: string
+          description: "traQ ID (例: ramdos)"
+        role:
+          type: string
+          enum: [manager, assistant, member]
+          description: "ユーザーの役割 (manager: 本職, assistant: 補佐, member: その他)"
+      required:
+        - traq_id
+        - role
+
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: "チケットID"
+        title:
+          type: string
+          description: "案件名 "
+        description:
+          type: string
+          description: "詳細 "
+        assignee:
+          type: string
+          description: "主担当のtraQ ID"
+        sub_assignees:
+          type: array
+          items: 
+            type: string
+          description: "副担当リスト (traQ ID)"
+        stakeholders:
+          type: array
+          items:
+            type: string
+          description: "その他関係者リスト (traQ ID)。"
+        tags:
+          type: array
+          items:
+            type: string
+          description: "タグ (例: 協賛, 問い合わせ)"
+        due:
+          type: string
+          format: date
+          nullable: true
+          description: "期日。未指定時は自動設定される。"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - created_at
+
+    Note:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: "ノートID"
+        ticket_id:
+          type: integer
+          format: int64
+        type:
+          $ref: "#/components/schemas/NoteType"
+        status:
+          $ref: "#/components/schemas/NoteStatus"
+        author:
+          type: string
+          description: "作成者"
+        content:
+          type: string
+          description: "メッセージ本文 "
+        reviews:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - ticket_id
+        - type
+        - content
+        - author
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        note_id:
+          type: integer
+          format: int64
+        reviewer:
+          type: string
+          description: "レビュワー"
+        type:
+          $ref: "#/components/schemas/ReviewType"
+        weight:
+          type: integer
+          minimum: 0
+          maximum: 5
+          description: |-
+            承認ウェイト。
+            - 本職: 1-5
+            - 補佐: 1-4
+            - その他: 0
+        status:
+          type: string
+          enum: [active, stale]
+          description: "レビュー状態 (active: 有効, stale: 修正により無効化済み)"
+        comment:
+          type: string
+          description: "コメント "
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - note_id
+        - reviewer
+        - type
+        - weight
+        - status
+
+  securitySchemes:
+    # 開発用簡易認証
+    traQAuth:
+      type: apiKey
+      in: header
+      name: X-Forwarded-User
+      description: "traQ IDをヘッダーに付与して認証"
+
+security:
+  - traQAuth: []
+
 paths:
-  /api/v1/ping:
+  # --- Config ---
+  /config:
     get:
-      summary: Ping API
-      operationId: ping
+      tags:
+        - Config
+      summary: "設定情報の取得"
       responses:
         "200":
-          description: pong
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: pong
-        default:
+          description: "成功"
           content:
             application/json:
               schema:
-                $ref: "#/components/responses/Error"
-  /api/v1/users:
-    get:
-      summary: Get all users
-      operationId: getUsers
+                type: object
+                description: "設定JSON (構造は未定)"
+
+    post:
+      tags:
+        - Config
+      summary: "設定情報の更新"
+      description: "本職権限のみ実行可能"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
       responses:
         "200":
-          description: List of users
+          description: "更新成功"
+        "403":
+          description: "権限エラー"
+
+  # --- Users ---
+  /users:
+    get:
+      tags:
+        - Users
+      summary: "ユーザー一覧取得"
+      responses:
+        "200":
+          description: "成功"
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/User"
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/responses/Error"
-    post:
-      summary: Create a user
-      operationId: createUser
+
+    put:
+      tags:
+        - Users
+      summary: "ユーザー情報の同期・更新"
+      description: "manager(本職)権限のみ。リクエストボディの内容でユーザー情報を一括更新・同期する。"
       requestBody:
-        $ref: "#/components/requestBodies/CreateUser"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/User"
       responses:
         "200":
-          description: Created user ID
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/responses/CreateUser"
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/responses/Error"
-  /api/v1/users/{userID}:
+          description: "成功"
+        "403":
+          description: "権限エラー"
+
+  # --- Tickets ---
+  /tickets:
     get:
-      summary: Get user by ID
-      operationId: getUser
+      tags:
+        - Tickets
+      summary: "チケット一覧取得"
       parameters:
-        - name: userID
-          in: path
-          required: true
+        - name: assignee
+          in: query
           schema:
             type: string
-            format: uuid
+          description: "担当者IDでフィルタ"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/TicketStatus"
+          description: "ステータスでフィルタ"
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [due_asc, due_desc, created_desc]
+          description: "ソート順"
       responses:
         "200":
-          description: User info
+          description: "成功"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
-        default:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ticket"
+        "401":
+          description: "認証エラー"
+
+    post:
+      tags:
+        - Tickets
+      summary: "チケット新規作成"
+      description: "新規チケットを作成する。"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                status:
+                  $ref: "#/components/schemas/TicketStatus"
+                assignee:
+                  type: string
+                  description: "主担当 (traQ ID)"
+                sub_assignees:
+                  type: array
+                  items:
+                    type: string
+                  description: "副担当リスト (traQ ID)"
+                stakeholders:
+                  type: array
+                  items:
+                    type: string
+                  description: "その他関係者 (traQ ID)"
+                due:
+                  type: string
+                  format: date
+                tags:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "201":
+          description: "作成成功"
           content:
             application/json:
               schema:
-                $ref: "#/components/responses/Error"
-components:
-  requestBodies:
-    CreateUser:
-      required: true
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              name:
-                type: string
-              email:
-                type: string
-                format: email
-            required:
-              - name
-              - email
-  responses:
-    Error:
-      type: object
-      properties:
-        message:
-          type: string
-      required:
-        - message
-    CreateUser:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-      required:
-        - id
-  schemas:
-    User:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        email:
-          type: string
-        iconUrl:
-          type: string
-      required:
-        - id
-        - name
-        - email
-        - iconUrl
+                $ref: "#/components/schemas/Ticket"
+        "401":
+          description: "認証エラー"
+
+
+  /tickets/{ticketId}:
+    parameters:
+      - name: ticketId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+
+    get:
+      tags:
+        - Tickets
+      summary: "チケット詳細取得"
+      description: "チケットに紐づくノート一覧(notes)も同時に返却される。"
+      responses:
+        "200":
+          description: "成功"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Ticket"
+                  - type: object
+                    properties:
+                      notes:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Note"
+                        description: "このチケットに紐づくノート一覧"
+        "404":
+          description: "チケットが見つからない"
+
+    patch:
+      tags:
+        - Tickets
+      summary: "チケット情報更新"
+      description: "関係者と渉外のみ実行可能。"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                status:
+                  $ref: "#/components/schemas/TicketStatus"
+                assignee:
+                  type: string
+                sub_assignees:
+                  type: array
+                  items:
+                    type: string
+                stakeholders:
+                  type: array
+                  items:
+                    type: string
+                due:
+                  type: string
+                  format: date
+                tags:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: "更新成功"
+        "403":
+          description: "権限なし"
+
+    delete:
+      tags:
+        - Tickets
+      summary: "チケット削除"
+      description: "本職のみ実行可能。"
+      responses:
+        "204":
+          description: "削除成功"
+        "403":
+          description: "権限なし"
+
+  # --- Notes ---
+  /tickets/{ticketId}/notes:
+    parameters:
+      - name: ticketId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+
+    post:
+      tags:
+        - Notes
+      summary: "ノート追加"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, content, mention_notification]
+              properties:
+                type:
+                  $ref: "#/components/schemas/NoteType"
+                content:
+                  type: string
+                mention_notification:
+                  type: boolean
+                  description: "作成時にメンション通知を送るか否か"
+      responses:
+        "201":
+          description: "作成成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+
+  /tickets/{ticketId}/notes/{noteId}:
+    parameters:
+      - name: ticketId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: noteId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+
+    put:
+      tags:
+        - Notes
+      summary: "ノート編集"
+      description: |-
+        送信ノートの編集時、既存のReviewを無効化する(Weightリセット)オプションがある。
+        Authorのみ実行可能。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                status:
+                  $ref: "#/components/schemas/NoteStatus"
+                reset_reviews:
+                  type: boolean
+                  default: true
+                  description: "trueの場合、承認状況(Weight)をリセットしてDraftに戻す"
+      responses:
+        "200":
+          description: "成功"
+        "403":
+          description: "権限なし"
+
+    delete:
+      tags:
+        - Notes
+      summary: "ノート削除"
+      responses:
+        "204":
+          description: "削除成功"
+
+  # --- Reviews ---
+  /tickets/{ticketId}/notes/{noteId}/reviews:
+    parameters:
+      - name: ticketId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: noteId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+
+    post:
+      tags:
+        - Reviews
+      summary: "レビュー追加"
+      description: |-
+        承認(approve)の場合、Weightの上限はユーザー権限に基づく(本職5/補佐4/他0)。
+        Weight合計が5以上になると、Noteのstatusが`waiting_sent`になる。
+        すでにレビュー済みの場合は失敗する。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type:
+                  $ref: "#/components/schemas/ReviewType"
+                weight:
+                  type: integer
+                  description: "承認の強さ"
+                comment:
+                  type: string
+      responses:
+        "201":
+          description: "作成成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+  /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}:
+    parameters:
+      - name: ticketId
+        in: path
+        required: true
+        schema: 
+          type: integer
+          format: int64
+      - name: noteId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: reviewId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+
+    put:
+      tags:
+        - Reviews
+      summary: "レビュー修正"
+      description: "ReviewのAuthorのみ実行可能。"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  $ref: "#/components/schemas/ReviewType"
+                weight:
+                  type: integer
+                comment:
+                  type: string
+      responses:
+        "200":
+          description: "成功"
+    
+    delete:
+      tags:
+        - Reviews
+      summary: "レビュー取り消し"
+      responses:
+        "204":
+          description: "削除成功"
