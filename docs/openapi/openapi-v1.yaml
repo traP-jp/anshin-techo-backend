@@ -4,6 +4,7 @@ info:
   description: |-
     2025冬ハッカソン02班 渉外チケット管理システム API仕様書。
     外部とのメールやり取り、案件進捗、レビューフローを管理するためのサービス。
+
   version: 1.0.0
 servers:
   - url: "http://localhost:8080/api"
@@ -26,7 +27,7 @@ components:
     # --- Enums ---
     TicketStatus:
       type: string
-      enum: [not_planned,not_written,waiting_review,waiting_sent , sent, milestone_scheduled, completed, forgotten]
+      enum: [not_planned, not_written, waiting_review, waiting_sent, sent, milestone_scheduled, completed, forgotten]
       description: |-
         チケットの進行状況
         - not_planned: 方針決定待ち
@@ -74,7 +75,6 @@ components:
         - traq_id
         - role
 
-
     Ticket:
       type: object
       properties:
@@ -82,14 +82,12 @@ components:
           type: integer
           format: int64
           description: "チケットID"
-        status:
-          $ref: "#/components/schemas/TicketStatus"
         title:
           type: string
-          description: "[Censorable] 案件名 (Key含む文字列)"
+          description: "案件名 "
         description:
           type: string
-          description: "[Censorable] 詳細 (Key含む文字列)"
+          description: "詳細 "
         assignee:
           type: string
           description: "主担当のtraQ ID"
@@ -102,7 +100,7 @@ components:
           type: array
           items:
             type: string
-          description: "その他関係者リスト (traQ ID)。黒塗りを閲覧可能。"
+          description: "その他関係者リスト (traQ ID)。"
         tags:
           type: array
           items:
@@ -113,8 +111,6 @@ components:
           format: date
           nullable: true
           description: "期日。未指定時は自動設定される。"
-        secrets:
-          $ref: "#/components/schemas/TicketSecret"
         created_at:
           type: string
           format: date-time
@@ -123,7 +119,6 @@ components:
           format: date-time
       required:
         - id
-        - status
         - title
         - created_at
 
@@ -146,12 +141,15 @@ components:
           description: "作成者"
         content:
           type: string
-          description: "[Censorable] メッセージ本文"
+          description: "メッセージ本文 "
         reviews:
           type: array
           items:
             $ref: "#/components/schemas/Review"
         created_at:
+          type: string
+          format: date-time
+        updated_at:
           type: string
           format: date-time
       required:
@@ -184,10 +182,17 @@ components:
             - 本職: 1-5
             - 補佐: 1-4
             - その他: 0
+        status:
+          type: string
+          enum: [active, stale]
+          description: "レビュー状態 (active: 有効, stale: 修正により無効化済み)"
         comment:
           type: string
-          description: "[Censorable] コメント"
+          description: "コメント "
         created_at:
+          type: string
+          format: date-time
+        updated_at:
           type: string
           format: date-time
       required:
@@ -196,6 +201,7 @@ components:
         - reviewer
         - type
         - weight
+        - status
 
   securitySchemes:
     # 開発用簡易認証
@@ -261,7 +267,15 @@ paths:
       tags:
         - Users
       summary: "ユーザー情報の同期・更新"
-      description: "本職権限のみ。traQや外部DBからの同期トリガー等。"
+      description: "manager(本職)権限のみ。リクエストボディの内容でユーザー情報を一括更新・同期する。"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/User"
       responses:
         "200":
           description: "成功"
@@ -341,8 +355,6 @@ paths:
                   type: array
                   items:
                     type: string
-                secrets:
-                  $ref: "#/components/schemas/TicketSecret"
       responses:
         "201":
           description: "作成成功"
@@ -367,10 +379,7 @@ paths:
       tags:
         - Tickets
       summary: "チケット詳細取得"
-      description: |-
-        権限(担当/副担当/関係者/本職)がある場合、secrets に実データが含まれる。
-        権限がない場合、secrets は空またはダミーとなる。
-        チケットに紐づくノート一覧(notes)も同時に返却される。
+      description: "チケットに紐づくノート一覧(notes)も同時に返却される。"
       responses:
         "200":
           description: "成功"
@@ -423,8 +432,6 @@ paths:
                   type: array
                   items:
                     type: string
-                secrets:
-                  $ref: "#/components/schemas/TicketSecret"
       responses:
         "200":
           description: "更新成功"
