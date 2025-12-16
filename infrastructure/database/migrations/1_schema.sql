@@ -3,10 +3,9 @@
 CREATE TABLE IF NOT EXISTS users (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     traq_id VARCHAR(64) NOT NULL UNIQUE,
-    is_assistant BOOLEAN DEFAULT FALSE,
-    is_main BOOLEAN DEFAULT FALSE,
+    role ENUM('user', 'assistant', 'manager') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS tickets (
@@ -15,7 +14,9 @@ CREATE TABLE IF NOT EXISTS tickets (
     due DATE,
     status ENUM(
         'not_planned',
-        'writing',
+        'not_written',
+        'waiting_review',
+        'waiting_sent',
         'sent',
         'milestone_scheduled',
         'completed',
@@ -24,7 +25,7 @@ CREATE TABLE IF NOT EXISTS tickets (
     title TEXT,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP,
     FOREIGN KEY (assignee) REFERENCES users(traq_id)
 );
@@ -60,7 +61,7 @@ CREATE TABLE IF NOT EXISTS notes (
     author VARCHAR(64) NOT NULL,
     content TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP,
     FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE,
     FOREIGN KEY (author) REFERENCES users(traq_id)
@@ -83,7 +84,7 @@ CREATE TABLE IF NOT EXISTS reviews (
     author VARCHAR(64) NOT NULL,
     comment TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP,
     FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE,
     FOREIGN KEY (author) REFERENCES users(traq_id)
