@@ -3,7 +3,7 @@
 CREATE TABLE IF NOT EXISTS users (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     traq_id VARCHAR(64) NOT NULL UNIQUE,
-    role ENUM('user', 'assistant', 'manager') NOT NULL,
+    role ENUM('member', 'assistant', 'manager') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
