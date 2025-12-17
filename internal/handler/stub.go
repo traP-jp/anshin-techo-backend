@@ -20,7 +20,6 @@ func (h *Handler) ConfigPost(_ context.Context, _ *api.ConfigPostReq) (api.Confi
 	return nil, fmt.Errorf("not implemented")
 }
 
-
 // --- Tickets ---
 // TicketsGet implements GET /tickets operation.
 func (h *Handler) TicketsGet(_ context.Context, _ api.TicketsGetParams) (api.TicketsGetRes, error) {
