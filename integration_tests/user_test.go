@@ -24,7 +24,7 @@ func TestUser(t *testing.T) {
 			t.Parallel()
 			rec := doRequest(t, "PUT", "/users", `{"role":"manager"}`)
 
-			expectedStatus := `401 Unauthorized`
+			expectedStatus := `400 Bad Request`
 			expectedBody := `{"error_message":"operation UsersPut: decode request: decode application/json: \"[\" expected: unexpected byte 123 '{' at 0"}`
 			assert.Equal(t, rec.Result().Status, expectedStatus)
 			assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
