@@ -977,6 +977,7 @@ const (
 	ReviewTypeApprove       ReviewType = "approve"
 	ReviewTypeChangeRequest ReviewType = "change_request"
 	ReviewTypeComment       ReviewType = "comment"
+	ReviewTypeSystem        ReviewType = "system"
 )
 
 // AllValues returns all ReviewType values.
@@ -985,6 +986,7 @@ func (ReviewType) AllValues() []ReviewType {
 		ReviewTypeApprove,
 		ReviewTypeChangeRequest,
 		ReviewTypeComment,
+		ReviewTypeSystem,
 	}
 }
 
@@ -996,6 +998,8 @@ func (s ReviewType) MarshalText() ([]byte, error) {
 	case ReviewTypeChangeRequest:
 		return []byte(s), nil
 	case ReviewTypeComment:
+		return []byte(s), nil
+	case ReviewTypeSystem:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -1013,6 +1017,9 @@ func (s *ReviewType) UnmarshalText(data []byte) error {
 		return nil
 	case ReviewTypeComment:
 		*s = ReviewTypeComment
+		return nil
+	case ReviewTypeSystem:
+		*s = ReviewTypeSystem
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

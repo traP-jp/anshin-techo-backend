@@ -179,6 +179,8 @@ func (s ReviewType) Validate() error {
 		return nil
 	case "comment":
 		return nil
+	case "system":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}

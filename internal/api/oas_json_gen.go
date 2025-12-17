@@ -1113,6 +1113,8 @@ func (s *ReviewType) Decode(d *jx.Decoder) error {
 		*s = ReviewTypeChangeRequest
 	case ReviewTypeComment:
 		*s = ReviewTypeComment
+	case ReviewTypeSystem:
+		*s = ReviewTypeSystem
 	default:
 		*s = ReviewType(v)
 	}
