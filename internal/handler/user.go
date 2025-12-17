@@ -8,66 +8,38 @@ import (
 	"github.com/traP-jp/anshin-techo-backend/internal/repository"
 )
 
-// POST /api/v1/users
-func (h *Handler) CreateUser(ctx context.Context, req *api.CreateUserReq) (*api.CreateUser, error) {
-	userID, err := h.repo.CreateUser(ctx, repository.CreateUserParams{
-		Name:  req.Name,
-		Email: req.Email,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("create user to repository: %w", err)
-	}
-
-	res := &api.CreateUser{
-		ID: userID,
-	}
-
-	return res, nil
-}
-
-// GET /api/v1/users/:userID
-func (h *Handler) GetUser(ctx context.Context, params api.GetUserParams) (*api.User, error) {
-	user, err := h.repo.GetUser(ctx, params.UserID)
-	if err != nil {
-		return nil, fmt.Errorf("get user from repository: %w", err)
-	}
-
-	photo, err := h.photo.GetPhoto(1)
-	if err != nil {
-		return nil, fmt.Errorf("get user icon from photoapi: %w", err)
-	}
-
-	res := &api.User{
-		ID:      user.ID,
-		Name:    user.Name,
-		Email:   user.Email,
-		IconUrl: photo.ThumbnailURL,
-	}
-
-	return res, nil
-}
-
 // GET /api/v1/users
-func (h *Handler) GetUsers(ctx context.Context) ([]api.User, error) {
+func (h *Handler) UsersGet(ctx context.Context) ([]api.User, error) {
 	users, err := h.repo.GetUsers(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("get users from repository: %w", err)
 	}
 
-	photo, err := h.photo.GetPhoto(1)
-	if err != nil {
-		return nil, fmt.Errorf("get user icon from photoapi: %w", err)
-	}
-
 	res := make([]api.User, 0, len(users))
 	for _, user := range users {
 		res = append(res, api.User{
-			ID:      user.ID,
-			Name:    user.Name,
-			Email:   user.Email,
-			IconUrl: photo.ThumbnailURL,
+			TraqID: user.TraqID,
+			Role:   api.UserRole(user.Role),
 		})
 	}
 
 	return res, nil
+}
+
+// PUT /api/v1/users
+func (h *Handler) UsersPut(ctx context.Context, req []api.User) (api.UsersPutRes, error) {
+	// Empty request means sync to empty set; proceed.
+	repoUsers := make([]*repository.User, 0, len(req))
+	for _, u := range req {
+		repoUsers = append(repoUsers, &repository.User{
+			TraqID: u.TraqID,
+			Role:   string(u.Role),
+		})
+	}
+
+	if err := h.repo.UpdateUsers(ctx, repoUsers); err != nil {
+		return nil, fmt.Errorf("sync users to repository: %w", err)
+	}
+
+	return &api.UsersPutOK{}, nil
 }

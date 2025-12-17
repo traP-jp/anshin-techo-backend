@@ -3,47 +3,53 @@ package repository
 import (
 	"context"
 	"fmt"
-
-	"github.com/google/uuid"
 )
 
 type (
-	// users table
 	User struct {
-		ID    uuid.UUID `db:"id"`
-		Name  string    `db:"name"`
-		Email string    `db:"email"`
-	}
-
-	CreateUserParams struct {
-		Name  string
-		Email string
+		TraqID string `db:"traq_id"`
+		Role   string `db:"role"`
 	}
 )
 
 func (r *Repository) GetUsers(ctx context.Context) ([]*User, error) {
 	users := []*User{}
-	if err := r.db.SelectContext(ctx, &users, "SELECT * FROM users"); err != nil {
+	if err := r.db.SelectContext(ctx, &users, "SELECT traq_id, role FROM users"); err != nil {
 		return nil, fmt.Errorf("select users: %w", err)
 	}
 
 	return users, nil
 }
 
-func (r *Repository) CreateUser(ctx context.Context, params CreateUserParams) (uuid.UUID, error) {
-	userID := uuid.New()
-	if _, err := r.db.ExecContext(ctx, "INSERT INTO users (id, name, email) VALUES (?, ?, ?)", userID, params.Name, params.Email); err != nil {
-		return uuid.Nil, fmt.Errorf("insert user: %w", err)
+func (r *Repository) UpdateUsers(ctx context.Context, users []*User) (err error) {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	_, err = tx.ExecContext(ctx, "DELETE FROM users")
+	if err != nil {
+		return fmt.Errorf("delete all users: %w", err)
 	}
 
-	return userID, nil
-}
+	if len(users) == 0 {
+		err = tx.Commit()
 
-func (r *Repository) GetUser(ctx context.Context, userID uuid.UUID) (*User, error) {
-	user := new(User)
-	if err := r.db.GetContext(ctx, user, "SELECT * FROM users WHERE id = ?", userID); err != nil {
-		return nil, fmt.Errorf("select user: %w", err)
+		return err
 	}
 
-	return user, nil
+	query := "INSERT INTO users (traq_id, role) VALUES (:traq_id, :role)"
+	_, err = tx.NamedExecContext(ctx, query, users)
+	if err != nil {
+		return fmt.Errorf("bulk insert users: %w", err)
+	}
+
+	err = tx.Commit()
+
+	return err
 }
