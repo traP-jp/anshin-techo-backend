@@ -57,7 +57,7 @@ components:
 
     ReviewType:
       type: string
-      enum: [approve, change_request, comment]
+      enum: [approve, change_request, comment, system]
       description: "レビューの種類"
 
     # --- Models ---
