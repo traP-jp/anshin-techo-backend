@@ -40,7 +40,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.notFound(w, r)
 		return
 	}
-	args := [1]string{}
+	args := [3]string{}
 
 	// Static code generated router with unwrapped path search.
 	switch {
@@ -49,9 +49,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		switch elem[0] {
-		case '/': // Prefix: "/api/v1/"
+		case '/': // Prefix: "/"
 
-			if l := len("/api/v1/"); len(elem) >= l && elem[0:l] == "/api/v1/" {
+			if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 				elem = elem[l:]
 			} else {
 				break
@@ -61,9 +61,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 			switch elem[0] {
-			case 'p': // Prefix: "ping"
+			case 'c': // Prefix: "config"
 
-				if l := len("ping"); len(elem) >= l && elem[0:l] == "ping" {
+				if l := len("config"); len(elem) >= l && elem[0:l] == "config" {
 					elem = elem[l:]
 				} else {
 					break
@@ -73,17 +73,19 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					// Leaf node.
 					switch r.Method {
 					case "GET":
-						s.handlePingRequest([0]string{}, elemIsEscaped, w, r)
+						s.handleConfigGetRequest([0]string{}, elemIsEscaped, w, r)
+					case "POST":
+						s.handleConfigPostRequest([0]string{}, elemIsEscaped, w, r)
 					default:
-						s.notAllowed(w, r, "GET")
+						s.notAllowed(w, r, "GET,POST")
 					}
 
 					return
 				}
 
-			case 'u': // Prefix: "users"
+			case 't': // Prefix: "tickets"
 
-				if l := len("users"); len(elem) >= l && elem[0:l] == "users" {
+				if l := len("tickets"); len(elem) >= l && elem[0:l] == "tickets" {
 					elem = elem[l:]
 				} else {
 					break
@@ -92,9 +94,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if len(elem) == 0 {
 					switch r.Method {
 					case "GET":
-						s.handleGetUsersRequest([0]string{}, elemIsEscaped, w, r)
+						s.handleTicketsGetRequest([0]string{}, elemIsEscaped, w, r)
 					case "POST":
-						s.handleCreateUserRequest([0]string{}, elemIsEscaped, w, r)
+						s.handleTicketsPostRequest([0]string{}, elemIsEscaped, w, r)
 					default:
 						s.notAllowed(w, r, "GET,POST")
 					}
@@ -110,29 +112,184 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						break
 					}
 
-					// Param: "userID"
-					// Leaf parameter, slashes are prohibited
+					// Param: "ticketId"
+					// Match until "/"
 					idx := strings.IndexByte(elem, '/')
-					if idx >= 0 {
-						break
+					if idx < 0 {
+						idx = len(elem)
 					}
-					args[0] = elem
-					elem = ""
+					args[0] = elem[:idx]
+					elem = elem[idx:]
 
 					if len(elem) == 0 {
-						// Leaf node.
 						switch r.Method {
+						case "DELETE":
+							s.handleTicketsTicketIdDeleteRequest([1]string{
+								args[0],
+							}, elemIsEscaped, w, r)
 						case "GET":
-							s.handleGetUserRequest([1]string{
+							s.handleTicketsTicketIdGetRequest([1]string{
+								args[0],
+							}, elemIsEscaped, w, r)
+						case "PATCH":
+							s.handleTicketsTicketIdPatchRequest([1]string{
 								args[0],
 							}, elemIsEscaped, w, r)
 						default:
-							s.notAllowed(w, r, "GET")
+							s.notAllowed(w, r, "DELETE,GET,PATCH")
 						}
 
 						return
 					}
+					switch elem[0] {
+					case '/': // Prefix: "/notes"
 
+						if l := len("/notes"); len(elem) >= l && elem[0:l] == "/notes" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch r.Method {
+							case "POST":
+								s.handleTicketsTicketIdNotesPostRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, "POST")
+							}
+
+							return
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							// Param: "noteId"
+							// Match until "/"
+							idx := strings.IndexByte(elem, '/')
+							if idx < 0 {
+								idx = len(elem)
+							}
+							args[1] = elem[:idx]
+							elem = elem[idx:]
+
+							if len(elem) == 0 {
+								switch r.Method {
+								case "DELETE":
+									s.handleTicketsTicketIdNotesNoteIdDeleteRequest([2]string{
+										args[0],
+										args[1],
+									}, elemIsEscaped, w, r)
+								case "PUT":
+									s.handleTicketsTicketIdNotesNoteIdPutRequest([2]string{
+										args[0],
+										args[1],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, "DELETE,PUT")
+								}
+
+								return
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/reviews"
+
+								if l := len("/reviews"); len(elem) >= l && elem[0:l] == "/reviews" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									switch r.Method {
+									case "POST":
+										s.handleTicketsTicketIdNotesNoteIdReviewsPostRequest([2]string{
+											args[0],
+											args[1],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, "POST")
+									}
+
+									return
+								}
+								switch elem[0] {
+								case '/': // Prefix: "/"
+
+									if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									// Param: "reviewId"
+									// Leaf parameter, slashes are prohibited
+									idx := strings.IndexByte(elem, '/')
+									if idx >= 0 {
+										break
+									}
+									args[2] = elem
+									elem = ""
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch r.Method {
+										case "DELETE":
+											s.handleTicketsTicketIdNotesNoteIdReviewsReviewIdDeleteRequest([3]string{
+												args[0],
+												args[1],
+												args[2],
+											}, elemIsEscaped, w, r)
+										case "PUT":
+											s.handleTicketsTicketIdNotesNoteIdReviewsReviewIdPutRequest([3]string{
+												args[0],
+												args[1],
+												args[2],
+											}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, "DELETE,PUT")
+										}
+
+										return
+									}
+
+								}
+
+							}
+
+						}
+
+					}
+
+				}
+
+			case 'u': // Prefix: "users"
+
+				if l := len("users"); len(elem) >= l && elem[0:l] == "users" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					// Leaf node.
+					switch r.Method {
+					case "GET":
+						s.handleUsersGetRequest([0]string{}, elemIsEscaped, w, r)
+					case "PUT":
+						s.handleUsersPutRequest([0]string{}, elemIsEscaped, w, r)
+					default:
+						s.notAllowed(w, r, "GET,PUT")
+					}
+
+					return
 				}
 
 			}
@@ -150,7 +307,7 @@ type Route struct {
 	operationGroup string
 	pathPattern    string
 	count          int
-	args           [1]string
+	args           [3]string
 }
 
 // Name returns ogen operation name.
@@ -223,9 +380,9 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 			break
 		}
 		switch elem[0] {
-		case '/': // Prefix: "/api/v1/"
+		case '/': // Prefix: "/"
 
-			if l := len("/api/v1/"); len(elem) >= l && elem[0:l] == "/api/v1/" {
+			if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 				elem = elem[l:]
 			} else {
 				break
@@ -235,9 +392,9 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 				break
 			}
 			switch elem[0] {
-			case 'p': // Prefix: "ping"
+			case 'c': // Prefix: "config"
 
-				if l := len("ping"); len(elem) >= l && elem[0:l] == "ping" {
+				if l := len("config"); len(elem) >= l && elem[0:l] == "config" {
 					elem = elem[l:]
 				} else {
 					break
@@ -247,11 +404,20 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 					// Leaf node.
 					switch method {
 					case "GET":
-						r.name = PingOperation
-						r.summary = "Ping API"
-						r.operationID = "ping"
+						r.name = ConfigGetOperation
+						r.summary = "設定情報の取得"
+						r.operationID = ""
 						r.operationGroup = ""
-						r.pathPattern = "/api/v1/ping"
+						r.pathPattern = "/config"
+						r.args = args
+						r.count = 0
+						return r, true
+					case "POST":
+						r.name = ConfigPostOperation
+						r.summary = "設定情報の更新"
+						r.operationID = ""
+						r.operationGroup = ""
+						r.pathPattern = "/config"
 						r.args = args
 						r.count = 0
 						return r, true
@@ -260,9 +426,9 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 					}
 				}
 
-			case 'u': // Prefix: "users"
+			case 't': // Prefix: "tickets"
 
-				if l := len("users"); len(elem) >= l && elem[0:l] == "users" {
+				if l := len("tickets"); len(elem) >= l && elem[0:l] == "tickets" {
 					elem = elem[l:]
 				} else {
 					break
@@ -271,20 +437,20 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 				if len(elem) == 0 {
 					switch method {
 					case "GET":
-						r.name = GetUsersOperation
-						r.summary = "Get all users"
-						r.operationID = "getUsers"
+						r.name = TicketsGetOperation
+						r.summary = "チケット一覧取得"
+						r.operationID = ""
 						r.operationGroup = ""
-						r.pathPattern = "/api/v1/users"
+						r.pathPattern = "/tickets"
 						r.args = args
 						r.count = 0
 						return r, true
 					case "POST":
-						r.name = CreateUserOperation
-						r.summary = "Create a user"
-						r.operationID = "createUser"
+						r.name = TicketsPostOperation
+						r.summary = "チケット新規作成"
+						r.operationID = ""
 						r.operationGroup = ""
-						r.pathPattern = "/api/v1/users"
+						r.pathPattern = "/tickets"
 						r.args = args
 						r.count = 0
 						return r, true
@@ -301,24 +467,41 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						break
 					}
 
-					// Param: "userID"
-					// Leaf parameter, slashes are prohibited
+					// Param: "ticketId"
+					// Match until "/"
 					idx := strings.IndexByte(elem, '/')
-					if idx >= 0 {
-						break
+					if idx < 0 {
+						idx = len(elem)
 					}
-					args[0] = elem
-					elem = ""
+					args[0] = elem[:idx]
+					elem = elem[idx:]
 
 					if len(elem) == 0 {
-						// Leaf node.
 						switch method {
-						case "GET":
-							r.name = GetUserOperation
-							r.summary = "Get user by ID"
-							r.operationID = "getUser"
+						case "DELETE":
+							r.name = TicketsTicketIdDeleteOperation
+							r.summary = "チケット削除"
+							r.operationID = ""
 							r.operationGroup = ""
-							r.pathPattern = "/api/v1/users/{userID}"
+							r.pathPattern = "/tickets/{ticketId}"
+							r.args = args
+							r.count = 1
+							return r, true
+						case "GET":
+							r.name = TicketsTicketIdGetOperation
+							r.summary = "チケット詳細取得"
+							r.operationID = ""
+							r.operationGroup = ""
+							r.pathPattern = "/tickets/{ticketId}"
+							r.args = args
+							r.count = 1
+							return r, true
+						case "PATCH":
+							r.name = TicketsTicketIdPatchOperation
+							r.summary = "チケット情報更新"
+							r.operationID = ""
+							r.operationGroup = ""
+							r.pathPattern = "/tickets/{ticketId}"
 							r.args = args
 							r.count = 1
 							return r, true
@@ -326,7 +509,182 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 							return
 						}
 					}
+					switch elem[0] {
+					case '/': // Prefix: "/notes"
 
+						if l := len("/notes"); len(elem) >= l && elem[0:l] == "/notes" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch method {
+							case "POST":
+								r.name = TicketsTicketIdNotesPostOperation
+								r.summary = "ノート追加"
+								r.operationID = ""
+								r.operationGroup = ""
+								r.pathPattern = "/tickets/{ticketId}/notes"
+								r.args = args
+								r.count = 1
+								return r, true
+							default:
+								return
+							}
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							// Param: "noteId"
+							// Match until "/"
+							idx := strings.IndexByte(elem, '/')
+							if idx < 0 {
+								idx = len(elem)
+							}
+							args[1] = elem[:idx]
+							elem = elem[idx:]
+
+							if len(elem) == 0 {
+								switch method {
+								case "DELETE":
+									r.name = TicketsTicketIdNotesNoteIdDeleteOperation
+									r.summary = "ノート削除"
+									r.operationID = ""
+									r.operationGroup = ""
+									r.pathPattern = "/tickets/{ticketId}/notes/{noteId}"
+									r.args = args
+									r.count = 2
+									return r, true
+								case "PUT":
+									r.name = TicketsTicketIdNotesNoteIdPutOperation
+									r.summary = "ノート編集"
+									r.operationID = ""
+									r.operationGroup = ""
+									r.pathPattern = "/tickets/{ticketId}/notes/{noteId}"
+									r.args = args
+									r.count = 2
+									return r, true
+								default:
+									return
+								}
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/reviews"
+
+								if l := len("/reviews"); len(elem) >= l && elem[0:l] == "/reviews" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									switch method {
+									case "POST":
+										r.name = TicketsTicketIdNotesNoteIdReviewsPostOperation
+										r.summary = "レビュー追加"
+										r.operationID = ""
+										r.operationGroup = ""
+										r.pathPattern = "/tickets/{ticketId}/notes/{noteId}/reviews"
+										r.args = args
+										r.count = 2
+										return r, true
+									default:
+										return
+									}
+								}
+								switch elem[0] {
+								case '/': // Prefix: "/"
+
+									if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									// Param: "reviewId"
+									// Leaf parameter, slashes are prohibited
+									idx := strings.IndexByte(elem, '/')
+									if idx >= 0 {
+										break
+									}
+									args[2] = elem
+									elem = ""
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch method {
+										case "DELETE":
+											r.name = TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteOperation
+											r.summary = "レビュー取り消し"
+											r.operationID = ""
+											r.operationGroup = ""
+											r.pathPattern = "/tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}"
+											r.args = args
+											r.count = 3
+											return r, true
+										case "PUT":
+											r.name = TicketsTicketIdNotesNoteIdReviewsReviewIdPutOperation
+											r.summary = "レビュー修正"
+											r.operationID = ""
+											r.operationGroup = ""
+											r.pathPattern = "/tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}"
+											r.args = args
+											r.count = 3
+											return r, true
+										default:
+											return
+										}
+									}
+
+								}
+
+							}
+
+						}
+
+					}
+
+				}
+
+			case 'u': // Prefix: "users"
+
+				if l := len("users"); len(elem) >= l && elem[0:l] == "users" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					// Leaf node.
+					switch method {
+					case "GET":
+						r.name = UsersGetOperation
+						r.summary = "ユーザー一覧取得"
+						r.operationID = ""
+						r.operationGroup = ""
+						r.pathPattern = "/users"
+						r.args = args
+						r.count = 0
+						return r, true
+					case "PUT":
+						r.name = UsersPutOperation
+						r.summary = "ユーザー情報の同期・更新"
+						r.operationID = ""
+						r.operationGroup = ""
+						r.pathPattern = "/users"
+						r.args = args
+						r.count = 0
+						return r, true
+					default:
+						return
+					}
 				}
 
 			}

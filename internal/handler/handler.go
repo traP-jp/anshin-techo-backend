@@ -5,37 +5,37 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
 	"github.com/traP-jp/anshin-techo-backend/internal/api"
 	"github.com/traP-jp/anshin-techo-backend/internal/repository"
-	"github.com/traP-jp/anshin-techo-backend/internal/service/photo"
 )
 
 type Handler struct {
-	photo *photo.Service
-	repo  *repository.Repository
+	//photo *photo.Service
+	repo *repository.Repository
 }
 
 func New(
-	photo *photo.Service,
+	//photo *photo.Service,
 	repo *repository.Repository,
 ) *Handler {
 	return &Handler{
-		photo,
+		//photo,
 		repo,
 	}
 }
 
-func (h *Handler) NewError(ctx context.Context, err error) *api.ErrorStatusCode {
-	if apiErr, ok := err.(*api.ErrorStatusCode); ok {
-		return apiErr
+func (h *Handler) NewError(ctx context.Context, err error) error {
+	if _, ok := err.(*echo.HTTPError); ok {
+		return err
 	}
 
 	slog.ErrorContext(ctx, "internal server error", "error", err)
 
-	return &api.ErrorStatusCode{
-		StatusCode: http.StatusInternalServerError,
-		Response: api.Error{
-			Message: "internal server error",
-		},
-	}
+	return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
+}
+
+func (h *Handler) HandleTraQAuth(ctx context.Context, operationName string, t api.TraQAuth) (context.Context, error) {
+
+	return ctx, nil
 }
