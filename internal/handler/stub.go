@@ -1,5 +1,7 @@
 package handler
 
+//revive:disable:var-naming
+
 import (
 	"context"
 	"fmt"
@@ -9,72 +11,74 @@ import (
 
 // --- Config ---
 // ConfigGet implements GET /config operation.
-func (h *Handler) ConfigGet(_ctx context.Context) error {
+func (h *Handler) ConfigGet(_ context.Context) error {
 	return fmt.Errorf("not implemented")
 }
 
 // ConfigPost implements POST /config operation.
-func (h *Handler) ConfigPost(_ctx context.Context, _req *api.ConfigPostReq) (api.ConfigPostRes, error) {
+func (h *Handler) ConfigPost(_ context.Context, _ *api.ConfigPostReq) (api.ConfigPostRes, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
 
 // --- Tickets ---
 // TicketsGet implements GET /tickets operation.
-func (h *Handler) TicketsGet(_ctx context.Context, _params api.TicketsGetParams) (api.TicketsGetRes, error) {
+func (h *Handler) TicketsGet(_ context.Context, _ api.TicketsGetParams) (api.TicketsGetRes, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
 // TicketsPost implements POST /tickets operation.
-func (h *Handler) TicketsPost(_ctx context.Context, _req *api.TicketsPostReq) (api.TicketsPostRes, error) {
+func (h *Handler) TicketsPost(_ context.Context, _ *api.TicketsPostReq) (api.TicketsPostRes, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
 // TicketsTicketIdDelete implements DELETE /tickets/{ticketId} operation.
-func (h *Handler) TicketsTicketIdDelete(_ctx context.Context, _params api.TicketsTicketIdDeleteParams) (api.TicketsTicketIdDeleteRes, error) {
+func (h *Handler) TicketsTicketIdDelete(_ context.Context, _ api.TicketsTicketIdDeleteParams) (api.TicketsTicketIdDeleteRes, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
 // TicketsTicketIdGet implements GET /tickets/{ticketId} operation.
-func (h *Handler) TicketsTicketIdGet(_ctx context.Context, _params api.TicketsTicketIdGetParams) (api.TicketsTicketIdGetRes, error) {
+func (h *Handler) TicketsTicketIdGet(_ context.Context, _ api.TicketsTicketIdGetParams) (api.TicketsTicketIdGetRes, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
 // TicketsTicketIdPatch implements PATCH /tickets/{ticketId} operation.
-func (h *Handler) TicketsTicketIdPatch(_ctx context.Context, _req api.OptTicketsTicketIdPatchReq, _params api.TicketsTicketIdPatchParams) (api.TicketsTicketIdPatchRes, error) {
+func (h *Handler) TicketsTicketIdPatch(_ context.Context, _ api.OptTicketsTicketIdPatchReq, _ api.TicketsTicketIdPatchParams) (api.TicketsTicketIdPatchRes, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
 // --- Notes ---
 
 // TicketsTicketIdNotesPost implements POST /tickets/{ticketId}/notes operation.
-func (h *Handler) TicketsTicketIdNotesPost(_ctx context.Context, _req *api.TicketsTicketIdNotesPostReq, _params api.TicketsTicketIdNotesPostParams) (*api.Note, error) {
+func (h *Handler) TicketsTicketIdNotesPost(_ context.Context, _ *api.TicketsTicketIdNotesPostReq, _ api.TicketsTicketIdNotesPostParams) (*api.Note, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
 // TicketsTicketIdNotesNoteIdPut implements PUT /tickets/{ticketId}/notes/{noteId} operation.
-func (h *Handler) TicketsTicketIdNotesNoteIdPut(_ctx context.Context, _req *api.TicketsTicketIdNotesNoteIdPutReq, _params api.TicketsTicketIdNotesNoteIdPutParams) (api.TicketsTicketIdNotesNoteIdPutRes, error) {
+func (h *Handler) TicketsTicketIdNotesNoteIdPut(_ context.Context, _ *api.TicketsTicketIdNotesNoteIdPutReq, _ api.TicketsTicketIdNotesNoteIdPutParams) (api.TicketsTicketIdNotesNoteIdPutRes, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
 // TicketsTicketIdNotesNoteIdDelete implements DELETE /tickets/{ticketId}/notes/{noteId} operation.
-func (h *Handler) TicketsTicketIdNotesNoteIdDelete(_ctx context.Context, _params api.TicketsTicketIdNotesNoteIdDeleteParams) error {
+func (h *Handler) TicketsTicketIdNotesNoteIdDelete(_ context.Context, _ api.TicketsTicketIdNotesNoteIdDeleteParams) error {
 	return fmt.Errorf("not implemented")
 }
 
 // --- Reviews ---
 
 // TicketsTicketIdNotesNoteIdReviewsPost implements POST /tickets/{ticketId}/notes/{noteId}/reviews operation.
-func (h *Handler) TicketsTicketIdNotesNoteIdReviewsPost(_ctx context.Context, _req *api.TicketsTicketIdNotesNoteIdReviewsPostReq, _params api.TicketsTicketIdNotesNoteIdReviewsPostParams) (*api.Review, error) {
+func (h *Handler) TicketsTicketIdNotesNoteIdReviewsPost(_ context.Context, _ *api.TicketsTicketIdNotesNoteIdReviewsPostReq, _ api.TicketsTicketIdNotesNoteIdReviewsPostParams) (*api.Review, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
 // TicketsTicketIdNotesNoteIdReviewsReviewIdPut implements PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
-func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdPut(_ctx context.Context, _req api.OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq, _params api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutParams) error {
+func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdPut(_ context.Context, _ api.OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq, _ api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutParams) error {
 	return fmt.Errorf("not implemented")
 }
 
 // TicketsTicketIdNotesNoteIdReviewsReviewIdDelete implements DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
-func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdDelete(_ctx context.Context, _params api.TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteParams) error {
+func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdDelete(_ context.Context, _ api.TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteParams) error {
 	return fmt.Errorf("not implemented")
 }
+
+//revive:enable:var-naming

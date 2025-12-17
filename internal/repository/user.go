@@ -21,25 +21,35 @@ func (r *Repository) GetUsers(ctx context.Context) ([]*User, error) {
 	return users, nil
 }
 
-func (r *Repository) UpdateUsers(ctx context.Context, users []*User) error {
+func (r *Repository) UpdateUsers(ctx context.Context, users []*User) (err error) {
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
 
-	if _, err := tx.ExecContext(ctx, "DELETE FROM users"); err != nil {
+	_, err = tx.ExecContext(ctx, "DELETE FROM users")
+	if err != nil {
 		return fmt.Errorf("delete all users: %w", err)
 	}
 
 	if len(users) == 0 {
-		return tx.Commit()
+		err = tx.Commit()
+
+		return err
 	}
 
 	query := "INSERT INTO users (traq_id, role) VALUES (:traq_id, :role)"
-	if _, err := tx.NamedExecContext(ctx, query, users); err != nil {
+	_, err = tx.NamedExecContext(ctx, query, users)
+	if err != nil {
 		return fmt.Errorf("bulk insert users: %w", err)
 	}
 
-	return tx.Commit()
+	err = tx.Commit()
+
+	return err
 }

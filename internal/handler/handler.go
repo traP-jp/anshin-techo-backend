@@ -35,7 +35,6 @@ func (h *Handler) NewError(ctx context.Context, err error) error {
 	return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
 }
 
-func (h *Handler) HandleTraQAuth(ctx context.Context, operationName string, t api.TraQAuth) (context.Context, error) {
-
+func (h *Handler) HandleTraQAuth(ctx context.Context, _ api.OperationName, _ api.TraQAuth) (context.Context, error) {
 	return ctx, nil
 }

@@ -28,9 +28,7 @@ func (h *Handler) UsersGet(ctx context.Context) ([]api.User, error) {
 
 // PUT /api/v1/users
 func (h *Handler) UsersPut(ctx context.Context, req []api.User) (api.UsersPutRes, error) {
-	if len(req) == 0 {
-	}
-
+	// Empty request means sync to empty set; proceed.
 	repoUsers := make([]*repository.User, 0, len(req))
 	for _, u := range req {
 		repoUsers = append(repoUsers, &repository.User{
