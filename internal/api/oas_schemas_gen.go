@@ -1035,12 +1035,12 @@ type Ticket struct {
 	// 詳細.
 	Description OptString `json:"description"`
 	// 主担当のtraQ ID.
-	Assignee OptString `json:"assignee"`
+	Assignee string `json:"assignee"`
 	// 副担当リスト (traQ ID).
 	SubAssignees []string `json:"sub_assignees"`
 	// その他関係者リスト (traQ ID)。.
-	Stakeholders []string        `json:"stakeholders"`
-	Status       OptTicketStatus `json:"status"`
+	Stakeholders []string     `json:"stakeholders"`
+	Status       TicketStatus `json:"status"`
 	// タグ (例: 協賛, 問い合わせ).
 	Tags []string `json:"tags"`
 	// 期日。未指定時は自動設定される。.
@@ -1065,7 +1065,7 @@ func (s *Ticket) GetDescription() OptString {
 }
 
 // GetAssignee returns the value of Assignee.
-func (s *Ticket) GetAssignee() OptString {
+func (s *Ticket) GetAssignee() string {
 	return s.Assignee
 }
 
@@ -1080,7 +1080,7 @@ func (s *Ticket) GetStakeholders() []string {
 }
 
 // GetStatus returns the value of Status.
-func (s *Ticket) GetStatus() OptTicketStatus {
+func (s *Ticket) GetStatus() TicketStatus {
 	return s.Status
 }
 
@@ -1120,7 +1120,7 @@ func (s *Ticket) SetDescription(val OptString) {
 }
 
 // SetAssignee sets the value of Assignee.
-func (s *Ticket) SetAssignee(val OptString) {
+func (s *Ticket) SetAssignee(val string) {
 	s.Assignee = val
 }
 
@@ -1135,7 +1135,7 @@ func (s *Ticket) SetStakeholders(val []string) {
 }
 
 // SetStatus sets the value of Status.
-func (s *Ticket) SetStatus(val OptTicketStatus) {
+func (s *Ticket) SetStatus(val TicketStatus) {
 	s.Status = val
 }
 
@@ -1312,11 +1312,11 @@ type TicketsGetUnauthorized struct{}
 func (*TicketsGetUnauthorized) ticketsGetRes() {}
 
 type TicketsPostReq struct {
-	Title       OptString       `json:"title"`
-	Description OptString       `json:"description"`
-	Status      OptTicketStatus `json:"status"`
+	Title       string       `json:"title"`
+	Description OptString    `json:"description"`
+	Status      TicketStatus `json:"status"`
 	// 主担当 (traQ ID).
-	Assignee OptString `json:"assignee"`
+	Assignee string `json:"assignee"`
 	// 副担当リスト (traQ ID).
 	SubAssignees []string `json:"sub_assignees"`
 	// その他関係者 (traQ ID).
@@ -1326,7 +1326,7 @@ type TicketsPostReq struct {
 }
 
 // GetTitle returns the value of Title.
-func (s *TicketsPostReq) GetTitle() OptString {
+func (s *TicketsPostReq) GetTitle() string {
 	return s.Title
 }
 
@@ -1336,12 +1336,12 @@ func (s *TicketsPostReq) GetDescription() OptString {
 }
 
 // GetStatus returns the value of Status.
-func (s *TicketsPostReq) GetStatus() OptTicketStatus {
+func (s *TicketsPostReq) GetStatus() TicketStatus {
 	return s.Status
 }
 
 // GetAssignee returns the value of Assignee.
-func (s *TicketsPostReq) GetAssignee() OptString {
+func (s *TicketsPostReq) GetAssignee() string {
 	return s.Assignee
 }
 
@@ -1366,7 +1366,7 @@ func (s *TicketsPostReq) GetTags() []string {
 }
 
 // SetTitle sets the value of Title.
-func (s *TicketsPostReq) SetTitle(val OptString) {
+func (s *TicketsPostReq) SetTitle(val string) {
 	s.Title = val
 }
 
@@ -1376,12 +1376,12 @@ func (s *TicketsPostReq) SetDescription(val OptString) {
 }
 
 // SetStatus sets the value of Status.
-func (s *TicketsPostReq) SetStatus(val OptTicketStatus) {
+func (s *TicketsPostReq) SetStatus(val TicketStatus) {
 	s.Status = val
 }
 
 // SetAssignee sets the value of Assignee.
-func (s *TicketsPostReq) SetAssignee(val OptString) {
+func (s *TicketsPostReq) SetAssignee(val string) {
 	s.Assignee = val
 }
 
@@ -1434,12 +1434,12 @@ type TicketsTicketIdGetOK struct {
 	// 詳細.
 	Description OptString `json:"description"`
 	// 主担当のtraQ ID.
-	Assignee OptString `json:"assignee"`
+	Assignee string `json:"assignee"`
 	// 副担当リスト (traQ ID).
 	SubAssignees []string `json:"sub_assignees"`
 	// その他関係者リスト (traQ ID)。.
-	Stakeholders []string        `json:"stakeholders"`
-	Status       OptTicketStatus `json:"status"`
+	Stakeholders []string     `json:"stakeholders"`
+	Status       TicketStatus `json:"status"`
 	// タグ (例: 協賛, 問い合わせ).
 	Tags []string `json:"tags"`
 	// 期日。未指定時は自動設定される。.
@@ -1466,7 +1466,7 @@ func (s *TicketsTicketIdGetOK) GetDescription() OptString {
 }
 
 // GetAssignee returns the value of Assignee.
-func (s *TicketsTicketIdGetOK) GetAssignee() OptString {
+func (s *TicketsTicketIdGetOK) GetAssignee() string {
 	return s.Assignee
 }
 
@@ -1481,7 +1481,7 @@ func (s *TicketsTicketIdGetOK) GetStakeholders() []string {
 }
 
 // GetStatus returns the value of Status.
-func (s *TicketsTicketIdGetOK) GetStatus() OptTicketStatus {
+func (s *TicketsTicketIdGetOK) GetStatus() TicketStatus {
 	return s.Status
 }
 
@@ -1526,7 +1526,7 @@ func (s *TicketsTicketIdGetOK) SetDescription(val OptString) {
 }
 
 // SetAssignee sets the value of Assignee.
-func (s *TicketsTicketIdGetOK) SetAssignee(val OptString) {
+func (s *TicketsTicketIdGetOK) SetAssignee(val string) {
 	s.Assignee = val
 }
 
@@ -1541,7 +1541,7 @@ func (s *TicketsTicketIdGetOK) SetStakeholders(val []string) {
 }
 
 // SetStatus sets the value of Status.
-func (s *TicketsTicketIdGetOK) SetStatus(val OptTicketStatus) {
+func (s *TicketsTicketIdGetOK) SetStatus(val TicketStatus) {
 	s.Status = val
 }
 

@@ -26,11 +26,6 @@ func (h *Handler) TicketsGet(_ context.Context, _ api.TicketsGetParams) (api.Tic
 	return nil, fmt.Errorf("not implemented")
 }
 
-// TicketsPost implements POST /tickets operation.
-func (h *Handler) TicketsPost(_ context.Context, _ *api.TicketsPostReq) (api.TicketsPostRes, error) {
-	return nil, fmt.Errorf("not implemented")
-}
-
 // TicketsTicketIdDelete implements DELETE /tickets/{ticketId} operation.
 func (h *Handler) TicketsTicketIdDelete(_ context.Context, _ api.TicketsTicketIdDeleteParams) (api.TicketsTicketIdDeleteRes, error) {
 	return nil, fmt.Errorf("not implemented")

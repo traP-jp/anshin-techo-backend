@@ -27,7 +27,17 @@ components:
     # --- Enums ---
     TicketStatus:
       type: string
-      enum: [not_planned, not_written, waiting_review, waiting_sent, sent, milestone_scheduled, completed, forgotten]
+      enum:
+        [
+          not_planned,
+          not_written,
+          waiting_review,
+          waiting_sent,
+          sent,
+          milestone_scheduled,
+          completed,
+          forgotten,
+        ]
       description: |-
         チケットの進行状況
         - not_planned: 方針決定待ち
@@ -93,7 +103,7 @@ components:
           description: "主担当のtraQ ID"
         sub_assignees:
           type: array
-          items: 
+          items:
             type: string
           description: "副担当リスト (traQ ID)"
         stakeholders:
@@ -122,6 +132,8 @@ components:
       required:
         - id
         - title
+        - status
+        - assignee
         - created_at
 
     Note:
@@ -330,6 +342,10 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - title
+                - status
+                - assignee
               properties:
                 title:
                   type: string
@@ -366,7 +382,6 @@ paths:
                 $ref: "#/components/schemas/Ticket"
         "401":
           description: "認証エラー"
-
 
   /tickets/{ticketId}:
     parameters:
@@ -591,7 +606,7 @@ paths:
       - name: ticketId
         in: path
         required: true
-        schema: 
+        schema:
           type: integer
           format: int64
       - name: noteId
@@ -627,7 +642,7 @@ paths:
       responses:
         "200":
           description: "成功"
-    
+
     delete:
       tags:
         - Reviews

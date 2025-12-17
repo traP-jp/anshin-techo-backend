@@ -14,7 +14,7 @@ type (
 		Status      string       `db:"status"`
 		Assignee    string       `db:"assignee"`
 		Due         sql.NullTime `db:"due"`
-		Description string       `db:"description"`
+		Description sql.NullString       `db:"description"`
 		CreatedAt   time.Time    `db:"created_at"`
 		UpdatedAt   time.Time    `db:"updated_at"`
 		DeletedAt   sql.NullTime `db:"deleted_at"`
@@ -25,7 +25,7 @@ type (
 
 	CreateTicketParams struct {
 		Title        string
-		Description  string
+		Description  sql.NullString
 		Status       string
 		Assignee     string
 		SubAssignees []string
@@ -93,9 +93,9 @@ func (r *Repository) GetTickets(ctx context.Context) ([]*Ticket, error) {
 	return tickets, nil
 }
 
-func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams) error {
+func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams) (int64, error) {
 	if !(params.Status == "not_planned" || params.Status == "not_written" || params.Status == "waiting_review" || params.Status == "waiting_sent" || params.Status == "sent" || params.Status == "milestone_scheduled" || params.Status == "completed" || params.Status == "forgotten") {
-		return fmt.Errorf("invalid status: %s", params.Status)
+		return 0, fmt.Errorf("invalid status: %s", params.Status)
 	}
 
 	unique_user_ids := make(map[string]struct{})
@@ -109,7 +109,7 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 
 	users, err := r.GetUsers(ctx) // TODO: 全ユーザーを取得するのは効率が悪いので改善する
 	if err != nil {
-		return fmt.Errorf("failed to get users: %w", err)
+		return 0, fmt.Errorf("failed to get users: %w", err)
 	}
 	assignee_found := false
 	for _, user := range users {
@@ -119,7 +119,7 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 		}
 	}
 	if !assignee_found {
-		return fmt.Errorf("assignee not found: %s", params.Assignee)
+		return 0, fmt.Errorf("assignee not found: %s", params.Assignee)
 	}
 	for _, subAssignee := range params.SubAssignees {
 		sub_assignee_found := false
@@ -130,13 +130,13 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 			}
 		}
 		if !sub_assignee_found {
-			return fmt.Errorf("sub-assignee not found: %s", subAssignee)
+			return 0, fmt.Errorf("sub-assignee not found: %s", subAssignee)
 		}
 	}
 
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
+		return 0, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback()
 
@@ -144,11 +144,11 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 		INSERT INTO tickets (title, description, status, assignee, due) VALUES (?, ?, ?, ?, ?)
 	`, params.Title, params.Description, params.Status, params.Assignee, params.Due)
 	if err != nil {
-		return fmt.Errorf("failed to insert ticket: %w", err)
+		return 0, fmt.Errorf("failed to insert ticket: %w", err)
 	}
 	ticketID, err := res.LastInsertId()
 	if err != nil {
-		return fmt.Errorf("failed to get last insert id: %w", err)
+		return 0, fmt.Errorf("failed to get last insert id: %w", err)
 	}
 	
 	for _, subAssignee := range params.SubAssignees {
@@ -156,7 +156,7 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 			INSERT INTO ticket_sub_assignees (ticket_id, sub_assignee) VALUES (?, ?)
 		`, ticketID, subAssignee)
 		if err != nil {
-			return fmt.Errorf("failed to insert sub-assignee: %w", err)
+			return 0, fmt.Errorf("failed to insert sub-assignee: %w", err)
 		}
 	}
 
@@ -165,7 +165,7 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 			INSERT INTO ticket_stakeholders (ticket_id, stakeholder) VALUES (?, ?)
 		`, ticketID, stakeholder)
 		if err != nil {
-			return fmt.Errorf("failed to insert stakeholder: %w", err)
+			return 0, fmt.Errorf("failed to insert stakeholder: %w", err)
 		}
 	}
 
@@ -174,15 +174,15 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 			INSERT INTO ticket_tags (ticket_id, tag) VALUES (?, ?)
 		`, ticketID, tag)
 		if err != nil {
-			return fmt.Errorf("failed to insert tag: %w", err)
+			return 0, fmt.Errorf("failed to insert tag: %w", err)
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
+		return 0, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	return nil
+	return ticketID, nil
 }
 
 func (r *Repository) GetTicketByID(ctx context.Context, ticketID int64) (*Ticket, error) {

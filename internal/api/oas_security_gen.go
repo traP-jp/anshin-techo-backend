@@ -68,3 +68,19 @@ func (s *Server) securityTraQAuth(ctx context.Context, operationName OperationNa
 	}
 	return rctx, true, err
 }
+
+// SecuritySource is provider of security values (tokens, passwords, etc.).
+type SecuritySource interface {
+	// TraQAuth provides traQAuth security value.
+	// TraQ IDをヘッダーに付与して認証.
+	TraQAuth(ctx context.Context, operationName OperationName) (TraQAuth, error)
+}
+
+func (s *Client) securityTraQAuth(ctx context.Context, operationName OperationName, req *http.Request) error {
+	t, err := s.sec.TraQAuth(ctx, operationName)
+	if err != nil {
+		return errors.Wrap(err, "security source \"TraQAuth\"")
+	}
+	req.Header.Set("X-Forwarded-User", t.APIKey)
+	return nil
+}
