@@ -3,15 +3,15 @@
 package api
 
 import (
-	"io"
+	"fmt"
 	"net/http"
 
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
-	ht "github.com/ogen-go/ogen/http"
+	"github.com/ogen-go/ogen/validate"
 )
 
-func encodeCreateUserResponse(response *CreateUser, w http.ResponseWriter) error {
+func encodeConfigGetResponse(response *ConfigGetOK, w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 
@@ -24,9 +24,162 @@ func encodeCreateUserResponse(response *CreateUser, w http.ResponseWriter) error
 	return nil
 }
 
-func encodeGetUserResponse(response *User, w http.ResponseWriter) error {
+func encodeConfigPostResponse(response ConfigPostRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *ConfigPostOK:
+		w.WriteHeader(200)
+
+		return nil
+
+	case *ConfigPostForbidden:
+		w.WriteHeader(403)
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeTicketsGetResponse(response TicketsGetRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *TicketsGetOKApplicationJSON:
+		if err := func() error {
+			if err := response.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrap(err, "validate")
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *TicketsGetUnauthorized:
+		w.WriteHeader(401)
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeTicketsPostResponse(response TicketsPostRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *Ticket:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(201)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *TicketsPostUnauthorized:
+		w.WriteHeader(401)
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeTicketsTicketIdDeleteResponse(response TicketsTicketIdDeleteRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *TicketsTicketIdDeleteNoContent:
+		w.WriteHeader(204)
+
+		return nil
+
+	case *TicketsTicketIdDeleteForbidden:
+		w.WriteHeader(403)
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeTicketsTicketIdGetResponse(response TicketsTicketIdGetRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *TicketsTicketIdGetOK:
+		if err := func() error {
+			if err := response.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrap(err, "validate")
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *TicketsTicketIdGetNotFound:
+		w.WriteHeader(404)
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeTicketsTicketIdNotesNoteIdDeleteResponse(response *TicketsTicketIdNotesNoteIdDeleteNoContent, w http.ResponseWriter) error {
+	w.WriteHeader(204)
+
+	return nil
+}
+
+func encodeTicketsTicketIdNotesNoteIdPutResponse(response TicketsTicketIdNotesNoteIdPutRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *TicketsTicketIdNotesNoteIdPutOK:
+		w.WriteHeader(200)
+
+		return nil
+
+	case *TicketsTicketIdNotesNoteIdPutForbidden:
+		w.WriteHeader(403)
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeTicketsTicketIdNotesNoteIdReviewsPostResponse(response *Review, w http.ResponseWriter) error {
+	if err := func() error {
+		if err := response.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "validate")
+	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 
 	e := new(jx.Encoder)
 	response.Encode(e)
@@ -37,10 +190,77 @@ func encodeGetUserResponse(response *User, w http.ResponseWriter) error {
 	return nil
 }
 
-func encodeGetUsersResponse(response []User, w http.ResponseWriter) error {
+func encodeTicketsTicketIdNotesNoteIdReviewsReviewIdDeleteResponse(response *TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteNoContent, w http.ResponseWriter) error {
+	w.WriteHeader(204)
+
+	return nil
+}
+
+func encodeTicketsTicketIdNotesNoteIdReviewsReviewIdPutResponse(response *TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK, w http.ResponseWriter) error {
+	w.WriteHeader(200)
+
+	return nil
+}
+
+func encodeTicketsTicketIdNotesPostResponse(response *Note, w http.ResponseWriter) error {
+	if err := func() error {
+		if err := response.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "validate")
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeTicketsTicketIdPatchResponse(response TicketsTicketIdPatchRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *TicketsTicketIdPatchOK:
+		w.WriteHeader(200)
+
+		return nil
+
+	case *TicketsTicketIdPatchForbidden:
+		w.WriteHeader(403)
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeUsersGetResponse(response []User, w http.ResponseWriter) error {
 	if err := func() error {
 		if response == nil {
 			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range response {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
 		}
 		return nil
 	}(); err != nil {
@@ -62,39 +282,19 @@ func encodeGetUsersResponse(response []User, w http.ResponseWriter) error {
 	return nil
 }
 
-func encodePingResponse(response PingOK, w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(200)
+func encodeUsersPutResponse(response UsersPutRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *UsersPutOK:
+		w.WriteHeader(200)
 
-	writer := w
-	if closer, ok := response.Data.(io.Closer); ok {
-		defer closer.Close()
+		return nil
+
+	case *UsersPutForbidden:
+		w.WriteHeader(403)
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
 	}
-	if _, err := io.Copy(writer, response); err != nil {
-		return errors.Wrap(err, "write")
-	}
-
-	return nil
-}
-
-func encodeErrorResponse(response *ErrorStatusCode, w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	code := response.StatusCode
-	if code == 0 {
-		// Set default status code.
-		code = http.StatusOK
-	}
-	w.WriteHeader(code)
-
-	e := new(jx.Encoder)
-	response.Response.Encode(e)
-	if _, err := e.WriteTo(w); err != nil {
-		return errors.Wrap(err, "write")
-	}
-
-	if code >= http.StatusInternalServerError {
-		return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
-	}
-	return nil
-
 }

@@ -6,8 +6,19 @@ package api
 type OperationName = string
 
 const (
-	CreateUserOperation OperationName = "CreateUser"
-	GetUserOperation    OperationName = "GetUser"
-	GetUsersOperation   OperationName = "GetUsers"
-	PingOperation       OperationName = "Ping"
+	ConfigGetOperation                                       OperationName = "ConfigGet"
+	ConfigPostOperation                                      OperationName = "ConfigPost"
+	TicketsGetOperation                                      OperationName = "TicketsGet"
+	TicketsPostOperation                                     OperationName = "TicketsPost"
+	TicketsTicketIdDeleteOperation                           OperationName = "TicketsTicketIdDelete"
+	TicketsTicketIdGetOperation                              OperationName = "TicketsTicketIdGet"
+	TicketsTicketIdNotesNoteIdDeleteOperation                OperationName = "TicketsTicketIdNotesNoteIdDelete"
+	TicketsTicketIdNotesNoteIdPutOperation                   OperationName = "TicketsTicketIdNotesNoteIdPut"
+	TicketsTicketIdNotesNoteIdReviewsPostOperation           OperationName = "TicketsTicketIdNotesNoteIdReviewsPost"
+	TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteOperation OperationName = "TicketsTicketIdNotesNoteIdReviewsReviewIdDelete"
+	TicketsTicketIdNotesNoteIdReviewsReviewIdPutOperation    OperationName = "TicketsTicketIdNotesNoteIdReviewsReviewIdPut"
+	TicketsTicketIdNotesPostOperation                        OperationName = "TicketsTicketIdNotesPost"
+	TicketsTicketIdPatchOperation                            OperationName = "TicketsTicketIdPatch"
+	UsersGetOperation                                        OperationName = "UsersGet"
+	UsersPutOperation                                        OperationName = "UsersPut"
 )

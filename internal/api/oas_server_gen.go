@@ -8,51 +8,118 @@ import (
 
 // Handler handles operations described by OpenAPI v3 specification.
 type Handler interface {
-	// CreateUser implements createUser operation.
+	// ConfigGet implements GET /config operation.
 	//
-	// Create a user.
+	// 設定情報の取得.
 	//
-	// POST /api/v1/users
-	CreateUser(ctx context.Context, req *CreateUserReq) (*CreateUser, error)
-	// GetUser implements getUser operation.
+	// GET /config
+	ConfigGet(ctx context.Context) error
+	// ConfigPost implements POST /config operation.
 	//
-	// Get user by ID.
+	// 本職権限のみ実行可能.
 	//
-	// GET /api/v1/users/{userID}
-	GetUser(ctx context.Context, params GetUserParams) (*User, error)
-	// GetUsers implements getUsers operation.
+	// POST /config
+	ConfigPost(ctx context.Context, req *ConfigPostReq) (ConfigPostRes, error)
+	// TicketsGet implements GET /tickets operation.
 	//
-	// Get all users.
+	// チケット一覧取得.
 	//
-	// GET /api/v1/users
-	GetUsers(ctx context.Context) ([]User, error)
-	// Ping implements ping operation.
+	// GET /tickets
+	TicketsGet(ctx context.Context, params TicketsGetParams) (TicketsGetRes, error)
+	// TicketsPost implements POST /tickets operation.
 	//
-	// Ping API.
+	// 新規チケットを作成する。.
 	//
-	// GET /api/v1/ping
-	Ping(ctx context.Context) (PingOK, error)
-	// NewError creates *ErrorStatusCode from error returned by handler.
+	// POST /tickets
+	TicketsPost(ctx context.Context, req *TicketsPostReq) (TicketsPostRes, error)
+	// TicketsTicketIdDelete implements DELETE /tickets/{ticketId} operation.
 	//
-	// Used for common default response.
-	NewError(ctx context.Context, err error) *ErrorStatusCode
+	// 本職のみ実行可能。.
+	//
+	// DELETE /tickets/{ticketId}
+	TicketsTicketIdDelete(ctx context.Context, params TicketsTicketIdDeleteParams) (TicketsTicketIdDeleteRes, error)
+	// TicketsTicketIdGet implements GET /tickets/{ticketId} operation.
+	//
+	// チケットに紐づくノート一覧(notes)も同時に返却される。.
+	//
+	// GET /tickets/{ticketId}
+	TicketsTicketIdGet(ctx context.Context, params TicketsTicketIdGetParams) (TicketsTicketIdGetRes, error)
+	// TicketsTicketIdNotesNoteIdDelete implements DELETE /tickets/{ticketId}/notes/{noteId} operation.
+	//
+	// ノート削除.
+	//
+	// DELETE /tickets/{ticketId}/notes/{noteId}
+	TicketsTicketIdNotesNoteIdDelete(ctx context.Context, params TicketsTicketIdNotesNoteIdDeleteParams) error
+	// TicketsTicketIdNotesNoteIdPut implements PUT /tickets/{ticketId}/notes/{noteId} operation.
+	//
+	// 送信ノートの編集時、既存のReviewを無効化する(Weightリセット)オプションがある。
+	// Authorのみ実行可能。.
+	//
+	// PUT /tickets/{ticketId}/notes/{noteId}
+	TicketsTicketIdNotesNoteIdPut(ctx context.Context, req *TicketsTicketIdNotesNoteIdPutReq, params TicketsTicketIdNotesNoteIdPutParams) (TicketsTicketIdNotesNoteIdPutRes, error)
+	// TicketsTicketIdNotesNoteIdReviewsPost implements POST /tickets/{ticketId}/notes/{noteId}/reviews operation.
+	//
+	// 承認(approve)の場合、Weightの上限はユーザー権限に基づく(本職5/補佐4/他0)。
+	// Weight合計が5以上になると、Noteのstatusが`waiting_sent`になる。
+	// すでにレビュー済みの場合は失敗する。.
+	//
+	// POST /tickets/{ticketId}/notes/{noteId}/reviews
+	TicketsTicketIdNotesNoteIdReviewsPost(ctx context.Context, req *TicketsTicketIdNotesNoteIdReviewsPostReq, params TicketsTicketIdNotesNoteIdReviewsPostParams) (*Review, error)
+	// TicketsTicketIdNotesNoteIdReviewsReviewIdDelete implements DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
+	//
+	// レビュー取り消し.
+	//
+	// DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
+	TicketsTicketIdNotesNoteIdReviewsReviewIdDelete(ctx context.Context, params TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteParams) error
+	// TicketsTicketIdNotesNoteIdReviewsReviewIdPut implements PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
+	//
+	// ReviewのAuthorのみ実行可能。.
+	//
+	// PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
+	TicketsTicketIdNotesNoteIdReviewsReviewIdPut(ctx context.Context, req OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq, params TicketsTicketIdNotesNoteIdReviewsReviewIdPutParams) error
+	// TicketsTicketIdNotesPost implements POST /tickets/{ticketId}/notes operation.
+	//
+	// ノート追加.
+	//
+	// POST /tickets/{ticketId}/notes
+	TicketsTicketIdNotesPost(ctx context.Context, req *TicketsTicketIdNotesPostReq, params TicketsTicketIdNotesPostParams) (*Note, error)
+	// TicketsTicketIdPatch implements PATCH /tickets/{ticketId} operation.
+	//
+	// 関係者と渉外のみ実行可能。.
+	//
+	// PATCH /tickets/{ticketId}
+	TicketsTicketIdPatch(ctx context.Context, req OptTicketsTicketIdPatchReq, params TicketsTicketIdPatchParams) (TicketsTicketIdPatchRes, error)
+	// UsersGet implements GET /users operation.
+	//
+	// ユーザー一覧取得.
+	//
+	// GET /users
+	UsersGet(ctx context.Context) ([]User, error)
+	// UsersPut implements PUT /users operation.
+	//
+	// Manager(本職)権限のみ。リクエストボディの内容でユーザー情報を一括更新・同期する。.
+	//
+	// PUT /users
+	UsersPut(ctx context.Context, req []User) (UsersPutRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and
 // calls Handler to handle requests.
 type Server struct {
-	h Handler
+	h   Handler
+	sec SecurityHandler
 	baseServer
 }
 
 // NewServer creates new Server.
-func NewServer(h Handler, opts ...ServerOption) (*Server, error) {
+func NewServer(h Handler, sec SecurityHandler, opts ...ServerOption) (*Server, error) {
 	s, err := newServerConfig(opts...).baseServer()
 	if err != nil {
 		return nil, err
 	}
 	return &Server{
 		h:          h,
+		sec:        sec,
 		baseServer: s,
 	}, nil
 }

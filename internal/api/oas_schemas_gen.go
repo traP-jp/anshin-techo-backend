@@ -3,155 +3,1921 @@
 package api
 
 import (
-	"fmt"
-	"io"
+	"time"
 
-	"github.com/google/uuid"
+	"github.com/go-faster/errors"
 )
 
-func (s *ErrorStatusCode) Error() string {
-	return fmt.Sprintf("code %d: %+v", s.StatusCode, s.Response)
-}
+// 設定JSON (構造は未定).
+type ConfigGetOK struct{}
 
-// Ref: #/components/responses/CreateUser
-type CreateUser struct {
-	ID uuid.UUID `json:"id"`
+// ConfigPostForbidden is response for ConfigPost operation.
+type ConfigPostForbidden struct{}
+
+func (*ConfigPostForbidden) configPostRes() {}
+
+// ConfigPostOK is response for ConfigPost operation.
+type ConfigPostOK struct{}
+
+func (*ConfigPostOK) configPostRes() {}
+
+type ConfigPostReq struct{}
+
+// Ref: #/components/schemas/Note
+type Note struct {
+	// ノートID.
+	ID       int64         `json:"id"`
+	TicketID int64         `json:"ticket_id"`
+	Type     NoteType      `json:"type"`
+	Status   OptNoteStatus `json:"status"`
+	// 作成者.
+	Author string `json:"author"`
+	// メッセージ本文.
+	Content   string      `json:"content"`
+	Reviews   []Review    `json:"reviews"`
+	CreatedAt OptDateTime `json:"created_at"`
+	UpdatedAt OptDateTime `json:"updated_at"`
 }
 
 // GetID returns the value of ID.
-func (s *CreateUser) GetID() uuid.UUID {
+func (s *Note) GetID() int64 {
 	return s.ID
 }
 
+// GetTicketID returns the value of TicketID.
+func (s *Note) GetTicketID() int64 {
+	return s.TicketID
+}
+
+// GetType returns the value of Type.
+func (s *Note) GetType() NoteType {
+	return s.Type
+}
+
+// GetStatus returns the value of Status.
+func (s *Note) GetStatus() OptNoteStatus {
+	return s.Status
+}
+
+// GetAuthor returns the value of Author.
+func (s *Note) GetAuthor() string {
+	return s.Author
+}
+
+// GetContent returns the value of Content.
+func (s *Note) GetContent() string {
+	return s.Content
+}
+
+// GetReviews returns the value of Reviews.
+func (s *Note) GetReviews() []Review {
+	return s.Reviews
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *Note) GetCreatedAt() OptDateTime {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *Note) GetUpdatedAt() OptDateTime {
+	return s.UpdatedAt
+}
+
 // SetID sets the value of ID.
-func (s *CreateUser) SetID(val uuid.UUID) {
+func (s *Note) SetID(val int64) {
 	s.ID = val
 }
 
-type CreateUserReq struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
+// SetTicketID sets the value of TicketID.
+func (s *Note) SetTicketID(val int64) {
+	s.TicketID = val
 }
 
-// GetName returns the value of Name.
-func (s *CreateUserReq) GetName() string {
-	return s.Name
+// SetType sets the value of Type.
+func (s *Note) SetType(val NoteType) {
+	s.Type = val
 }
 
-// GetEmail returns the value of Email.
-func (s *CreateUserReq) GetEmail() string {
-	return s.Email
+// SetStatus sets the value of Status.
+func (s *Note) SetStatus(val OptNoteStatus) {
+	s.Status = val
 }
 
-// SetName sets the value of Name.
-func (s *CreateUserReq) SetName(val string) {
-	s.Name = val
+// SetAuthor sets the value of Author.
+func (s *Note) SetAuthor(val string) {
+	s.Author = val
 }
 
-// SetEmail sets the value of Email.
-func (s *CreateUserReq) SetEmail(val string) {
-	s.Email = val
+// SetContent sets the value of Content.
+func (s *Note) SetContent(val string) {
+	s.Content = val
 }
 
-// Ref: #/components/responses/Error
-type Error struct {
-	Message string `json:"message"`
+// SetReviews sets the value of Reviews.
+func (s *Note) SetReviews(val []Review) {
+	s.Reviews = val
 }
 
-// GetMessage returns the value of Message.
-func (s *Error) GetMessage() string {
-	return s.Message
+// SetCreatedAt sets the value of CreatedAt.
+func (s *Note) SetCreatedAt(val OptDateTime) {
+	s.CreatedAt = val
 }
 
-// SetMessage sets the value of Message.
-func (s *Error) SetMessage(val string) {
-	s.Message = val
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *Note) SetUpdatedAt(val OptDateTime) {
+	s.UpdatedAt = val
 }
 
-// ErrorStatusCode wraps Error with StatusCode.
-type ErrorStatusCode struct {
-	StatusCode int
-	Response   Error
-}
+// Outgoing(発信)ノートの状態管理用
+// - draft: 下書き
+// - waiting_review: 添削待ち
+// - waiting_sent: 承認完了・送信待ち (Weight >= 5)
+// - sent: 送信済み (手動完了)
+// - canceled: 破棄.
+// Ref: #/components/schemas/NoteStatus
+type NoteStatus string
 
-// GetStatusCode returns the value of StatusCode.
-func (s *ErrorStatusCode) GetStatusCode() int {
-	return s.StatusCode
-}
+const (
+	NoteStatusDraft         NoteStatus = "draft"
+	NoteStatusWaitingReview NoteStatus = "waiting_review"
+	NoteStatusWaitingSent   NoteStatus = "waiting_sent"
+	NoteStatusSent          NoteStatus = "sent"
+	NoteStatusCanceled      NoteStatus = "canceled"
+)
 
-// GetResponse returns the value of Response.
-func (s *ErrorStatusCode) GetResponse() Error {
-	return s.Response
-}
-
-// SetStatusCode sets the value of StatusCode.
-func (s *ErrorStatusCode) SetStatusCode(val int) {
-	s.StatusCode = val
-}
-
-// SetResponse sets the value of Response.
-func (s *ErrorStatusCode) SetResponse(val Error) {
-	s.Response = val
-}
-
-type PingOK struct {
-	Data io.Reader
-}
-
-// Read reads data from the Data reader.
-//
-// Kept to satisfy the io.Reader interface.
-func (s PingOK) Read(p []byte) (n int, err error) {
-	if s.Data == nil {
-		return 0, io.EOF
+// AllValues returns all NoteStatus values.
+func (NoteStatus) AllValues() []NoteStatus {
+	return []NoteStatus{
+		NoteStatusDraft,
+		NoteStatusWaitingReview,
+		NoteStatusWaitingSent,
+		NoteStatusSent,
+		NoteStatusCanceled,
 	}
-	return s.Data.Read(p)
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s NoteStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case NoteStatusDraft:
+		return []byte(s), nil
+	case NoteStatusWaitingReview:
+		return []byte(s), nil
+	case NoteStatusWaitingSent:
+		return []byte(s), nil
+	case NoteStatusSent:
+		return []byte(s), nil
+	case NoteStatusCanceled:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *NoteStatus) UnmarshalText(data []byte) error {
+	switch NoteStatus(data) {
+	case NoteStatusDraft:
+		*s = NoteStatusDraft
+		return nil
+	case NoteStatusWaitingReview:
+		*s = NoteStatusWaitingReview
+		return nil
+	case NoteStatusWaitingSent:
+		*s = NoteStatusWaitingSent
+		return nil
+	case NoteStatusSent:
+		*s = NoteStatusSent
+		return nil
+	case NoteStatusCanceled:
+		*s = NoteStatusCanceled
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// ノートの種類 (発信/受信/その他).
+// Ref: #/components/schemas/NoteType
+type NoteType string
+
+const (
+	NoteTypeOutgoing NoteType = "outgoing"
+	NoteTypeIncoming NoteType = "incoming"
+	NoteTypeOther    NoteType = "other"
+)
+
+// AllValues returns all NoteType values.
+func (NoteType) AllValues() []NoteType {
+	return []NoteType{
+		NoteTypeOutgoing,
+		NoteTypeIncoming,
+		NoteTypeOther,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s NoteType) MarshalText() ([]byte, error) {
+	switch s {
+	case NoteTypeOutgoing:
+		return []byte(s), nil
+	case NoteTypeIncoming:
+		return []byte(s), nil
+	case NoteTypeOther:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *NoteType) UnmarshalText(data []byte) error {
+	switch NoteType(data) {
+	case NoteTypeOutgoing:
+		*s = NoteTypeOutgoing
+		return nil
+	case NoteTypeIncoming:
+		*s = NoteTypeIncoming
+		return nil
+	case NoteTypeOther:
+		*s = NoteTypeOther
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// NewOptBool returns new OptBool with value set to v.
+func NewOptBool(v bool) OptBool {
+	return OptBool{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptBool is optional bool.
+type OptBool struct {
+	Value bool
+	Set   bool
+}
+
+// IsSet returns true if OptBool was set.
+func (o OptBool) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptBool) Reset() {
+	var v bool
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptBool) SetTo(v bool) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptBool) Get() (v bool, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptBool) Or(d bool) bool {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptDate returns new OptDate with value set to v.
+func NewOptDate(v time.Time) OptDate {
+	return OptDate{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptDate is optional time.Time.
+type OptDate struct {
+	Value time.Time
+	Set   bool
+}
+
+// IsSet returns true if OptDate was set.
+func (o OptDate) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptDate) Reset() {
+	var v time.Time
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptDate) SetTo(v time.Time) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptDate) Get() (v time.Time, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptDate) Or(d time.Time) time.Time {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptDateTime returns new OptDateTime with value set to v.
+func NewOptDateTime(v time.Time) OptDateTime {
+	return OptDateTime{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptDateTime is optional time.Time.
+type OptDateTime struct {
+	Value time.Time
+	Set   bool
+}
+
+// IsSet returns true if OptDateTime was set.
+func (o OptDateTime) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptDateTime) Reset() {
+	var v time.Time
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptDateTime) SetTo(v time.Time) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptDateTime) Get() (v time.Time, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptDateTime) Or(d time.Time) time.Time {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptInt returns new OptInt with value set to v.
+func NewOptInt(v int) OptInt {
+	return OptInt{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptInt is optional int.
+type OptInt struct {
+	Value int
+	Set   bool
+}
+
+// IsSet returns true if OptInt was set.
+func (o OptInt) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptInt) Reset() {
+	var v int
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptInt) SetTo(v int) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptInt) Get() (v int, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptInt) Or(d int) int {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilDate returns new OptNilDate with value set to v.
+func NewOptNilDate(v time.Time) OptNilDate {
+	return OptNilDate{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilDate is optional nullable time.Time.
+type OptNilDate struct {
+	Value time.Time
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilDate was set.
+func (o OptNilDate) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilDate) Reset() {
+	var v time.Time
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilDate) SetTo(v time.Time) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilDate) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilDate) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v time.Time
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilDate) Get() (v time.Time, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilDate) Or(d time.Time) time.Time {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNoteStatus returns new OptNoteStatus with value set to v.
+func NewOptNoteStatus(v NoteStatus) OptNoteStatus {
+	return OptNoteStatus{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNoteStatus is optional NoteStatus.
+type OptNoteStatus struct {
+	Value NoteStatus
+	Set   bool
+}
+
+// IsSet returns true if OptNoteStatus was set.
+func (o OptNoteStatus) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNoteStatus) Reset() {
+	var v NoteStatus
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptNoteStatus) SetTo(v NoteStatus) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNoteStatus) Get() (v NoteStatus, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNoteStatus) Or(d NoteStatus) NoteStatus {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptReviewType returns new OptReviewType with value set to v.
+func NewOptReviewType(v ReviewType) OptReviewType {
+	return OptReviewType{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptReviewType is optional ReviewType.
+type OptReviewType struct {
+	Value ReviewType
+	Set   bool
+}
+
+// IsSet returns true if OptReviewType was set.
+func (o OptReviewType) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptReviewType) Reset() {
+	var v ReviewType
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptReviewType) SetTo(v ReviewType) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptReviewType) Get() (v ReviewType, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptReviewType) Or(d ReviewType) ReviewType {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptString returns new OptString with value set to v.
+func NewOptString(v string) OptString {
+	return OptString{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptString is optional string.
+type OptString struct {
+	Value string
+	Set   bool
+}
+
+// IsSet returns true if OptString was set.
+func (o OptString) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptString) Reset() {
+	var v string
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptString) SetTo(v string) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptString) Get() (v string, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptString) Or(d string) string {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptTicketStatus returns new OptTicketStatus with value set to v.
+func NewOptTicketStatus(v TicketStatus) OptTicketStatus {
+	return OptTicketStatus{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptTicketStatus is optional TicketStatus.
+type OptTicketStatus struct {
+	Value TicketStatus
+	Set   bool
+}
+
+// IsSet returns true if OptTicketStatus was set.
+func (o OptTicketStatus) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptTicketStatus) Reset() {
+	var v TicketStatus
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptTicketStatus) SetTo(v TicketStatus) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptTicketStatus) Get() (v TicketStatus, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptTicketStatus) Or(d TicketStatus) TicketStatus {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptTicketsGetSort returns new OptTicketsGetSort with value set to v.
+func NewOptTicketsGetSort(v TicketsGetSort) OptTicketsGetSort {
+	return OptTicketsGetSort{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptTicketsGetSort is optional TicketsGetSort.
+type OptTicketsGetSort struct {
+	Value TicketsGetSort
+	Set   bool
+}
+
+// IsSet returns true if OptTicketsGetSort was set.
+func (o OptTicketsGetSort) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptTicketsGetSort) Reset() {
+	var v TicketsGetSort
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptTicketsGetSort) SetTo(v TicketsGetSort) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptTicketsGetSort) Get() (v TicketsGetSort, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptTicketsGetSort) Or(d TicketsGetSort) TicketsGetSort {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq returns new OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq with value set to v.
+func NewOptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq(v TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq {
+	return OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq is optional TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq.
+type OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq struct {
+	Value TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq
+	Set   bool
+}
+
+// IsSet returns true if OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq was set.
+func (o OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) Reset() {
+	var v TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) SetTo(v TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) Get() (v TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) Or(d TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptTicketsTicketIdPatchReq returns new OptTicketsTicketIdPatchReq with value set to v.
+func NewOptTicketsTicketIdPatchReq(v TicketsTicketIdPatchReq) OptTicketsTicketIdPatchReq {
+	return OptTicketsTicketIdPatchReq{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptTicketsTicketIdPatchReq is optional TicketsTicketIdPatchReq.
+type OptTicketsTicketIdPatchReq struct {
+	Value TicketsTicketIdPatchReq
+	Set   bool
+}
+
+// IsSet returns true if OptTicketsTicketIdPatchReq was set.
+func (o OptTicketsTicketIdPatchReq) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptTicketsTicketIdPatchReq) Reset() {
+	var v TicketsTicketIdPatchReq
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptTicketsTicketIdPatchReq) SetTo(v TicketsTicketIdPatchReq) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptTicketsTicketIdPatchReq) Get() (v TicketsTicketIdPatchReq, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptTicketsTicketIdPatchReq) Or(d TicketsTicketIdPatchReq) TicketsTicketIdPatchReq {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// Ref: #/components/schemas/Review
+type Review struct {
+	ID     int64 `json:"id"`
+	NoteID int64 `json:"note_id"`
+	// レビュワー.
+	Reviewer string     `json:"reviewer"`
+	Type     ReviewType `json:"type"`
+	// 承認ウェイト。
+	// - 本職: 1-5
+	// - 補佐: 1-4
+	// - その他: 0.
+	Weight int `json:"weight"`
+	// レビュー状態 (active: 有効, stale: 修正により無効化済み).
+	Status ReviewStatus `json:"status"`
+	// コメント.
+	Comment   OptString   `json:"comment"`
+	CreatedAt OptDateTime `json:"created_at"`
+	UpdatedAt OptDateTime `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *Review) GetID() int64 {
+	return s.ID
+}
+
+// GetNoteID returns the value of NoteID.
+func (s *Review) GetNoteID() int64 {
+	return s.NoteID
+}
+
+// GetReviewer returns the value of Reviewer.
+func (s *Review) GetReviewer() string {
+	return s.Reviewer
+}
+
+// GetType returns the value of Type.
+func (s *Review) GetType() ReviewType {
+	return s.Type
+}
+
+// GetWeight returns the value of Weight.
+func (s *Review) GetWeight() int {
+	return s.Weight
+}
+
+// GetStatus returns the value of Status.
+func (s *Review) GetStatus() ReviewStatus {
+	return s.Status
+}
+
+// GetComment returns the value of Comment.
+func (s *Review) GetComment() OptString {
+	return s.Comment
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *Review) GetCreatedAt() OptDateTime {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *Review) GetUpdatedAt() OptDateTime {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *Review) SetID(val int64) {
+	s.ID = val
+}
+
+// SetNoteID sets the value of NoteID.
+func (s *Review) SetNoteID(val int64) {
+	s.NoteID = val
+}
+
+// SetReviewer sets the value of Reviewer.
+func (s *Review) SetReviewer(val string) {
+	s.Reviewer = val
+}
+
+// SetType sets the value of Type.
+func (s *Review) SetType(val ReviewType) {
+	s.Type = val
+}
+
+// SetWeight sets the value of Weight.
+func (s *Review) SetWeight(val int) {
+	s.Weight = val
+}
+
+// SetStatus sets the value of Status.
+func (s *Review) SetStatus(val ReviewStatus) {
+	s.Status = val
+}
+
+// SetComment sets the value of Comment.
+func (s *Review) SetComment(val OptString) {
+	s.Comment = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *Review) SetCreatedAt(val OptDateTime) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *Review) SetUpdatedAt(val OptDateTime) {
+	s.UpdatedAt = val
+}
+
+// レビュー状態 (active: 有効, stale: 修正により無効化済み).
+type ReviewStatus string
+
+const (
+	ReviewStatusActive ReviewStatus = "active"
+	ReviewStatusStale  ReviewStatus = "stale"
+)
+
+// AllValues returns all ReviewStatus values.
+func (ReviewStatus) AllValues() []ReviewStatus {
+	return []ReviewStatus{
+		ReviewStatusActive,
+		ReviewStatusStale,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ReviewStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case ReviewStatusActive:
+		return []byte(s), nil
+	case ReviewStatusStale:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ReviewStatus) UnmarshalText(data []byte) error {
+	switch ReviewStatus(data) {
+	case ReviewStatusActive:
+		*s = ReviewStatusActive
+		return nil
+	case ReviewStatusStale:
+		*s = ReviewStatusStale
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// レビューの種類.
+// Ref: #/components/schemas/ReviewType
+type ReviewType string
+
+const (
+	ReviewTypeApprove       ReviewType = "approve"
+	ReviewTypeChangeRequest ReviewType = "change_request"
+	ReviewTypeComment       ReviewType = "comment"
+)
+
+// AllValues returns all ReviewType values.
+func (ReviewType) AllValues() []ReviewType {
+	return []ReviewType{
+		ReviewTypeApprove,
+		ReviewTypeChangeRequest,
+		ReviewTypeComment,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ReviewType) MarshalText() ([]byte, error) {
+	switch s {
+	case ReviewTypeApprove:
+		return []byte(s), nil
+	case ReviewTypeChangeRequest:
+		return []byte(s), nil
+	case ReviewTypeComment:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ReviewType) UnmarshalText(data []byte) error {
+	switch ReviewType(data) {
+	case ReviewTypeApprove:
+		*s = ReviewTypeApprove
+		return nil
+	case ReviewTypeChangeRequest:
+		*s = ReviewTypeChangeRequest
+		return nil
+	case ReviewTypeComment:
+		*s = ReviewTypeComment
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/Ticket
+type Ticket struct {
+	// チケットID.
+	ID int64 `json:"id"`
+	// 案件名.
+	Title string `json:"title"`
+	// 詳細.
+	Description OptString `json:"description"`
+	// 主担当のtraQ ID.
+	Assignee OptString `json:"assignee"`
+	// 副担当リスト (traQ ID).
+	SubAssignees []string `json:"sub_assignees"`
+	// その他関係者リスト (traQ ID)。.
+	Stakeholders []string `json:"stakeholders"`
+	// タグ (例: 協賛, 問い合わせ).
+	Tags []string `json:"tags"`
+	// 期日。未指定時は自動設定される。.
+	Due       OptNilDate  `json:"due"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt OptDateTime `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *Ticket) GetID() int64 {
+	return s.ID
+}
+
+// GetTitle returns the value of Title.
+func (s *Ticket) GetTitle() string {
+	return s.Title
+}
+
+// GetDescription returns the value of Description.
+func (s *Ticket) GetDescription() OptString {
+	return s.Description
+}
+
+// GetAssignee returns the value of Assignee.
+func (s *Ticket) GetAssignee() OptString {
+	return s.Assignee
+}
+
+// GetSubAssignees returns the value of SubAssignees.
+func (s *Ticket) GetSubAssignees() []string {
+	return s.SubAssignees
+}
+
+// GetStakeholders returns the value of Stakeholders.
+func (s *Ticket) GetStakeholders() []string {
+	return s.Stakeholders
+}
+
+// GetTags returns the value of Tags.
+func (s *Ticket) GetTags() []string {
+	return s.Tags
+}
+
+// GetDue returns the value of Due.
+func (s *Ticket) GetDue() OptNilDate {
+	return s.Due
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *Ticket) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *Ticket) GetUpdatedAt() OptDateTime {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *Ticket) SetID(val int64) {
+	s.ID = val
+}
+
+// SetTitle sets the value of Title.
+func (s *Ticket) SetTitle(val string) {
+	s.Title = val
+}
+
+// SetDescription sets the value of Description.
+func (s *Ticket) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetAssignee sets the value of Assignee.
+func (s *Ticket) SetAssignee(val OptString) {
+	s.Assignee = val
+}
+
+// SetSubAssignees sets the value of SubAssignees.
+func (s *Ticket) SetSubAssignees(val []string) {
+	s.SubAssignees = val
+}
+
+// SetStakeholders sets the value of Stakeholders.
+func (s *Ticket) SetStakeholders(val []string) {
+	s.Stakeholders = val
+}
+
+// SetTags sets the value of Tags.
+func (s *Ticket) SetTags(val []string) {
+	s.Tags = val
+}
+
+// SetDue sets the value of Due.
+func (s *Ticket) SetDue(val OptNilDate) {
+	s.Due = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *Ticket) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *Ticket) SetUpdatedAt(val OptDateTime) {
+	s.UpdatedAt = val
+}
+
+func (*Ticket) ticketsPostRes() {}
+
+// チケットの進行状況
+// - not_planned: 方針決定待ち
+// - not_written: メールが書かれていない
+// - waiting_review: レビューを待っている
+// - waiting_sent: レビューが終わっている
+// - sent: 相手の対応待ち (送信済み)
+// - milestone_scheduled: 次のアクション決定済み
+// - completed: 完了
+// - forgotten: 忘れ去られた状態.
+// Ref: #/components/schemas/TicketStatus
+type TicketStatus string
+
+const (
+	TicketStatusNotPlanned         TicketStatus = "not_planned"
+	TicketStatusNotWritten         TicketStatus = "not_written"
+	TicketStatusWaitingReview      TicketStatus = "waiting_review"
+	TicketStatusWaitingSent        TicketStatus = "waiting_sent"
+	TicketStatusSent               TicketStatus = "sent"
+	TicketStatusMilestoneScheduled TicketStatus = "milestone_scheduled"
+	TicketStatusCompleted          TicketStatus = "completed"
+	TicketStatusForgotten          TicketStatus = "forgotten"
+)
+
+// AllValues returns all TicketStatus values.
+func (TicketStatus) AllValues() []TicketStatus {
+	return []TicketStatus{
+		TicketStatusNotPlanned,
+		TicketStatusNotWritten,
+		TicketStatusWaitingReview,
+		TicketStatusWaitingSent,
+		TicketStatusSent,
+		TicketStatusMilestoneScheduled,
+		TicketStatusCompleted,
+		TicketStatusForgotten,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TicketStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case TicketStatusNotPlanned:
+		return []byte(s), nil
+	case TicketStatusNotWritten:
+		return []byte(s), nil
+	case TicketStatusWaitingReview:
+		return []byte(s), nil
+	case TicketStatusWaitingSent:
+		return []byte(s), nil
+	case TicketStatusSent:
+		return []byte(s), nil
+	case TicketStatusMilestoneScheduled:
+		return []byte(s), nil
+	case TicketStatusCompleted:
+		return []byte(s), nil
+	case TicketStatusForgotten:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TicketStatus) UnmarshalText(data []byte) error {
+	switch TicketStatus(data) {
+	case TicketStatusNotPlanned:
+		*s = TicketStatusNotPlanned
+		return nil
+	case TicketStatusNotWritten:
+		*s = TicketStatusNotWritten
+		return nil
+	case TicketStatusWaitingReview:
+		*s = TicketStatusWaitingReview
+		return nil
+	case TicketStatusWaitingSent:
+		*s = TicketStatusWaitingSent
+		return nil
+	case TicketStatusSent:
+		*s = TicketStatusSent
+		return nil
+	case TicketStatusMilestoneScheduled:
+		*s = TicketStatusMilestoneScheduled
+		return nil
+	case TicketStatusCompleted:
+		*s = TicketStatusCompleted
+		return nil
+	case TicketStatusForgotten:
+		*s = TicketStatusForgotten
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type TicketsGetOKApplicationJSON []Ticket
+
+func (*TicketsGetOKApplicationJSON) ticketsGetRes() {}
+
+type TicketsGetSort string
+
+const (
+	TicketsGetSortDueAsc      TicketsGetSort = "due_asc"
+	TicketsGetSortDueDesc     TicketsGetSort = "due_desc"
+	TicketsGetSortCreatedDesc TicketsGetSort = "created_desc"
+)
+
+// AllValues returns all TicketsGetSort values.
+func (TicketsGetSort) AllValues() []TicketsGetSort {
+	return []TicketsGetSort{
+		TicketsGetSortDueAsc,
+		TicketsGetSortDueDesc,
+		TicketsGetSortCreatedDesc,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TicketsGetSort) MarshalText() ([]byte, error) {
+	switch s {
+	case TicketsGetSortDueAsc:
+		return []byte(s), nil
+	case TicketsGetSortDueDesc:
+		return []byte(s), nil
+	case TicketsGetSortCreatedDesc:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TicketsGetSort) UnmarshalText(data []byte) error {
+	switch TicketsGetSort(data) {
+	case TicketsGetSortDueAsc:
+		*s = TicketsGetSortDueAsc
+		return nil
+	case TicketsGetSortDueDesc:
+		*s = TicketsGetSortDueDesc
+		return nil
+	case TicketsGetSortCreatedDesc:
+		*s = TicketsGetSortCreatedDesc
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// TicketsGetUnauthorized is response for TicketsGet operation.
+type TicketsGetUnauthorized struct{}
+
+func (*TicketsGetUnauthorized) ticketsGetRes() {}
+
+type TicketsPostReq struct {
+	Title       OptString       `json:"title"`
+	Description OptString       `json:"description"`
+	Status      OptTicketStatus `json:"status"`
+	// 主担当 (traQ ID).
+	Assignee OptString `json:"assignee"`
+	// 副担当リスト (traQ ID).
+	SubAssignees []string `json:"sub_assignees"`
+	// その他関係者 (traQ ID).
+	Stakeholders []string `json:"stakeholders"`
+	Due          OptDate  `json:"due"`
+	Tags         []string `json:"tags"`
+}
+
+// GetTitle returns the value of Title.
+func (s *TicketsPostReq) GetTitle() OptString {
+	return s.Title
+}
+
+// GetDescription returns the value of Description.
+func (s *TicketsPostReq) GetDescription() OptString {
+	return s.Description
+}
+
+// GetStatus returns the value of Status.
+func (s *TicketsPostReq) GetStatus() OptTicketStatus {
+	return s.Status
+}
+
+// GetAssignee returns the value of Assignee.
+func (s *TicketsPostReq) GetAssignee() OptString {
+	return s.Assignee
+}
+
+// GetSubAssignees returns the value of SubAssignees.
+func (s *TicketsPostReq) GetSubAssignees() []string {
+	return s.SubAssignees
+}
+
+// GetStakeholders returns the value of Stakeholders.
+func (s *TicketsPostReq) GetStakeholders() []string {
+	return s.Stakeholders
+}
+
+// GetDue returns the value of Due.
+func (s *TicketsPostReq) GetDue() OptDate {
+	return s.Due
+}
+
+// GetTags returns the value of Tags.
+func (s *TicketsPostReq) GetTags() []string {
+	return s.Tags
+}
+
+// SetTitle sets the value of Title.
+func (s *TicketsPostReq) SetTitle(val OptString) {
+	s.Title = val
+}
+
+// SetDescription sets the value of Description.
+func (s *TicketsPostReq) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetStatus sets the value of Status.
+func (s *TicketsPostReq) SetStatus(val OptTicketStatus) {
+	s.Status = val
+}
+
+// SetAssignee sets the value of Assignee.
+func (s *TicketsPostReq) SetAssignee(val OptString) {
+	s.Assignee = val
+}
+
+// SetSubAssignees sets the value of SubAssignees.
+func (s *TicketsPostReq) SetSubAssignees(val []string) {
+	s.SubAssignees = val
+}
+
+// SetStakeholders sets the value of Stakeholders.
+func (s *TicketsPostReq) SetStakeholders(val []string) {
+	s.Stakeholders = val
+}
+
+// SetDue sets the value of Due.
+func (s *TicketsPostReq) SetDue(val OptDate) {
+	s.Due = val
+}
+
+// SetTags sets the value of Tags.
+func (s *TicketsPostReq) SetTags(val []string) {
+	s.Tags = val
+}
+
+// TicketsPostUnauthorized is response for TicketsPost operation.
+type TicketsPostUnauthorized struct{}
+
+func (*TicketsPostUnauthorized) ticketsPostRes() {}
+
+// TicketsTicketIdDeleteForbidden is response for TicketsTicketIdDelete operation.
+type TicketsTicketIdDeleteForbidden struct{}
+
+func (*TicketsTicketIdDeleteForbidden) ticketsTicketIdDeleteRes() {}
+
+// TicketsTicketIdDeleteNoContent is response for TicketsTicketIdDelete operation.
+type TicketsTicketIdDeleteNoContent struct{}
+
+func (*TicketsTicketIdDeleteNoContent) ticketsTicketIdDeleteRes() {}
+
+// TicketsTicketIdGetNotFound is response for TicketsTicketIdGet operation.
+type TicketsTicketIdGetNotFound struct{}
+
+func (*TicketsTicketIdGetNotFound) ticketsTicketIdGetRes() {}
+
+// Merged schema.
+type TicketsTicketIdGetOK struct {
+	// チケットID.
+	ID int64 `json:"id"`
+	// 案件名.
+	Title string `json:"title"`
+	// 詳細.
+	Description OptString `json:"description"`
+	// 主担当のtraQ ID.
+	Assignee OptString `json:"assignee"`
+	// 副担当リスト (traQ ID).
+	SubAssignees []string `json:"sub_assignees"`
+	// その他関係者リスト (traQ ID)。.
+	Stakeholders []string `json:"stakeholders"`
+	// タグ (例: 協賛, 問い合わせ).
+	Tags []string `json:"tags"`
+	// 期日。未指定時は自動設定される。.
+	Due       OptNilDate  `json:"due"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt OptDateTime `json:"updated_at"`
+	// このチケットに紐づくノート一覧.
+	Notes []Note `json:"notes"`
+}
+
+// GetID returns the value of ID.
+func (s *TicketsTicketIdGetOK) GetID() int64 {
+	return s.ID
+}
+
+// GetTitle returns the value of Title.
+func (s *TicketsTicketIdGetOK) GetTitle() string {
+	return s.Title
+}
+
+// GetDescription returns the value of Description.
+func (s *TicketsTicketIdGetOK) GetDescription() OptString {
+	return s.Description
+}
+
+// GetAssignee returns the value of Assignee.
+func (s *TicketsTicketIdGetOK) GetAssignee() OptString {
+	return s.Assignee
+}
+
+// GetSubAssignees returns the value of SubAssignees.
+func (s *TicketsTicketIdGetOK) GetSubAssignees() []string {
+	return s.SubAssignees
+}
+
+// GetStakeholders returns the value of Stakeholders.
+func (s *TicketsTicketIdGetOK) GetStakeholders() []string {
+	return s.Stakeholders
+}
+
+// GetTags returns the value of Tags.
+func (s *TicketsTicketIdGetOK) GetTags() []string {
+	return s.Tags
+}
+
+// GetDue returns the value of Due.
+func (s *TicketsTicketIdGetOK) GetDue() OptNilDate {
+	return s.Due
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *TicketsTicketIdGetOK) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *TicketsTicketIdGetOK) GetUpdatedAt() OptDateTime {
+	return s.UpdatedAt
+}
+
+// GetNotes returns the value of Notes.
+func (s *TicketsTicketIdGetOK) GetNotes() []Note {
+	return s.Notes
+}
+
+// SetID sets the value of ID.
+func (s *TicketsTicketIdGetOK) SetID(val int64) {
+	s.ID = val
+}
+
+// SetTitle sets the value of Title.
+func (s *TicketsTicketIdGetOK) SetTitle(val string) {
+	s.Title = val
+}
+
+// SetDescription sets the value of Description.
+func (s *TicketsTicketIdGetOK) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetAssignee sets the value of Assignee.
+func (s *TicketsTicketIdGetOK) SetAssignee(val OptString) {
+	s.Assignee = val
+}
+
+// SetSubAssignees sets the value of SubAssignees.
+func (s *TicketsTicketIdGetOK) SetSubAssignees(val []string) {
+	s.SubAssignees = val
+}
+
+// SetStakeholders sets the value of Stakeholders.
+func (s *TicketsTicketIdGetOK) SetStakeholders(val []string) {
+	s.Stakeholders = val
+}
+
+// SetTags sets the value of Tags.
+func (s *TicketsTicketIdGetOK) SetTags(val []string) {
+	s.Tags = val
+}
+
+// SetDue sets the value of Due.
+func (s *TicketsTicketIdGetOK) SetDue(val OptNilDate) {
+	s.Due = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *TicketsTicketIdGetOK) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *TicketsTicketIdGetOK) SetUpdatedAt(val OptDateTime) {
+	s.UpdatedAt = val
+}
+
+// SetNotes sets the value of Notes.
+func (s *TicketsTicketIdGetOK) SetNotes(val []Note) {
+	s.Notes = val
+}
+
+func (*TicketsTicketIdGetOK) ticketsTicketIdGetRes() {}
+
+// TicketsTicketIdNotesNoteIdDeleteNoContent is response for TicketsTicketIdNotesNoteIdDelete operation.
+type TicketsTicketIdNotesNoteIdDeleteNoContent struct{}
+
+// TicketsTicketIdNotesNoteIdPutForbidden is response for TicketsTicketIdNotesNoteIdPut operation.
+type TicketsTicketIdNotesNoteIdPutForbidden struct{}
+
+func (*TicketsTicketIdNotesNoteIdPutForbidden) ticketsTicketIdNotesNoteIdPutRes() {}
+
+// TicketsTicketIdNotesNoteIdPutOK is response for TicketsTicketIdNotesNoteIdPut operation.
+type TicketsTicketIdNotesNoteIdPutOK struct{}
+
+func (*TicketsTicketIdNotesNoteIdPutOK) ticketsTicketIdNotesNoteIdPutRes() {}
+
+type TicketsTicketIdNotesNoteIdPutReq struct {
+	Content OptString     `json:"content"`
+	Status  OptNoteStatus `json:"status"`
+	// Trueの場合、承認状況(Weight)をリセットしてDraftに戻す.
+	ResetReviews OptBool `json:"reset_reviews"`
+}
+
+// GetContent returns the value of Content.
+func (s *TicketsTicketIdNotesNoteIdPutReq) GetContent() OptString {
+	return s.Content
+}
+
+// GetStatus returns the value of Status.
+func (s *TicketsTicketIdNotesNoteIdPutReq) GetStatus() OptNoteStatus {
+	return s.Status
+}
+
+// GetResetReviews returns the value of ResetReviews.
+func (s *TicketsTicketIdNotesNoteIdPutReq) GetResetReviews() OptBool {
+	return s.ResetReviews
+}
+
+// SetContent sets the value of Content.
+func (s *TicketsTicketIdNotesNoteIdPutReq) SetContent(val OptString) {
+	s.Content = val
+}
+
+// SetStatus sets the value of Status.
+func (s *TicketsTicketIdNotesNoteIdPutReq) SetStatus(val OptNoteStatus) {
+	s.Status = val
+}
+
+// SetResetReviews sets the value of ResetReviews.
+func (s *TicketsTicketIdNotesNoteIdPutReq) SetResetReviews(val OptBool) {
+	s.ResetReviews = val
+}
+
+type TicketsTicketIdNotesNoteIdReviewsPostReq struct {
+	Type ReviewType `json:"type"`
+	// 承認の強さ.
+	Weight  OptInt    `json:"weight"`
+	Comment OptString `json:"comment"`
+}
+
+// GetType returns the value of Type.
+func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) GetType() ReviewType {
+	return s.Type
+}
+
+// GetWeight returns the value of Weight.
+func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) GetWeight() OptInt {
+	return s.Weight
+}
+
+// GetComment returns the value of Comment.
+func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) GetComment() OptString {
+	return s.Comment
+}
+
+// SetType sets the value of Type.
+func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) SetType(val ReviewType) {
+	s.Type = val
+}
+
+// SetWeight sets the value of Weight.
+func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) SetWeight(val OptInt) {
+	s.Weight = val
+}
+
+// SetComment sets the value of Comment.
+func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) SetComment(val OptString) {
+	s.Comment = val
+}
+
+// TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteNoContent is response for TicketsTicketIdNotesNoteIdReviewsReviewIdDelete operation.
+type TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteNoContent struct{}
+
+// TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK is response for TicketsTicketIdNotesNoteIdReviewsReviewIdPut operation.
+type TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK struct{}
+
+type TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq struct {
+	Type    OptReviewType `json:"type"`
+	Weight  OptInt        `json:"weight"`
+	Comment OptString     `json:"comment"`
+}
+
+// GetType returns the value of Type.
+func (s *TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) GetType() OptReviewType {
+	return s.Type
+}
+
+// GetWeight returns the value of Weight.
+func (s *TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) GetWeight() OptInt {
+	return s.Weight
+}
+
+// GetComment returns the value of Comment.
+func (s *TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) GetComment() OptString {
+	return s.Comment
+}
+
+// SetType sets the value of Type.
+func (s *TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) SetType(val OptReviewType) {
+	s.Type = val
+}
+
+// SetWeight sets the value of Weight.
+func (s *TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) SetWeight(val OptInt) {
+	s.Weight = val
+}
+
+// SetComment sets the value of Comment.
+func (s *TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) SetComment(val OptString) {
+	s.Comment = val
+}
+
+type TicketsTicketIdNotesPostReq struct {
+	Type    NoteType `json:"type"`
+	Content string   `json:"content"`
+	// 作成時にメンション通知を送るか否か.
+	MentionNotification bool `json:"mention_notification"`
+}
+
+// GetType returns the value of Type.
+func (s *TicketsTicketIdNotesPostReq) GetType() NoteType {
+	return s.Type
+}
+
+// GetContent returns the value of Content.
+func (s *TicketsTicketIdNotesPostReq) GetContent() string {
+	return s.Content
+}
+
+// GetMentionNotification returns the value of MentionNotification.
+func (s *TicketsTicketIdNotesPostReq) GetMentionNotification() bool {
+	return s.MentionNotification
+}
+
+// SetType sets the value of Type.
+func (s *TicketsTicketIdNotesPostReq) SetType(val NoteType) {
+	s.Type = val
+}
+
+// SetContent sets the value of Content.
+func (s *TicketsTicketIdNotesPostReq) SetContent(val string) {
+	s.Content = val
+}
+
+// SetMentionNotification sets the value of MentionNotification.
+func (s *TicketsTicketIdNotesPostReq) SetMentionNotification(val bool) {
+	s.MentionNotification = val
+}
+
+// TicketsTicketIdPatchForbidden is response for TicketsTicketIdPatch operation.
+type TicketsTicketIdPatchForbidden struct{}
+
+func (*TicketsTicketIdPatchForbidden) ticketsTicketIdPatchRes() {}
+
+// TicketsTicketIdPatchOK is response for TicketsTicketIdPatch operation.
+type TicketsTicketIdPatchOK struct{}
+
+func (*TicketsTicketIdPatchOK) ticketsTicketIdPatchRes() {}
+
+type TicketsTicketIdPatchReq struct {
+	Title        OptString       `json:"title"`
+	Description  OptString       `json:"description"`
+	Status       OptTicketStatus `json:"status"`
+	Assignee     OptString       `json:"assignee"`
+	SubAssignees []string        `json:"sub_assignees"`
+	Stakeholders []string        `json:"stakeholders"`
+	Due          OptDate         `json:"due"`
+	Tags         []string        `json:"tags"`
+}
+
+// GetTitle returns the value of Title.
+func (s *TicketsTicketIdPatchReq) GetTitle() OptString {
+	return s.Title
+}
+
+// GetDescription returns the value of Description.
+func (s *TicketsTicketIdPatchReq) GetDescription() OptString {
+	return s.Description
+}
+
+// GetStatus returns the value of Status.
+func (s *TicketsTicketIdPatchReq) GetStatus() OptTicketStatus {
+	return s.Status
+}
+
+// GetAssignee returns the value of Assignee.
+func (s *TicketsTicketIdPatchReq) GetAssignee() OptString {
+	return s.Assignee
+}
+
+// GetSubAssignees returns the value of SubAssignees.
+func (s *TicketsTicketIdPatchReq) GetSubAssignees() []string {
+	return s.SubAssignees
+}
+
+// GetStakeholders returns the value of Stakeholders.
+func (s *TicketsTicketIdPatchReq) GetStakeholders() []string {
+	return s.Stakeholders
+}
+
+// GetDue returns the value of Due.
+func (s *TicketsTicketIdPatchReq) GetDue() OptDate {
+	return s.Due
+}
+
+// GetTags returns the value of Tags.
+func (s *TicketsTicketIdPatchReq) GetTags() []string {
+	return s.Tags
+}
+
+// SetTitle sets the value of Title.
+func (s *TicketsTicketIdPatchReq) SetTitle(val OptString) {
+	s.Title = val
+}
+
+// SetDescription sets the value of Description.
+func (s *TicketsTicketIdPatchReq) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetStatus sets the value of Status.
+func (s *TicketsTicketIdPatchReq) SetStatus(val OptTicketStatus) {
+	s.Status = val
+}
+
+// SetAssignee sets the value of Assignee.
+func (s *TicketsTicketIdPatchReq) SetAssignee(val OptString) {
+	s.Assignee = val
+}
+
+// SetSubAssignees sets the value of SubAssignees.
+func (s *TicketsTicketIdPatchReq) SetSubAssignees(val []string) {
+	s.SubAssignees = val
+}
+
+// SetStakeholders sets the value of Stakeholders.
+func (s *TicketsTicketIdPatchReq) SetStakeholders(val []string) {
+	s.Stakeholders = val
+}
+
+// SetDue sets the value of Due.
+func (s *TicketsTicketIdPatchReq) SetDue(val OptDate) {
+	s.Due = val
+}
+
+// SetTags sets the value of Tags.
+func (s *TicketsTicketIdPatchReq) SetTags(val []string) {
+	s.Tags = val
+}
+
+type TraQAuth struct {
+	APIKey string
+	Roles  []string
+}
+
+// GetAPIKey returns the value of APIKey.
+func (s *TraQAuth) GetAPIKey() string {
+	return s.APIKey
+}
+
+// GetRoles returns the value of Roles.
+func (s *TraQAuth) GetRoles() []string {
+	return s.Roles
+}
+
+// SetAPIKey sets the value of APIKey.
+func (s *TraQAuth) SetAPIKey(val string) {
+	s.APIKey = val
+}
+
+// SetRoles sets the value of Roles.
+func (s *TraQAuth) SetRoles(val []string) {
+	s.Roles = val
 }
 
 // Ref: #/components/schemas/User
 type User struct {
-	ID      uuid.UUID `json:"id"`
-	Name    string    `json:"name"`
-	Email   string    `json:"email"`
-	IconUrl string    `json:"iconUrl"`
+	// TraQ ID (例: ramdos).
+	TraqID string `json:"traq_id"`
+	// ユーザーの役割 (manager: 本職, assistant: 補佐, member: その他).
+	Role UserRole `json:"role"`
 }
 
-// GetID returns the value of ID.
-func (s *User) GetID() uuid.UUID {
-	return s.ID
+// GetTraqID returns the value of TraqID.
+func (s *User) GetTraqID() string {
+	return s.TraqID
 }
 
-// GetName returns the value of Name.
-func (s *User) GetName() string {
-	return s.Name
+// GetRole returns the value of Role.
+func (s *User) GetRole() UserRole {
+	return s.Role
 }
 
-// GetEmail returns the value of Email.
-func (s *User) GetEmail() string {
-	return s.Email
+// SetTraqID sets the value of TraqID.
+func (s *User) SetTraqID(val string) {
+	s.TraqID = val
 }
 
-// GetIconUrl returns the value of IconUrl.
-func (s *User) GetIconUrl() string {
-	return s.IconUrl
+// SetRole sets the value of Role.
+func (s *User) SetRole(val UserRole) {
+	s.Role = val
 }
 
-// SetID sets the value of ID.
-func (s *User) SetID(val uuid.UUID) {
-	s.ID = val
+// ユーザーの役割 (manager: 本職, assistant: 補佐, member: その他).
+type UserRole string
+
+const (
+	UserRoleManager   UserRole = "manager"
+	UserRoleAssistant UserRole = "assistant"
+	UserRoleMember    UserRole = "member"
+)
+
+// AllValues returns all UserRole values.
+func (UserRole) AllValues() []UserRole {
+	return []UserRole{
+		UserRoleManager,
+		UserRoleAssistant,
+		UserRoleMember,
+	}
 }
 
-// SetName sets the value of Name.
-func (s *User) SetName(val string) {
-	s.Name = val
+// MarshalText implements encoding.TextMarshaler.
+func (s UserRole) MarshalText() ([]byte, error) {
+	switch s {
+	case UserRoleManager:
+		return []byte(s), nil
+	case UserRoleAssistant:
+		return []byte(s), nil
+	case UserRoleMember:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
 }
 
-// SetEmail sets the value of Email.
-func (s *User) SetEmail(val string) {
-	s.Email = val
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *UserRole) UnmarshalText(data []byte) error {
+	switch UserRole(data) {
+	case UserRoleManager:
+		*s = UserRoleManager
+		return nil
+	case UserRoleAssistant:
+		*s = UserRoleAssistant
+		return nil
+	case UserRoleMember:
+		*s = UserRoleMember
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
-// SetIconUrl sets the value of IconUrl.
-func (s *User) SetIconUrl(val string) {
-	s.IconUrl = val
-}
+// UsersPutForbidden is response for UsersPut operation.
+type UsersPutForbidden struct{}
+
+func (*UsersPutForbidden) usersPutRes() {}
+
+// UsersPutOK is response for UsersPut operation.
+type UsersPutOK struct{}
+
+func (*UsersPutOK) usersPutRes() {}
