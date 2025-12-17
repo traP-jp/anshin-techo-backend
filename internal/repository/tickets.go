@@ -132,3 +132,70 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 
 	return nil
 }
+
+func (r *Repository) GetTicketByID(ctx context.Context, ticketID int64) (*Ticket, error) {
+	ticket := new(Ticket)
+	if err := r.db.GetContext(ctx, ticket, "SELECT * FROM tickets WHERE id = ?", ticketID); err != nil {
+		return nil, fmt.Errorf("failed to select ticket: %w", err)
+	}
+	return ticket, nil
+}
+
+func (r *Repository) UpdateTicket(ctx context.Context, ticketID int64, params CreateTicketParams) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx, `
+		UPDATE tickets SET title = ?, description = ?, status = ?, assignee = ?, due = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+	`, params.Title, params.Description, params.Status, params.Assignee, params.Due, ticketID)
+	if err != nil {
+		return fmt.Errorf("failed to update ticket: %w", err)
+	}
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM ticket_sub_assignees WHERE ticket_id = ?`, ticketID); err != nil {
+		return fmt.Errorf("failed to delete sub_assignees: %w", err)
+	}
+	for _, subAssignee := range params.SubAssignees {
+		_, err = tx.ExecContext(ctx, `INSERT INTO ticket_sub_assignees (ticket_id, sub_assignee) VALUES (?, ?)`, ticketID, subAssignee)
+		if err != nil {
+			return fmt.Errorf("failed to insert sub_assignee: %w", err)
+		}
+	}
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM ticket_stakeholders WHERE ticket_id = ?`, ticketID); err != nil {
+		return fmt.Errorf("failed to delete stakeholders: %w", err)
+	}
+	for _, stakeholder := range params.Stakeholders {
+		_, err = tx.ExecContext(ctx, `INSERT INTO ticket_stakeholders (ticket_id, stakeholder) VALUES (?, ?)`, ticketID, stakeholder)
+		if err != nil {
+			return fmt.Errorf("failed to insert stakeholder: %w", err)
+		}
+	}
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM ticket_tags WHERE ticket_id = ?`, ticketID); err != nil {
+		return fmt.Errorf("failed to delete tags: %w", err)
+	}
+	for _, tag := range params.Tags {
+		_, err = tx.ExecContext(ctx, `INSERT INTO ticket_tags (ticket_id, tag) VALUES (?, ?)`, ticketID, tag)
+		if err != nil {
+			return fmt.Errorf("failed to insert tag: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) DeleteTicket(ctx context.Context, ticketID int64) error {
+	if err := r.db.QueryRowContext(ctx, `
+		UPDATE tickets SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?
+	`, ticketID).Err(); err != nil {
+		return fmt.Errorf("failed to delete ticket: %w", err)
+	}
+	return nil
+}
