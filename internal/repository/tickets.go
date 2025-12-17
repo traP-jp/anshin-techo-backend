@@ -18,6 +18,9 @@ type (
 		CreatedAt   time.Time    `db:"created_at"`
 		UpdatedAt   time.Time    `db:"updated_at"`
 		DeletedAt   sql.NullTime `db:"deleted_at"`
+		SubAssignees []string    `db:"-"`
+		Stakeholders []string    `db:"-"`
+		Tags         []string    `db:"-"`
 	}
 
 	CreateTicketParams struct {
@@ -36,6 +39,55 @@ func (r *Repository) GetTickets(ctx context.Context) ([]*Ticket, error) {
 	tickets := []*Ticket{}
 	if err := r.db.SelectContext(ctx, &tickets, "SELECT * FROM tickets"); err != nil {
 		return nil, fmt.Errorf("failed to select tickets: %w", err)
+	}
+	ticketsMap := make(map[int64]*Ticket)
+	for _, ticket := range tickets {
+		ticketsMap[ticket.ID] = ticket
+	}
+
+	subAssignees := []struct {
+		TicketID     int64  `db:"ticket_id"`
+		SubAssignee string `db:"sub_assignee"`
+	}{}
+	if err := r.db.SelectContext(ctx, &subAssignees,`
+		SELECT * FROM ticket_sub_assignees
+	`); err != nil {
+		return nil, fmt.Errorf("failed to select ticket_sub_assignees: %w", err)
+	}
+	for _, subAssignee := range subAssignees {
+		if ticket, ok := ticketsMap[subAssignee.TicketID]; ok {
+			ticket.SubAssignees = append(ticket.SubAssignees, subAssignee.SubAssignee)
+		}
+	}
+
+	stakeholders := []struct {
+		TicketID    int64  `db:"ticket_id"`
+		Stakeholder string `db:"stakeholder"`
+	}{}
+	if err := r.db.SelectContext(ctx, &stakeholders,`
+		SELECT * FROM ticket_stakeholders
+	`); err != nil {
+		return nil, fmt.Errorf("failed to select ticket_stakeholders: %w", err)
+	}
+	for _, stakeholder := range stakeholders {
+		if ticket, ok := ticketsMap[stakeholder.TicketID]; ok {
+			ticket.Stakeholders = append(ticket.Stakeholders, stakeholder.Stakeholder)
+		}
+	}
+
+	tags := []struct {
+		TicketID int64  `db:"ticket_id"`
+		Tag      string `db:"tag"`
+	}{}
+	if err := r.db.SelectContext(ctx, &tags,`
+		SELECT * FROM ticket_tags
+	`); err != nil {
+		return nil, fmt.Errorf("failed to select ticket_tags: %w", err)
+	}
+	for _, tag := range tags {
+		if ticket, ok := ticketsMap[tag.TicketID]; ok {
+			ticket.Tags = append(ticket.Tags, tag.Tag)
+		}
 	}
 
 	return tickets, nil
@@ -138,6 +190,24 @@ func (r *Repository) GetTicketByID(ctx context.Context, ticketID int64) (*Ticket
 	if err := r.db.GetContext(ctx, ticket, "SELECT * FROM tickets WHERE id = ?", ticketID); err != nil {
 		return nil, fmt.Errorf("failed to select ticket: %w", err)
 	}
+	subAssignees := []string{}
+	if err := r.db.SelectContext(ctx, &subAssignees, "SELECT sub_assignee FROM ticket_sub_assignees WHERE ticket_id = ?", ticketID); err != nil {
+		return nil, fmt.Errorf("failed to select sub_assignees: %w", err)
+	}
+	ticket.SubAssignees = subAssignees
+
+	stakeholders := []string{}
+	if err := r.db.SelectContext(ctx, &stakeholders, "SELECT stakeholder FROM ticket_stakeholders WHERE ticket_id = ?", ticketID); err != nil {
+		return nil, fmt.Errorf("failed to select stakeholders: %w", err)
+	}
+	ticket.Stakeholders = stakeholders
+
+	tags := []string{}
+	if err := r.db.SelectContext(ctx, &tags, "SELECT tag FROM ticket_tags WHERE ticket_id = ?", ticketID); err != nil {
+		return nil, fmt.Errorf("failed to select tags: %w", err)
+	}
+	ticket.Tags = tags
+
 	return ticket, nil
 }
 
