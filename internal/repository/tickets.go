@@ -9,18 +9,18 @@ import (
 
 type (
 	Ticket struct {
-		ID          int64        `db:"id"`
-		Title       string       `db:"title"`
-		Status      string       `db:"status"`
-		Assignee    string       `db:"assignee"`
-		Due         sql.NullTime `db:"due"`
-		Description sql.NullString       `db:"description"`
-		CreatedAt   time.Time    `db:"created_at"`
-		UpdatedAt   time.Time    `db:"updated_at"`
-		DeletedAt   sql.NullTime `db:"deleted_at"`
-		SubAssignees []string    `db:"-"`
-		Stakeholders []string    `db:"-"`
-		Tags         []string    `db:"-"`
+		ID           int64          `db:"id"`
+		Title        string         `db:"title"`
+		Status       string         `db:"status"`
+		Assignee     string         `db:"assignee"`
+		Due          sql.NullTime   `db:"due"`
+		Description  sql.NullString `db:"description"`
+		CreatedAt    time.Time      `db:"created_at"`
+		UpdatedAt    time.Time      `db:"updated_at"`
+		DeletedAt    sql.NullTime   `db:"deleted_at"`
+		SubAssignees []string       `db:"-"`
+		Stakeholders []string       `db:"-"`
+		Tags         []string       `db:"-"`
 	}
 
 	CreateTicketParams struct {
@@ -46,10 +46,10 @@ func (r *Repository) GetTickets(ctx context.Context) ([]*Ticket, error) {
 	}
 
 	subAssignees := []struct {
-		TicketID     int64  `db:"ticket_id"`
+		TicketID    int64  `db:"ticket_id"`
 		SubAssignee string `db:"sub_assignee"`
 	}{}
-	if err := r.db.SelectContext(ctx, &subAssignees,`
+	if err := r.db.SelectContext(ctx, &subAssignees, `
 		SELECT * FROM ticket_sub_assignees
 	`); err != nil {
 		return nil, fmt.Errorf("failed to select ticket_sub_assignees: %w", err)
@@ -64,7 +64,7 @@ func (r *Repository) GetTickets(ctx context.Context) ([]*Ticket, error) {
 		TicketID    int64  `db:"ticket_id"`
 		Stakeholder string `db:"stakeholder"`
 	}{}
-	if err := r.db.SelectContext(ctx, &stakeholders,`
+	if err := r.db.SelectContext(ctx, &stakeholders, `
 		SELECT * FROM ticket_stakeholders
 	`); err != nil {
 		return nil, fmt.Errorf("failed to select ticket_stakeholders: %w", err)
@@ -79,7 +79,7 @@ func (r *Repository) GetTickets(ctx context.Context) ([]*Ticket, error) {
 		TicketID int64  `db:"ticket_id"`
 		Tag      string `db:"tag"`
 	}{}
-	if err := r.db.SelectContext(ctx, &tags,`
+	if err := r.db.SelectContext(ctx, &tags, `
 		SELECT * FROM ticket_tags
 	`); err != nil {
 		return nil, fmt.Errorf("failed to select ticket_tags: %w", err)
@@ -94,42 +94,44 @@ func (r *Repository) GetTickets(ctx context.Context) ([]*Ticket, error) {
 }
 
 func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams) (int64, error) {
-	if !(params.Status == "not_planned" || params.Status == "not_written" || params.Status == "waiting_review" || params.Status == "waiting_sent" || params.Status == "sent" || params.Status == "milestone_scheduled" || params.Status == "completed" || params.Status == "forgotten") {
+	if params.Status != "not_planned" && params.Status != "not_written" && params.Status != "waiting_review" && params.Status != "waiting_sent" && params.Status != "sent" && params.Status != "milestone_scheduled" && params.Status != "completed" && params.Status != "forgotten" {
 		return 0, fmt.Errorf("invalid status: %s", params.Status)
 	}
 
-	unique_user_ids := make(map[string]struct{})
-	unique_user_ids[params.Assignee] = struct{}{}
+	uniqueUserIds := make(map[string]struct{})
+	uniqueUserIds[params.Assignee] = struct{}{}
 	for _, subAssignee := range params.SubAssignees {
-		unique_user_ids[subAssignee] = struct{}{}
+		uniqueUserIds[subAssignee] = struct{}{}
 	}
 	for _, stakeholder := range params.Stakeholders {
-		unique_user_ids[stakeholder] = struct{}{}
+		uniqueUserIds[stakeholder] = struct{}{}
 	}
 
 	users, err := r.GetUsers(ctx) // TODO: 全ユーザーを取得するのは効率が悪いので改善する
 	if err != nil {
 		return 0, fmt.Errorf("failed to get users: %w", err)
 	}
-	assignee_found := false
+	assigneeFound := false
 	for _, user := range users {
 		if user.TraqID == params.Assignee {
-			assignee_found = true
+			assigneeFound = true
+
 			break
 		}
 	}
-	if !assignee_found {
+	if !assigneeFound {
 		return 0, fmt.Errorf("assignee not found: %s", params.Assignee)
 	}
 	for _, subAssignee := range params.SubAssignees {
-		sub_assignee_found := false
+		subAssigneeFound := false
 		for _, user := range users {
 			if user.TraqID == subAssignee {
-				sub_assignee_found = true
+				subAssigneeFound = true
+
 				break
 			}
 		}
-		if !sub_assignee_found {
+		if !subAssigneeFound {
 			return 0, fmt.Errorf("sub-assignee not found: %s", subAssignee)
 		}
 	}
@@ -150,7 +152,7 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 	if err != nil {
 		return 0, fmt.Errorf("failed to get last insert id: %w", err)
 	}
-	
+
 	for _, subAssignee := range params.SubAssignees {
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO ticket_sub_assignees (ticket_id, sub_assignee) VALUES (?, ?)
@@ -258,6 +260,7 @@ func (r *Repository) UpdateTicket(ctx context.Context, ticketID int64, params Cr
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
+
 	return nil
 }
 
@@ -267,5 +270,6 @@ func (r *Repository) DeleteTicket(ctx context.Context, ticketID int64) error {
 	`, ticketID).Err(); err != nil {
 		return fmt.Errorf("failed to delete ticket: %w", err)
 	}
+
 	return nil
 }
