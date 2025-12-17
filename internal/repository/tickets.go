@@ -61,7 +61,7 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 	}
 	assignee_found := false
 	for _, user := range users {
-		if user.ID == params.Assignee {
+		if user.TraqID == params.Assignee {
 			assignee_found = true
 			break
 		}
@@ -72,7 +72,7 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 	for _, subAssignee := range params.SubAssignees {
 		sub_assignee_found := false
 		for _, user := range users {
-			if user.ID == subAssignee {
+			if user.TraqID == subAssignee {
 				sub_assignee_found = true
 				break
 			}
