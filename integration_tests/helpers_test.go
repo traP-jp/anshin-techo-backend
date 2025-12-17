@@ -31,6 +31,7 @@ func doRequest(t *testing.T, method, path string, bodystr string) *httptest.Resp
 
 	req := httptest.NewRequest(method, path, strings.NewReader(bodystr))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set("X-Forwarded-User", "ramdos")
 	rec := httptest.NewRecorder()
 
 	globalServer.ServeHTTP(rec, req)

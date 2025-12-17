@@ -977,6 +977,7 @@ const (
 	ReviewTypeApprove       ReviewType = "approve"
 	ReviewTypeChangeRequest ReviewType = "change_request"
 	ReviewTypeComment       ReviewType = "comment"
+	ReviewTypeSystem        ReviewType = "system"
 )
 
 // AllValues returns all ReviewType values.
@@ -985,6 +986,7 @@ func (ReviewType) AllValues() []ReviewType {
 		ReviewTypeApprove,
 		ReviewTypeChangeRequest,
 		ReviewTypeComment,
+		ReviewTypeSystem,
 	}
 }
 
@@ -996,6 +998,8 @@ func (s ReviewType) MarshalText() ([]byte, error) {
 	case ReviewTypeChangeRequest:
 		return []byte(s), nil
 	case ReviewTypeComment:
+		return []byte(s), nil
+	case ReviewTypeSystem:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -1013,6 +1017,9 @@ func (s *ReviewType) UnmarshalText(data []byte) error {
 		return nil
 	case ReviewTypeComment:
 		*s = ReviewTypeComment
+		return nil
+	case ReviewTypeSystem:
+		*s = ReviewTypeSystem
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -1032,7 +1039,8 @@ type Ticket struct {
 	// 副担当リスト (traQ ID).
 	SubAssignees []string `json:"sub_assignees"`
 	// その他関係者リスト (traQ ID)。.
-	Stakeholders []string `json:"stakeholders"`
+	Stakeholders []string        `json:"stakeholders"`
+	Status       OptTicketStatus `json:"status"`
 	// タグ (例: 協賛, 問い合わせ).
 	Tags []string `json:"tags"`
 	// 期日。未指定時は自動設定される。.
@@ -1069,6 +1077,11 @@ func (s *Ticket) GetSubAssignees() []string {
 // GetStakeholders returns the value of Stakeholders.
 func (s *Ticket) GetStakeholders() []string {
 	return s.Stakeholders
+}
+
+// GetStatus returns the value of Status.
+func (s *Ticket) GetStatus() OptTicketStatus {
+	return s.Status
 }
 
 // GetTags returns the value of Tags.
@@ -1119,6 +1132,11 @@ func (s *Ticket) SetSubAssignees(val []string) {
 // SetStakeholders sets the value of Stakeholders.
 func (s *Ticket) SetStakeholders(val []string) {
 	s.Stakeholders = val
+}
+
+// SetStatus sets the value of Status.
+func (s *Ticket) SetStatus(val OptTicketStatus) {
+	s.Status = val
 }
 
 // SetTags sets the value of Tags.
@@ -1420,7 +1438,8 @@ type TicketsTicketIdGetOK struct {
 	// 副担当リスト (traQ ID).
 	SubAssignees []string `json:"sub_assignees"`
 	// その他関係者リスト (traQ ID)。.
-	Stakeholders []string `json:"stakeholders"`
+	Stakeholders []string        `json:"stakeholders"`
+	Status       OptTicketStatus `json:"status"`
 	// タグ (例: 協賛, 問い合わせ).
 	Tags []string `json:"tags"`
 	// 期日。未指定時は自動設定される。.
@@ -1459,6 +1478,11 @@ func (s *TicketsTicketIdGetOK) GetSubAssignees() []string {
 // GetStakeholders returns the value of Stakeholders.
 func (s *TicketsTicketIdGetOK) GetStakeholders() []string {
 	return s.Stakeholders
+}
+
+// GetStatus returns the value of Status.
+func (s *TicketsTicketIdGetOK) GetStatus() OptTicketStatus {
+	return s.Status
 }
 
 // GetTags returns the value of Tags.
@@ -1514,6 +1538,11 @@ func (s *TicketsTicketIdGetOK) SetSubAssignees(val []string) {
 // SetStakeholders sets the value of Stakeholders.
 func (s *TicketsTicketIdGetOK) SetStakeholders(val []string) {
 	s.Stakeholders = val
+}
+
+// SetStatus sets the value of Status.
+func (s *TicketsTicketIdGetOK) SetStatus(val OptTicketStatus) {
+	s.Status = val
 }
 
 // SetTags sets the value of Tags.

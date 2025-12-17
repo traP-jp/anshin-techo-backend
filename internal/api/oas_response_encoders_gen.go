@@ -76,6 +76,14 @@ func encodeTicketsGetResponse(response TicketsGetRes, w http.ResponseWriter) err
 func encodeTicketsPostResponse(response TicketsPostRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
 	case *Ticket:
+		if err := func() error {
+			if err := response.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrap(err, "validate")
+		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(201)
 

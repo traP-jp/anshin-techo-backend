@@ -8,7 +8,7 @@ import (
 	"github.com/traP-jp/anshin-techo-backend/internal/repository"
 )
 
-// GET /api/v1/users
+// GET /users
 func (h *Handler) UsersGet(ctx context.Context) ([]api.User, error) {
 	users, err := h.repo.GetUsers(ctx)
 	if err != nil {
@@ -26,7 +26,7 @@ func (h *Handler) UsersGet(ctx context.Context) ([]api.User, error) {
 	return res, nil
 }
 
-// PUT /api/v1/users
+// PUT /users
 func (h *Handler) UsersPut(ctx context.Context, req []api.User) (api.UsersPutRes, error) {
 	// Empty request means sync to empty set; proceed.
 	repoUsers := make([]*repository.User, 0, len(req))

@@ -1113,6 +1113,8 @@ func (s *ReviewType) Decode(d *jx.Decoder) error {
 		*s = ReviewTypeChangeRequest
 	case ReviewTypeComment:
 		*s = ReviewTypeComment
+	case ReviewTypeSystem:
+		*s = ReviewTypeSystem
 	default:
 		*s = ReviewType(v)
 	}
@@ -1183,6 +1185,12 @@ func (s *Ticket) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Status.Set {
+			e.FieldStart("status")
+			s.Status.Encode(e)
+		}
+	}
+	{
 		if s.Tags != nil {
 			e.FieldStart("tags")
 			e.ArrStart()
@@ -1210,17 +1218,18 @@ func (s *Ticket) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfTicket = [10]string{
-	0: "id",
-	1: "title",
-	2: "description",
-	3: "assignee",
-	4: "sub_assignees",
-	5: "stakeholders",
-	6: "tags",
-	7: "due",
-	8: "created_at",
-	9: "updated_at",
+var jsonFieldsNameOfTicket = [11]string{
+	0:  "id",
+	1:  "title",
+	2:  "description",
+	3:  "assignee",
+	4:  "sub_assignees",
+	5:  "stakeholders",
+	6:  "status",
+	7:  "tags",
+	8:  "due",
+	9:  "created_at",
+	10: "updated_at",
 }
 
 // Decode decodes Ticket from json.
@@ -1314,6 +1323,16 @@ func (s *Ticket) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"stakeholders\"")
 			}
+		case "status":
+			if err := func() error {
+				s.Status.Reset()
+				if err := s.Status.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"status\"")
+			}
 		case "tags":
 			if err := func() error {
 				s.Tags = make([]string, 0)
@@ -1344,7 +1363,7 @@ func (s *Ticket) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"due\"")
 			}
 		case "created_at":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				v, err := json.DecodeDateTime(d)
 				s.CreatedAt = v
@@ -1376,7 +1395,7 @@ func (s *Ticket) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b00000011,
-		0b00000001,
+		0b00000010,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -1795,6 +1814,12 @@ func (s *TicketsTicketIdGetOK) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Status.Set {
+			e.FieldStart("status")
+			s.Status.Encode(e)
+		}
+	}
+	{
 		if s.Tags != nil {
 			e.FieldStart("tags")
 			e.ArrStart()
@@ -1832,18 +1857,19 @@ func (s *TicketsTicketIdGetOK) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfTicketsTicketIdGetOK = [11]string{
+var jsonFieldsNameOfTicketsTicketIdGetOK = [12]string{
 	0:  "id",
 	1:  "title",
 	2:  "description",
 	3:  "assignee",
 	4:  "sub_assignees",
 	5:  "stakeholders",
-	6:  "tags",
-	7:  "due",
-	8:  "created_at",
-	9:  "updated_at",
-	10: "notes",
+	6:  "status",
+	7:  "tags",
+	8:  "due",
+	9:  "created_at",
+	10: "updated_at",
+	11: "notes",
 }
 
 // Decode decodes TicketsTicketIdGetOK from json.
@@ -1937,6 +1963,16 @@ func (s *TicketsTicketIdGetOK) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"stakeholders\"")
 			}
+		case "status":
+			if err := func() error {
+				s.Status.Reset()
+				if err := s.Status.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"status\"")
+			}
 		case "tags":
 			if err := func() error {
 				s.Tags = make([]string, 0)
@@ -1967,7 +2003,7 @@ func (s *TicketsTicketIdGetOK) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"due\"")
 			}
 		case "created_at":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				v, err := json.DecodeDateTime(d)
 				s.CreatedAt = v
@@ -2016,7 +2052,7 @@ func (s *TicketsTicketIdGetOK) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b00000011,
-		0b00000001,
+		0b00000010,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
