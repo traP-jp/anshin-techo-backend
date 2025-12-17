@@ -5,52 +5,47 @@ package integrationtests
 import (
 	"testing"
 
+	"gotest.tools/v3/assert"
 )
 
 func TestUser(t *testing.T) {
-	/*
-	var userIDMap = make(map[string]uuid.UUID)
-
 	t.Run("create an user", func(t *testing.T) {
 		t.Run("success", func(t *testing.T) {
 			t.Parallel()
-			rec := doRequest(t, "POST", "/api/v1/users", `{"name":"test","email":"test@example.com"}`)
+			rec := doRequest(t, "PUT", "/users", `[{"traq_id":"ramdos","role":"manager"}]`)
 
 			expectedStatus := `200 OK`
-			expectedBody := `{"id":"[UUID]"}`
+			expectedBody := ``
 			assert.Equal(t, rec.Result().Status, expectedStatus)
 			assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
-
-			res := unmarshalResponse(t, rec)
-			userIDMap["user1"] = uuid.MustParse(res["id"].(string))
 		})
 
 		t.Run("invalid: name is blank", func(t *testing.T) {
 			t.Parallel()
-			rec := doRequest(t, "POST", "/api/v1/users", `{"email":"test2@example.com"}`)
+			rec := doRequest(t, "PUT", "/users", `{"role":"manager"}`)
 
-			expectedStatus := `400 Bad Request`
-			expectedBody := `{"error_message":"operation CreateUser: decode request: decode application/json: invalid: name (field required)"}`
+			expectedStatus := `401 Unauthorized`
+			expectedBody := `{"error_message":"operation UsersPut: decode request: decode application/json: \"[\" expected: unexpected byte 123 '{' at 0"}`
 			assert.Equal(t, rec.Result().Status, expectedStatus)
 			assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 		})
 
-		t.Run("invalid: email is blank", func(t *testing.T) {
+		t.Run("invalid: role is blank", func(t *testing.T) {
 			t.Parallel()
-			rec := doRequest(t, "POST", "/api/v1/users", `{"name":"test2"}`)
+			rec := doRequest(t, "PUT", "/users", `{"traq_id":"ramdos"}`)
 
 			expectedStatus := `400 Bad Request`
-			expectedBody := `{"error_message":"operation CreateUser: decode request: decode application/json: invalid: email (field required)"}`
+			expectedBody := `{"error_message":"operation UsersPut: decode request: decode application/json: \"[\" expected: unexpected byte 123 '{' at 0"}`
 			assert.Equal(t, rec.Result().Status, expectedStatus)
 			assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 		})
 
-		t.Run("invalid: email is invalid", func(t *testing.T) {
+		t.Run("invalid: role is invalid", func(t *testing.T) {
 			t.Parallel()
-			rec := doRequest(t, "POST", "/api/v1/users", `{"name":"test2","email":"not_email"}`)
+			rec := doRequest(t, "PUT", "/users", `{"traq_id":"ramdos","role":"not_a_role"}`)
 
 			expectedStatus := `400 Bad Request`
-			expectedBody := `{"error_message":"operation CreateUser: decode request: validate: invalid: email (string: no @)"}`
+			expectedBody := `{"error_message":"operation UsersPut: decode request: decode application/json: \"[\" expected: unexpected byte 123 '{' at 0"}`
 			assert.Equal(t, rec.Result().Status, expectedStatus)
 			assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 		})
@@ -59,25 +54,12 @@ func TestUser(t *testing.T) {
 	t.Run("get users", func(t *testing.T) {
 		t.Run("success", func(t *testing.T) {
 			t.Parallel()
-			rec := doRequest(t, "GET", "/api/v1/users", "")
+			rec := doRequest(t, "GET", "/users", "")
 
 			expectedStatus := `200 OK`
-			expectedBody := `[{"id":"[UUID]","name":"test","email":"test@example.com","iconUrl":"https://via.placeholder.com/150/92c952"}]`
+			expectedBody := `[{"traq_id":"ramdos","role":"manager"}]`
 			assert.Equal(t, rec.Result().Status, expectedStatus)
 			assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 		})
 	})
-
-	t.Run("get an user", func(t *testing.T) {
-		t.Run("success: user1", func(t *testing.T) {
-			t.Parallel()
-			rec := doRequest(t, "GET", "/api/v1/users/"+userIDMap["user1"].String(), "")
-
-			expectedStatus := `200 OK`
-			expectedBody := `{"id":"[UUID]","name":"test","email":"test@example.com","iconUrl":"https://via.placeholder.com/150/92c952"}`
-			assert.Equal(t, rec.Result().Status, expectedStatus)
-			assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
-		})
-	})
-	*/
 }
