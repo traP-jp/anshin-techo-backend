@@ -1420,6 +1420,11 @@ type TicketsTicketIdDeleteNoContent struct{}
 
 func (*TicketsTicketIdDeleteNoContent) ticketsTicketIdDeleteRes() {}
 
+// TicketsTicketIdDeleteNotFound is response for TicketsTicketIdDelete operation.
+type TicketsTicketIdDeleteNotFound struct{}
+
+func (*TicketsTicketIdDeleteNotFound) ticketsTicketIdDeleteRes() {}
+
 // TicketsTicketIdGetNotFound is response for TicketsTicketIdGet operation.
 type TicketsTicketIdGetNotFound struct{}
 
@@ -1742,6 +1747,11 @@ func (s *TicketsTicketIdNotesPostReq) SetMentionNotification(val bool) {
 type TicketsTicketIdPatchForbidden struct{}
 
 func (*TicketsTicketIdPatchForbidden) ticketsTicketIdPatchRes() {}
+
+// TicketsTicketIdPatchNotFound is response for TicketsTicketIdPatch operation.
+type TicketsTicketIdPatchNotFound struct{}
+
+func (*TicketsTicketIdPatchNotFound) ticketsTicketIdPatchRes() {}
 
 // TicketsTicketIdPatchOK is response for TicketsTicketIdPatch operation.
 type TicketsTicketIdPatchOK struct{}

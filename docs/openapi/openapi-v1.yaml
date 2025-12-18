@@ -454,6 +454,8 @@ paths:
           description: "更新成功"
         "403":
           description: "権限なし"
+        "404":
+          description: "チケットが見つからない"
 
     delete:
       tags:
@@ -465,6 +467,8 @@ paths:
           description: "削除成功"
         "403":
           description: "権限なし"
+        "404":
+          description: "チケットが見つからない"
 
   # --- Notes ---
   /tickets/{ticketId}/notes:

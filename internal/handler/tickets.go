@@ -99,6 +99,9 @@ func (h *Handler) TicketsGet(ctx context.Context, params api.TicketsGetParams) (
 func (h *Handler) TicketsTicketIdDelete(ctx context.Context, params api.TicketsTicketIdDeleteParams) (api.TicketsTicketIdDeleteRes, error) {
 	id := params.TicketId
 	if err := h.repo.DeleteTicket(ctx, id); err != nil {
+		if err == repository.ErrTicketNotFound {
+			return &api.TicketsTicketIdDeleteNotFound{}, nil
+		}
 		return nil, fmt.Errorf("delete ticket in repository: %w", err)
 	}
 	result := api.TicketsTicketIdDeleteNoContent{}
@@ -140,6 +143,9 @@ func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTi
 
 	ticket, err := h.repo.GetTicketByID(ctx, id)
 	if err != nil {
+		if err == repository.ErrTicketNotFound {
+			return &api.TicketsTicketIdPatchNotFound{}, nil
+		}
 		return nil, fmt.Errorf("get ticket from repository: %w", err)
 	}
 	
