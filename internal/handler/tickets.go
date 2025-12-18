@@ -13,12 +13,12 @@ import (
 func (h *Handler) TicketsPost(ctx context.Context, req *api.TicketsPostReq) (api.TicketsPostRes, error) {
 	description := sql.NullString{Valid: false}
 	if req.Description.Set {
-		description = sql.NullString{String: *&req.Description.Value, Valid: true}
+		description = sql.NullString{String: req.Description.Value, Valid: true}
 	}
 
 	due := sql.NullTime{Valid: false}
 	if req.Due.Set {
-		due = sql.NullTime{Time: *&req.Due.Value, Valid: true}
+		due = sql.NullTime{Time: req.Due.Value, Valid: true}
 	}
 
 	repoTicket := repository.CreateTicketParams{
@@ -96,4 +96,109 @@ func (h *Handler) TicketsGet(ctx context.Context, params api.TicketsGetParams) (
 	}
 	result := api.TicketsGetOKApplicationJSON(res)
 	return &result, nil
+}
+
+// DELETE /tickets/{ticketId}
+func (h *Handler) TicketsTicketIdDelete(ctx context.Context, params api.TicketsTicketIdDeleteParams) (api.TicketsTicketIdDeleteRes, error) {
+	id := params.TicketId
+	if err := h.repo.DeleteTicket(ctx, id); err != nil {
+		return nil, fmt.Errorf("delete ticket in repository: %w", err)
+	}
+	result := api.TicketsTicketIdDeleteNoContent{}
+	return &result, nil
+}
+
+// GET /tickets/{ticketId}
+func (h *Handler) TicketsTicketIdGet(ctx context.Context, params api.TicketsTicketIdGetParams) (api.TicketsTicketIdGetRes, error) {
+	id := params.TicketId
+	ticket, err := h.repo.GetTicketByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("get ticket from repository: %w", err)
+	}
+	if ticket.DeletedAt.Valid {
+		return &api.TicketsTicketIdGetNotFound{}, nil
+	}
+	res := &api.TicketsTicketIdGetOK{
+		ID:           ticket.ID,
+		Title:        ticket.Title,
+		Description:  api.OptString{Value: ticket.Description.String, Set: ticket.Description.Valid},
+		Due:          api.OptNilDate{Value: ticket.Due.Time, Set: ticket.Due.Valid},
+		Status:       api.TicketStatus(ticket.Status),
+		Assignee:     ticket.Assignee,
+		SubAssignees: ticket.SubAssignees,
+		Stakeholders: ticket.Stakeholders,
+		Tags:         ticket.Tags,
+		CreatedAt:    ticket.CreatedAt,
+		UpdatedAt:    api.OptDateTime{Value: ticket.UpdatedAt, Set: true},
+	}
+	return res, nil
+}
+
+// PATCH /tickets/{ticketId}
+func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTicketIdPatchReq, params api.TicketsTicketIdPatchParams) (api.TicketsTicketIdPatchRes, error) {
+	id := params.TicketId
+	if !req.Set {
+		return nil, fmt.Errorf("request body is required")
+	}
+
+	ticket, err := h.repo.GetTicketByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("get ticket from repository: %w", err)
+	}
+	if ticket.DeletedAt.Valid {
+		return nil, fmt.Errorf("ticket not found")
+	}
+	
+	title := ticket.Title
+	if req.Value.Title.Set {
+		title = req.Value.Title.Value
+	}
+	description := ticket.Description
+	if req.Value.Description.Set {
+		description = sql.NullString{
+			String: req.Value.Description.Value,
+			Valid:  true,
+		}
+	}
+	status := ticket.Status
+	if req.Value.Status.Set {
+		status = string(req.Value.Status.Value)
+	}
+	assignee := ticket.Assignee
+	if req.Value.Assignee.Set {
+		assignee = req.Value.Assignee.Value
+	}
+	subAssignees := ticket.SubAssignees
+	if req.Value.SubAssignees != nil {
+		subAssignees = req.Value.SubAssignees
+	}
+	stakeholders := ticket.Stakeholders
+	if req.Value.Stakeholders != nil {
+		stakeholders = req.Value.Stakeholders
+	}
+	due := ticket.Due
+	if req.Value.Due.Set {
+		due = sql.NullTime{
+			Time:  req.Value.Due.Value,
+			Valid: true,
+		}
+	}
+	tags := ticket.Tags
+	if req.Value.Tags != nil {
+		tags = req.Value.Tags
+	}
+	updateParams := repository.CreateTicketParams{
+		Title:        title,
+		Description:  description,
+		Status:       status,
+		Assignee:     assignee,
+		SubAssignees: subAssignees,
+		Stakeholders: stakeholders,
+		Due:          due,
+		Tags:         tags,
+	}
+	if err := h.repo.UpdateTicket(ctx, id, updateParams); err != nil {
+		return nil, fmt.Errorf("update ticket in repository: %w", err)
+	}
+	return &api.TicketsTicketIdPatchOK{}, nil
 }
