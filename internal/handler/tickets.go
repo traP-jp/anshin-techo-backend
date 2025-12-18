@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/traP-jp/anshin-techo-backend/internal/api"
 	"github.com/traP-jp/anshin-techo-backend/internal/repository"
@@ -11,12 +12,12 @@ import (
 
 // POST /tickets
 func (h *Handler) TicketsPost(ctx context.Context, req *api.TicketsPostReq) (api.TicketsPostRes, error) {
-	description := sql.NullString{Valid: false}
+	description := sql.NullString{String: "", Valid: false}
 	if req.Description.Set {
 		description = sql.NullString{String: req.Description.Value, Valid: true}
 	}
 
-	due := sql.NullTime{Valid: false}
+	due := sql.NullTime{Time: time.Time{}, Valid: false}
 	if req.Due.Set {
 		due = sql.NullTime{Time: req.Due.Value, Valid: true}
 	}
@@ -34,7 +35,7 @@ func (h *Handler) TicketsPost(ctx context.Context, req *api.TicketsPostReq) (api
 
 	ticketID, err := h.repo.CreateTicket(ctx, repoTicket)
 	if err != nil {
-			return nil, fmt.Errorf("create ticket in repository: %w", err)
+		return nil, fmt.Errorf("create ticket in repository: %w", err)
 	}
 	ticket, err := h.repo.GetTicketByID(ctx, ticketID)
 	if err != nil {
@@ -44,7 +45,7 @@ func (h *Handler) TicketsPost(ctx context.Context, req *api.TicketsPostReq) (api
 		ID:           ticket.ID,
 		Title:        ticket.Title,
 		Description:  api.OptString{Value: ticket.Description.String, Set: ticket.Description.Valid},
-		Due:          api.OptNilDate{Value: ticket.Due.Time, Set: ticket.Due.Valid},
+		Due:          api.OptNilDate{Value: ticket.Due.Time, Set: ticket.Due.Valid, Null: !ticket.Due.Valid},
 		Status:       api.TicketStatus(ticket.Status),
 		Assignee:     ticket.Assignee,
 		SubAssignees: ticket.SubAssignees,
@@ -58,7 +59,7 @@ func (h *Handler) TicketsPost(ctx context.Context, req *api.TicketsPostReq) (api
 }
 
 // GET /tickets
-func (h *Handler) TicketsGet(ctx context.Context, params api.TicketsGetParams) (api.TicketsGetRes, error) {
+func (h *Handler) TicketsGet(ctx context.Context, _ api.TicketsGetParams) (api.TicketsGetRes, error) {
 	// TODO: 絞り込みはまだ実装していない
 	tickets, err := h.repo.GetTickets(ctx)
 	if err != nil {
@@ -78,6 +79,7 @@ func (h *Handler) TicketsGet(ctx context.Context, params api.TicketsGetParams) (
 			Due: api.OptNilDate{
 				Value: ticket.Due.Time,
 				Set:   ticket.Due.Valid,
+				Null:  !ticket.Due.Valid,
 			},
 			Status:       api.TicketStatus(ticket.Status),
 			Assignee:     ticket.Assignee,
@@ -92,6 +94,7 @@ func (h *Handler) TicketsGet(ctx context.Context, params api.TicketsGetParams) (
 		})
 	}
 	result := api.TicketsGetOKApplicationJSON(res)
+	
 	return &result, nil
 }
 
@@ -102,9 +105,11 @@ func (h *Handler) TicketsTicketIdDelete(ctx context.Context, params api.TicketsT
 		if err == repository.ErrTicketNotFound {
 			return &api.TicketsTicketIdDeleteNotFound{}, nil
 		}
+		
 		return nil, fmt.Errorf("delete ticket in repository: %w", err)
 	}
 	result := api.TicketsTicketIdDeleteNoContent{}
+
 	return &result, nil
 }
 
@@ -116,13 +121,14 @@ func (h *Handler) TicketsTicketIdGet(ctx context.Context, params api.TicketsTick
 		if err == repository.ErrTicketNotFound {
 			return &api.TicketsTicketIdGetNotFound{}, nil
 		}
+
 		return nil, fmt.Errorf("get ticket from repository: %w", err)
 	}
 	res := &api.TicketsTicketIdGetOK{
 		ID:           ticket.ID,
 		Title:        ticket.Title,
 		Description:  api.OptString{Value: ticket.Description.String, Set: ticket.Description.Valid},
-		Due:          api.OptNilDate{Value: ticket.Due.Time, Set: ticket.Due.Valid},
+		Due:          api.OptNilDate{Value: ticket.Due.Time, Set: ticket.Due.Valid, Null: !ticket.Due.Valid},
 		Status:       api.TicketStatus(ticket.Status),
 		Assignee:     ticket.Assignee,
 		SubAssignees: ticket.SubAssignees,
@@ -131,6 +137,7 @@ func (h *Handler) TicketsTicketIdGet(ctx context.Context, params api.TicketsTick
 		CreatedAt:    ticket.CreatedAt,
 		UpdatedAt:    api.OptDateTime{Value: ticket.UpdatedAt, Set: true},
 	}
+
 	return res, nil
 }
 
@@ -146,6 +153,7 @@ func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTi
 		if err == repository.ErrTicketNotFound {
 			return &api.TicketsTicketIdPatchNotFound{}, nil
 		}
+		
 		return nil, fmt.Errorf("get ticket from repository: %w", err)
 	}
 	
@@ -155,9 +163,13 @@ func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTi
 	}
 	description := ticket.Description
 	if req.Value.Description.Set {
-		description = sql.NullString{
-			String: req.Value.Description.Value,
-			Valid:  true,
+		if req.Value.Description.Value == "" {
+			description = sql.NullString{String: "", Valid: false}
+		} else {
+			description = sql.NullString{
+				String: req.Value.Description.Value,
+				Valid:  true,
+			}
 		}
 	}
 	status := ticket.Status
@@ -178,9 +190,13 @@ func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTi
 	}
 	due := ticket.Due
 	if req.Value.Due.Set {
-		due = sql.NullTime{
-			Time:  req.Value.Due.Value,
-			Valid: true,
+		if req.Value.Due.Value.IsZero() {
+			due = sql.NullTime{Time: time.Time{}, Valid: false}
+		} else {
+			due = sql.NullTime{
+				Time:  req.Value.Due.Value,
+				Valid: true,
+			}
 		}
 	}
 	tags := ticket.Tags
@@ -200,5 +216,6 @@ func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTi
 	if err := h.repo.UpdateTicket(ctx, id, updateParams); err != nil {
 		return nil, fmt.Errorf("update ticket in repository: %w", err)
 	}
+	
 	return &api.TicketsTicketIdPatchOK{}, nil
 }

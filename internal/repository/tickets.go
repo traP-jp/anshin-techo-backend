@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -36,6 +37,15 @@ type (
 )
 
 var ErrTicketNotFound = fmt.Errorf("ticket not found")
+
+func validateStatus(status string) bool {
+	switch status {
+	case "not_planned", "not_written", "waiting_review", "waiting_sent", "sent", "milestone_scheduled", "completed", "forgotten":
+		return true
+	default:
+		return false
+	}
+}
 
 func (r *Repository) GetTickets(ctx context.Context) ([]*Ticket, error) {
 	tickets := []*Ticket{}
@@ -96,44 +106,50 @@ func (r *Repository) GetTickets(ctx context.Context) ([]*Ticket, error) {
 }
 
 func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams) (int64, error) {
-	if params.Status != "not_planned" && params.Status != "not_written" && params.Status != "waiting_review" && params.Status != "waiting_sent" && params.Status != "sent" && params.Status != "milestone_scheduled" && params.Status != "completed" && params.Status != "forgotten" {
+	if !validateStatus(params.Status) {
 		return 0, fmt.Errorf("invalid status: %s", params.Status)
 	}
 
-	uniqueUserIds := make(map[string]struct{})
-	uniqueUserIds[params.Assignee] = struct{}{}
+	uniqueUserIDs := make(map[string]struct{})
+	uniqueUserIDs[params.Assignee] = struct{}{}
 	for _, subAssignee := range params.SubAssignees {
-		uniqueUserIds[subAssignee] = struct{}{}
+		uniqueUserIDs[subAssignee] = struct{}{}
 	}
 	for _, stakeholder := range params.Stakeholders {
-		uniqueUserIds[stakeholder] = struct{}{}
+		uniqueUserIDs[stakeholder] = struct{}{}
 	}
 
-	users, err := r.GetUsers(ctx) // TODO: 全ユーザーを取得するのは効率が悪いので改善する
+	ids := make([]interface{}, 0, len(uniqueUserIDs))
+	for id := range uniqueUserIDs {
+		ids = append(ids, id)
+	}
+	
+	placeholders := make([]string, len(ids))
+	for i := range ids {
+		placeholders[i] = "?"
+	}
+	query := fmt.Sprintf("SELECT traq_id FROM users WHERE traq_id IN (%s)", strings.Join(placeholders, ","))
+	rows, err := r.db.QueryContext(ctx, query, ids...)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get users: %w", err)
 	}
-	assigneeFound := false
-	for _, user := range users {
-		if user.TraqID == params.Assignee {
-			assigneeFound = true
-
-			break
+	defer rows.Close()
+	found := map[string]struct{}{}
+	for rows.Next() {
+		var traqID string
+		if err := rows.Scan(&traqID); err != nil {
+			return 0, fmt.Errorf("failed to scan user: %w", err)
 		}
+		found[traqID] = struct{}{}
 	}
-	if !assigneeFound {
+	if err := rows.Err(); err != nil {
+		return 0, fmt.Errorf("failed to iterate users: %w", err)
+	}
+	if _, ok := found[params.Assignee]; !ok {
 		return 0, fmt.Errorf("assignee not found: %s", params.Assignee)
 	}
 	for _, subAssignee := range params.SubAssignees {
-		subAssigneeFound := false
-		for _, user := range users {
-			if user.TraqID == subAssignee {
-				subAssigneeFound = true
-
-				break
-			}
-		}
-		if !subAssigneeFound {
+		if _, ok := found[subAssignee]; !ok {
 			return 0, fmt.Errorf("sub-assignee not found: %s", subAssignee)
 		}
 	}
@@ -195,6 +211,7 @@ func (r *Repository) GetTicketByID(ctx context.Context, ticketID int64) (*Ticket
 		if err == sql.ErrNoRows {
 			return nil, ErrTicketNotFound
 		}
+
 		return nil, fmt.Errorf("failed to select ticket: %w", err)
 	}
 	subAssignees := []string{}
@@ -219,6 +236,9 @@ func (r *Repository) GetTicketByID(ctx context.Context, ticketID int64) (*Ticket
 }
 
 func (r *Repository) UpdateTicket(ctx context.Context, ticketID int64, params CreateTicketParams) error {
+	if !validateStatus(params.Status) {
+		return fmt.Errorf("invalid status: %s", params.Status)
+	}
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -290,5 +310,6 @@ func (r *Repository) DeleteTicket(ctx context.Context, ticketID int64) error {
 	if rowsAffected == 0 {
 		return ErrTicketNotFound
 	}
+	
 	return nil
 }
