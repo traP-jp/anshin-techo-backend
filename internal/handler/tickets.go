@@ -99,6 +99,7 @@ func (h *Handler) TicketsGet(ctx context.Context, _ api.TicketsGetParams) (api.T
 }
 
 // DELETE /tickets/{ticketId}
+//nolint:revive
 func (h *Handler) TicketsTicketIdDelete(ctx context.Context, params api.TicketsTicketIdDeleteParams) (api.TicketsTicketIdDeleteRes, error) {
 	id := params.TicketId
 	if err := h.repo.DeleteTicket(ctx, id); err != nil {
@@ -114,6 +115,7 @@ func (h *Handler) TicketsTicketIdDelete(ctx context.Context, params api.TicketsT
 }
 
 // GET /tickets/{ticketId}
+//nolint:revive
 func (h *Handler) TicketsTicketIdGet(ctx context.Context, params api.TicketsTicketIdGetParams) (api.TicketsTicketIdGetRes, error) {
 	id := params.TicketId
 	ticket, err := h.repo.GetTicketByID(ctx, id)
@@ -136,12 +138,14 @@ func (h *Handler) TicketsTicketIdGet(ctx context.Context, params api.TicketsTick
 		Tags:         ticket.Tags,
 		CreatedAt:    ticket.CreatedAt,
 		UpdatedAt:    api.OptDateTime{Value: ticket.UpdatedAt, Set: true},
+		Notes:        []api.Note{}, // TODO: ノート機能実装時に追加
 	}
 
 	return res, nil
 }
 
 // PATCH /tickets/{ticketId}
+//nolint:revive
 func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTicketIdPatchReq, params api.TicketsTicketIdPatchParams) (api.TicketsTicketIdPatchRes, error) {
 	id := params.TicketId
 	if !req.Set {

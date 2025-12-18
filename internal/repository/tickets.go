@@ -158,7 +158,11 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 	if err != nil {
 		return 0, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			fmt.Printf("failed to rollback: %v\n", err)
+		}
+	}()
 
 	res, err := tx.ExecContext(ctx, `
 		INSERT INTO tickets (title, description, status, assignee, due) VALUES (?, ?, ?, ?, ?)
@@ -291,7 +295,11 @@ func (r *Repository) UpdateTicket(ctx context.Context, ticketID int64, params Cr
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			fmt.Printf("failed to rollback: %v\n", err)
+		}
+	}()
 
 	res, err := tx.ExecContext(ctx, `
 		UPDATE tickets SET title = ?, description = ?, status = ?, assignee = ?, due = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
