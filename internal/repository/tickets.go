@@ -48,6 +48,7 @@ func validateStatus(status string) bool {
 }
 
 func (r *Repository) GetTickets(ctx context.Context) ([]*Ticket, error) {
+	// TODO: N+1問題を解消する
 	tickets := []*Ticket{}
 	if err := r.db.SelectContext(ctx, &tickets, "SELECT * FROM tickets WHERE deleted_at IS NULL"); err != nil {
 		return nil, fmt.Errorf("failed to select tickets: %w", err)
@@ -319,6 +320,7 @@ func (r *Repository) UpdateTicket(ctx context.Context, ticketID int64, params Cr
 		return fmt.Errorf("failed to delete sub_assignees: %w", err)
 	}
 	for _, subAssignee := range params.SubAssignees {
+		// TODO: 遅いのでまとめてINSERT
 		_, err = tx.ExecContext(ctx, `INSERT INTO ticket_sub_assignees (ticket_id, sub_assignee) VALUES (?, ?)`, ticketID, subAssignee)
 		if err != nil {
 			return fmt.Errorf("failed to insert sub_assignee: %w", err)
