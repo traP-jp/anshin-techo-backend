@@ -1159,10 +1159,8 @@ func (s *Ticket) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.Assignee.Set {
-			e.FieldStart("assignee")
-			s.Assignee.Encode(e)
-		}
+		e.FieldStart("assignee")
+		e.Str(s.Assignee)
 	}
 	{
 		if s.SubAssignees != nil {
@@ -1185,10 +1183,8 @@ func (s *Ticket) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.Status.Set {
-			e.FieldStart("status")
-			s.Status.Encode(e)
-		}
+		e.FieldStart("status")
+		s.Status.Encode(e)
 	}
 	{
 		if s.Tags != nil {
@@ -1276,9 +1272,11 @@ func (s *Ticket) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"description\"")
 			}
 		case "assignee":
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
-				s.Assignee.Reset()
-				if err := s.Assignee.Decode(d); err != nil {
+				v, err := d.Str()
+				s.Assignee = string(v)
+				if err != nil {
 					return err
 				}
 				return nil
@@ -1324,8 +1322,8 @@ func (s *Ticket) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"stakeholders\"")
 			}
 		case "status":
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
-				s.Status.Reset()
 				if err := s.Status.Decode(d); err != nil {
 					return err
 				}
@@ -1394,7 +1392,7 @@ func (s *Ticket) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
-		0b00000011,
+		0b01001011,
 		0b00000010,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
@@ -1553,10 +1551,8 @@ func (s *TicketsPostReq) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *TicketsPostReq) encodeFields(e *jx.Encoder) {
 	{
-		if s.Title.Set {
-			e.FieldStart("title")
-			s.Title.Encode(e)
-		}
+		e.FieldStart("title")
+		e.Str(s.Title)
 	}
 	{
 		if s.Description.Set {
@@ -1565,16 +1561,12 @@ func (s *TicketsPostReq) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.Status.Set {
-			e.FieldStart("status")
-			s.Status.Encode(e)
-		}
+		e.FieldStart("status")
+		s.Status.Encode(e)
 	}
 	{
-		if s.Assignee.Set {
-			e.FieldStart("assignee")
-			s.Assignee.Encode(e)
-		}
+		e.FieldStart("assignee")
+		e.Str(s.Assignee)
 	}
 	{
 		if s.SubAssignees != nil {
@@ -1630,13 +1622,16 @@ func (s *TicketsPostReq) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode TicketsPostReq to nil")
 	}
+	var requiredBitSet [1]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
 		case "title":
+			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				s.Title.Reset()
-				if err := s.Title.Decode(d); err != nil {
+				v, err := d.Str()
+				s.Title = string(v)
+				if err != nil {
 					return err
 				}
 				return nil
@@ -1654,8 +1649,8 @@ func (s *TicketsPostReq) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"description\"")
 			}
 		case "status":
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
-				s.Status.Reset()
 				if err := s.Status.Decode(d); err != nil {
 					return err
 				}
@@ -1664,9 +1659,11 @@ func (s *TicketsPostReq) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"status\"")
 			}
 		case "assignee":
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
-				s.Assignee.Reset()
-				if err := s.Assignee.Decode(d); err != nil {
+				v, err := d.Str()
+				s.Assignee = string(v)
+				if err != nil {
 					return err
 				}
 				return nil
@@ -1747,6 +1744,38 @@ func (s *TicketsPostReq) Decode(d *jx.Decoder) error {
 	}); err != nil {
 		return errors.Wrap(err, "decode TicketsPostReq")
 	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001101,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfTicketsPostReq) {
+					name = jsonFieldsNameOfTicketsPostReq[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
 
 	return nil
 }
@@ -1788,10 +1817,8 @@ func (s *TicketsTicketIdGetOK) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.Assignee.Set {
-			e.FieldStart("assignee")
-			s.Assignee.Encode(e)
-		}
+		e.FieldStart("assignee")
+		e.Str(s.Assignee)
 	}
 	{
 		if s.SubAssignees != nil {
@@ -1814,10 +1841,8 @@ func (s *TicketsTicketIdGetOK) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.Status.Set {
-			e.FieldStart("status")
-			s.Status.Encode(e)
-		}
+		e.FieldStart("status")
+		s.Status.Encode(e)
 	}
 	{
 		if s.Tags != nil {
@@ -1916,9 +1941,11 @@ func (s *TicketsTicketIdGetOK) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"description\"")
 			}
 		case "assignee":
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
-				s.Assignee.Reset()
-				if err := s.Assignee.Decode(d); err != nil {
+				v, err := d.Str()
+				s.Assignee = string(v)
+				if err != nil {
 					return err
 				}
 				return nil
@@ -1964,8 +1991,8 @@ func (s *TicketsTicketIdGetOK) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"stakeholders\"")
 			}
 		case "status":
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
-				s.Status.Reset()
 				if err := s.Status.Decode(d); err != nil {
 					return err
 				}
@@ -2051,7 +2078,7 @@ func (s *TicketsTicketIdGetOK) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
-		0b00000011,
+		0b01001011,
 		0b00000010,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {

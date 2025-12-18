@@ -1,0 +1,373 @@
+package repository
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"strings"
+	"time"
+)
+
+type (
+	Ticket struct {
+		ID           int64          `db:"id"`
+		Title        string         `db:"title"`
+		Status       string         `db:"status"`
+		Assignee     string         `db:"assignee"`
+		Due          sql.NullTime   `db:"due"`
+		Description  sql.NullString `db:"description"`
+		CreatedAt    time.Time      `db:"created_at"`
+		UpdatedAt    time.Time      `db:"updated_at"`
+		DeletedAt    sql.NullTime   `db:"deleted_at"`
+		SubAssignees []string       `db:"-"`
+		Stakeholders []string       `db:"-"`
+		Tags         []string       `db:"-"`
+	}
+
+	CreateTicketParams struct {
+		Title        string
+		Description  sql.NullString
+		Status       string
+		Assignee     string
+		SubAssignees []string
+		Stakeholders []string
+		Due          sql.NullTime
+		Tags         []string
+	}
+)
+
+var ErrTicketNotFound = fmt.Errorf("ticket not found")
+
+func validateStatus(status string) bool {
+	switch status {
+	case "not_planned", "not_written", "waiting_review", "waiting_sent", "sent", "milestone_scheduled", "completed", "forgotten":
+		return true
+	default:
+		return false
+	}
+}
+
+func (r *Repository) GetTickets(ctx context.Context) ([]*Ticket, error) {
+	// TODO: N+1問題を解消する
+	tickets := []*Ticket{}
+	if err := r.db.SelectContext(ctx, &tickets, "SELECT * FROM tickets WHERE deleted_at IS NULL"); err != nil {
+		return nil, fmt.Errorf("failed to select tickets: %w", err)
+	}
+	ticketsMap := make(map[int64]*Ticket)
+	for _, ticket := range tickets {
+		ticketsMap[ticket.ID] = ticket
+	}
+
+	subAssignees := []struct {
+		TicketID    int64  `db:"ticket_id"`
+		SubAssignee string `db:"sub_assignee"`
+	}{}
+	if err := r.db.SelectContext(ctx, &subAssignees, `
+		SELECT * FROM ticket_sub_assignees
+	`); err != nil {
+		return nil, fmt.Errorf("failed to select ticket_sub_assignees: %w", err)
+	}
+	for _, subAssignee := range subAssignees {
+		if ticket, ok := ticketsMap[subAssignee.TicketID]; ok {
+			ticket.SubAssignees = append(ticket.SubAssignees, subAssignee.SubAssignee)
+		}
+	}
+
+	stakeholders := []struct {
+		TicketID    int64  `db:"ticket_id"`
+		Stakeholder string `db:"stakeholder"`
+	}{}
+	if err := r.db.SelectContext(ctx, &stakeholders, `
+		SELECT * FROM ticket_stakeholders
+	`); err != nil {
+		return nil, fmt.Errorf("failed to select ticket_stakeholders: %w", err)
+	}
+	for _, stakeholder := range stakeholders {
+		if ticket, ok := ticketsMap[stakeholder.TicketID]; ok {
+			ticket.Stakeholders = append(ticket.Stakeholders, stakeholder.Stakeholder)
+		}
+	}
+
+	tags := []struct {
+		TicketID int64  `db:"ticket_id"`
+		Tag      string `db:"tag"`
+	}{}
+	if err := r.db.SelectContext(ctx, &tags, `
+		SELECT * FROM ticket_tags
+	`); err != nil {
+		return nil, fmt.Errorf("failed to select ticket_tags: %w", err)
+	}
+	for _, tag := range tags {
+		if ticket, ok := ticketsMap[tag.TicketID]; ok {
+			ticket.Tags = append(ticket.Tags, tag.Tag)
+		}
+	}
+
+	return tickets, nil
+}
+
+func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams) (int64, error) {
+	if !validateStatus(params.Status) {
+		return 0, fmt.Errorf("invalid status: %s", params.Status)
+	}
+
+	uniqueUserIDs := make(map[string]struct{})
+	uniqueUserIDs[params.Assignee] = struct{}{}
+	for _, subAssignee := range params.SubAssignees {
+		uniqueUserIDs[subAssignee] = struct{}{}
+	}
+	for _, stakeholder := range params.Stakeholders {
+		uniqueUserIDs[stakeholder] = struct{}{}
+	}
+
+	ids := make([]interface{}, 0, len(uniqueUserIDs))
+	for id := range uniqueUserIDs {
+		ids = append(ids, id)
+	}
+	
+	placeholders := make([]string, len(ids))
+	for i := range ids {
+		placeholders[i] = "?"
+	}
+	query := fmt.Sprintf("SELECT traq_id FROM users WHERE traq_id IN (%s)", strings.Join(placeholders, ","))
+	rows, err := r.db.QueryContext(ctx, query, ids...)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get users: %w", err)
+	}
+	defer rows.Close()
+	found := map[string]struct{}{}
+	for rows.Next() {
+		var traqID string
+		if err := rows.Scan(&traqID); err != nil {
+			return 0, fmt.Errorf("failed to scan user: %w", err)
+		}
+		found[traqID] = struct{}{}
+	}
+	if err := rows.Err(); err != nil {
+		return 0, fmt.Errorf("failed to iterate users: %w", err)
+	}
+	if _, ok := found[params.Assignee]; !ok {
+		return 0, fmt.Errorf("assignee not found: %s", params.Assignee)
+	}
+	for _, subAssignee := range params.SubAssignees {
+		if _, ok := found[subAssignee]; !ok {
+			return 0, fmt.Errorf("sub-assignee not found: %s", subAssignee)
+		}
+	}
+
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return 0, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			fmt.Printf("failed to rollback: %v\n", err)
+		}
+	}()
+
+	res, err := tx.ExecContext(ctx, `
+		INSERT INTO tickets (title, description, status, assignee, due) VALUES (?, ?, ?, ?, ?)
+	`, params.Title, params.Description, params.Status, params.Assignee, params.Due)
+	if err != nil {
+		return 0, fmt.Errorf("failed to insert ticket: %w", err)
+	}
+	ticketID, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get last insert id: %w", err)
+	}
+
+	for _, subAssignee := range params.SubAssignees {
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO ticket_sub_assignees (ticket_id, sub_assignee) VALUES (?, ?)
+		`, ticketID, subAssignee)
+		if err != nil {
+			return 0, fmt.Errorf("failed to insert sub-assignee: %w", err)
+		}
+	}
+
+	for _, stakeholder := range params.Stakeholders {
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO ticket_stakeholders (ticket_id, stakeholder) VALUES (?, ?)
+		`, ticketID, stakeholder)
+		if err != nil {
+			return 0, fmt.Errorf("failed to insert stakeholder: %w", err)
+		}
+	}
+
+	for _, tag := range params.Tags {
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO ticket_tags (ticket_id, tag) VALUES (?, ?)
+		`, ticketID, tag)
+		if err != nil {
+			return 0, fmt.Errorf("failed to insert tag: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return ticketID, nil
+}
+
+func (r *Repository) GetTicketByID(ctx context.Context, ticketID int64) (*Ticket, error) {
+	ticket := new(Ticket)
+	if err := r.db.GetContext(ctx, ticket, "SELECT * FROM tickets WHERE id = ? AND deleted_at IS NULL", ticketID); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrTicketNotFound
+		}
+
+		return nil, fmt.Errorf("failed to select ticket: %w", err)
+	}
+	subAssignees := []string{}
+	if err := r.db.SelectContext(ctx, &subAssignees, "SELECT sub_assignee FROM ticket_sub_assignees WHERE ticket_id = ?", ticketID); err != nil {
+		return nil, fmt.Errorf("failed to select sub_assignees: %w", err)
+	}
+	ticket.SubAssignees = subAssignees
+
+	stakeholders := []string{}
+	if err := r.db.SelectContext(ctx, &stakeholders, "SELECT stakeholder FROM ticket_stakeholders WHERE ticket_id = ?", ticketID); err != nil {
+		return nil, fmt.Errorf("failed to select stakeholders: %w", err)
+	}
+	ticket.Stakeholders = stakeholders
+
+	tags := []string{}
+	if err := r.db.SelectContext(ctx, &tags, "SELECT tag FROM ticket_tags WHERE ticket_id = ?", ticketID); err != nil {
+		return nil, fmt.Errorf("failed to select tags: %w", err)
+	}
+	ticket.Tags = tags
+
+	return ticket, nil
+}
+
+func (r *Repository) UpdateTicket(ctx context.Context, ticketID int64, params CreateTicketParams) error {
+	if !validateStatus(params.Status) {
+		return fmt.Errorf("invalid status: %s", params.Status)
+	}
+
+	uniqueUserIDs := make(map[string]struct{})
+	uniqueUserIDs[params.Assignee] = struct{}{}
+	for _, subAssignee := range params.SubAssignees {
+		uniqueUserIDs[subAssignee] = struct{}{}
+	}
+	for _, stakeholder := range params.Stakeholders {
+		uniqueUserIDs[stakeholder] = struct{}{}
+	}
+
+	ids := make([]interface{}, 0, len(uniqueUserIDs))
+	for id := range uniqueUserIDs {
+		ids = append(ids, id)
+	}
+	placeholders := make([]string, len(ids))
+	for i := range ids {
+		placeholders[i] = "?"
+	}
+	query := fmt.Sprintf("SELECT traq_id FROM users WHERE traq_id IN (%s)", strings.Join(placeholders, ","))
+	rows, err := r.db.QueryContext(ctx, query, ids...)
+	if err != nil {
+		return fmt.Errorf("failed to get users: %w", err)
+	}
+	defer rows.Close()
+	found := map[string]struct{}{}
+	for rows.Next() {
+		var traqID string
+		if err := rows.Scan(&traqID); err != nil {
+			return fmt.Errorf("failed to scan user: %w", err)
+		}
+		found[traqID] = struct{}{}
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("failed to iterate users: %w", err)
+	}
+	if _, ok := found[params.Assignee]; !ok {
+		return fmt.Errorf("assignee not found: %s", params.Assignee)
+	}
+	for _, subAssignee := range params.SubAssignees {
+		if _, ok := found[subAssignee]; !ok {
+			return fmt.Errorf("sub-assignee not found: %s", subAssignee)
+		}
+	}
+	for _, stakeholder := range params.Stakeholders {
+		if _, ok := found[stakeholder]; !ok {
+			return fmt.Errorf("stakeholder not found: %s", stakeholder)
+		}
+	}
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			fmt.Printf("failed to rollback: %v\n", err)
+		}
+	}()
+
+	res, err := tx.ExecContext(ctx, `
+		UPDATE tickets SET title = ?, description = ?, status = ?, assignee = ?, due = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+	`, params.Title, params.Description, params.Status, params.Assignee, params.Due, ticketID)
+	if err != nil {
+		return fmt.Errorf("failed to update ticket: %w", err)
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return ErrTicketNotFound
+	}
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM ticket_sub_assignees WHERE ticket_id = ?`, ticketID); err != nil {
+		return fmt.Errorf("failed to delete sub_assignees: %w", err)
+	}
+	for _, subAssignee := range params.SubAssignees {
+		// TODO: 遅いのでまとめてINSERT
+		_, err = tx.ExecContext(ctx, `INSERT INTO ticket_sub_assignees (ticket_id, sub_assignee) VALUES (?, ?)`, ticketID, subAssignee)
+		if err != nil {
+			return fmt.Errorf("failed to insert sub_assignee: %w", err)
+		}
+	}
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM ticket_stakeholders WHERE ticket_id = ?`, ticketID); err != nil {
+		return fmt.Errorf("failed to delete stakeholders: %w", err)
+	}
+	for _, stakeholder := range params.Stakeholders {
+		_, err = tx.ExecContext(ctx, `INSERT INTO ticket_stakeholders (ticket_id, stakeholder) VALUES (?, ?)`, ticketID, stakeholder)
+		if err != nil {
+			return fmt.Errorf("failed to insert stakeholder: %w", err)
+		}
+	}
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM ticket_tags WHERE ticket_id = ?`, ticketID); err != nil {
+		return fmt.Errorf("failed to delete tags: %w", err)
+	}
+	for _, tag := range params.Tags {
+		_, err = tx.ExecContext(ctx, `INSERT INTO ticket_tags (ticket_id, tag) VALUES (?, ?)`, ticketID, tag)
+		if err != nil {
+			return fmt.Errorf("failed to insert tag: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Repository) DeleteTicket(ctx context.Context, ticketID int64) error {
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE tickets SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?
+	`, ticketID)
+	if err != nil {
+		return fmt.Errorf("failed to delete ticket: %w", err)
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return ErrTicketNotFound
+	}
+	
+	return nil
+}
