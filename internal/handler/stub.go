@@ -21,10 +21,6 @@ func (h *Handler) ConfigPost(_ context.Context, _ *api.ConfigPostReq) (api.Confi
 }
 
 // --- Tickets ---
-// TicketsGet implements GET /tickets operation.
-func (h *Handler) TicketsGet(_ context.Context, _ api.TicketsGetParams) (api.TicketsGetRes, error) {
-	return nil, fmt.Errorf("not implemented")
-}
 
 // TicketsTicketIdDelete implements DELETE /tickets/{ticketId} operation.
 func (h *Handler) TicketsTicketIdDelete(_ context.Context, _ api.TicketsTicketIdDeleteParams) (api.TicketsTicketIdDeleteRes, error) {
