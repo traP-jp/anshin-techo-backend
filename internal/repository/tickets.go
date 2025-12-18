@@ -192,6 +192,9 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 func (r *Repository) GetTicketByID(ctx context.Context, ticketID int64) (*Ticket, error) {
 	ticket := new(Ticket)
 	if err := r.db.GetContext(ctx, ticket, "SELECT * FROM tickets WHERE id = ? AND deleted_at IS NULL", ticketID); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrTicketNotFound
+		}
 		return nil, fmt.Errorf("failed to select ticket: %w", err)
 	}
 	subAssignees := []string{}
@@ -222,11 +225,18 @@ func (r *Repository) UpdateTicket(ctx context.Context, ticketID int64, params Cr
 	}
 	defer tx.Rollback()
 
-	_, err = tx.ExecContext(ctx, `
+	res, err := tx.ExecContext(ctx, `
 		UPDATE tickets SET title = ?, description = ?, status = ?, assignee = ?, due = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
 	`, params.Title, params.Description, params.Status, params.Assignee, params.Due, ticketID)
 	if err != nil {
 		return fmt.Errorf("failed to update ticket: %w", err)
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return ErrTicketNotFound
 	}
 
 	if _, err := tx.ExecContext(ctx, `DELETE FROM ticket_sub_assignees WHERE ticket_id = ?`, ticketID); err != nil {
@@ -267,11 +277,18 @@ func (r *Repository) UpdateTicket(ctx context.Context, ticketID int64, params Cr
 }
 
 func (r *Repository) DeleteTicket(ctx context.Context, ticketID int64) error {
-	if err := r.db.QueryRowContext(ctx, `
+	res, err := r.db.ExecContext(ctx, `
 		UPDATE tickets SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?
-	`, ticketID).Err(); err != nil {
+	`, ticketID)
+	if err != nil {
 		return fmt.Errorf("failed to delete ticket: %w", err)
 	}
-
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return ErrTicketNotFound
+	}
 	return nil
 }
