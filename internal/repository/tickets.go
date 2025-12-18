@@ -35,9 +35,11 @@ type (
 	}
 )
 
+var ErrTicketNotFound = fmt.Errorf("ticket not found")
+
 func (r *Repository) GetTickets(ctx context.Context) ([]*Ticket, error) {
 	tickets := []*Ticket{}
-	if err := r.db.SelectContext(ctx, &tickets, "SELECT * FROM tickets"); err != nil {
+	if err := r.db.SelectContext(ctx, &tickets, "SELECT * FROM tickets WHERE deleted_at IS NULL"); err != nil {
 		return nil, fmt.Errorf("failed to select tickets: %w", err)
 	}
 	ticketsMap := make(map[int64]*Ticket)
@@ -189,7 +191,7 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 
 func (r *Repository) GetTicketByID(ctx context.Context, ticketID int64) (*Ticket, error) {
 	ticket := new(Ticket)
-	if err := r.db.GetContext(ctx, ticket, "SELECT * FROM tickets WHERE id = ?", ticketID); err != nil {
+	if err := r.db.GetContext(ctx, ticket, "SELECT * FROM tickets WHERE id = ? AND deleted_at IS NULL", ticketID); err != nil {
 		return nil, fmt.Errorf("failed to select ticket: %w", err)
 	}
 	subAssignees := []string{}

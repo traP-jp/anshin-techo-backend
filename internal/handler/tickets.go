@@ -67,9 +67,6 @@ func (h *Handler) TicketsGet(ctx context.Context, params api.TicketsGetParams) (
 
 	res := make([]api.Ticket, 0, len(tickets))
 	for _, ticket := range tickets {
-		if ticket.DeletedAt.Valid {
-			continue
-		}
 
 		res = append(res, api.Ticket{
 			ID: ticket.ID,
@@ -113,10 +110,10 @@ func (h *Handler) TicketsTicketIdGet(ctx context.Context, params api.TicketsTick
 	id := params.TicketId
 	ticket, err := h.repo.GetTicketByID(ctx, id)
 	if err != nil {
+		if err == repository.ErrTicketNotFound {
+			return &api.TicketsTicketIdGetNotFound{}, nil
+		}
 		return nil, fmt.Errorf("get ticket from repository: %w", err)
-	}
-	if ticket.DeletedAt.Valid {
-		return &api.TicketsTicketIdGetNotFound{}, nil
 	}
 	res := &api.TicketsTicketIdGetOK{
 		ID:           ticket.ID,
@@ -144,9 +141,6 @@ func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTi
 	ticket, err := h.repo.GetTicketByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("get ticket from repository: %w", err)
-	}
-	if ticket.DeletedAt.Valid {
-		return nil, fmt.Errorf("ticket not found")
 	}
 	
 	title := ticket.Title
