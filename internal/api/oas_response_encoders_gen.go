@@ -3,18 +3,17 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
+	"github.com/ogen-go/ogen/validate"
 )
 
-func encodeConfigGetResponse(response *ConfigGetOK, w http.ResponseWriter, span trace.Span) error {
+func encodeConfigGetResponse(response *ConfigGetOK, w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
-	span.SetStatus(codes.Ok, http.StatusText(200))
 
 	e := new(jx.Encoder)
 	response.Encode(e)
@@ -25,17 +24,15 @@ func encodeConfigGetResponse(response *ConfigGetOK, w http.ResponseWriter, span 
 	return nil
 }
 
-func encodeConfigPostResponse(response ConfigPostRes, w http.ResponseWriter, span trace.Span) error {
+func encodeConfigPostResponse(response ConfigPostRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
 	case *ConfigPostOK:
 		w.WriteHeader(200)
-		span.SetStatus(codes.Ok, http.StatusText(200))
 
 		return nil
 
 	case *ConfigPostForbidden:
 		w.WriteHeader(403)
-		span.SetStatus(codes.Error, http.StatusText(403))
 
 		return nil
 
@@ -44,12 +41,19 @@ func encodeConfigPostResponse(response ConfigPostRes, w http.ResponseWriter, spa
 	}
 }
 
-func encodeTicketsGetResponse(response TicketsGetRes, w http.ResponseWriter, span trace.Span) error {
+func encodeTicketsGetResponse(response TicketsGetRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
 	case *TicketsGetOKApplicationJSON:
+		if err := func() error {
+			if err := response.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrap(err, "validate")
+		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
-		span.SetStatus(codes.Ok, http.StatusText(200))
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -61,7 +65,6 @@ func encodeTicketsGetResponse(response TicketsGetRes, w http.ResponseWriter, spa
 
 	case *TicketsGetUnauthorized:
 		w.WriteHeader(401)
-		span.SetStatus(codes.Error, http.StatusText(401))
 
 		return nil
 
@@ -70,12 +73,19 @@ func encodeTicketsGetResponse(response TicketsGetRes, w http.ResponseWriter, spa
 	}
 }
 
-func encodeTicketsPostResponse(response TicketsPostRes, w http.ResponseWriter, span trace.Span) error {
+func encodeTicketsPostResponse(response TicketsPostRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
 	case *Ticket:
+		if err := func() error {
+			if err := response.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrap(err, "validate")
+		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(201)
-		span.SetStatus(codes.Ok, http.StatusText(201))
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -87,7 +97,6 @@ func encodeTicketsPostResponse(response TicketsPostRes, w http.ResponseWriter, s
 
 	case *TicketsPostUnauthorized:
 		w.WriteHeader(401)
-		span.SetStatus(codes.Error, http.StatusText(401))
 
 		return nil
 
@@ -96,17 +105,15 @@ func encodeTicketsPostResponse(response TicketsPostRes, w http.ResponseWriter, s
 	}
 }
 
-func encodeTicketsTicketIdDeleteResponse(response TicketsTicketIdDeleteRes, w http.ResponseWriter, span trace.Span) error {
+func encodeTicketsTicketIdDeleteResponse(response TicketsTicketIdDeleteRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
 	case *TicketsTicketIdDeleteNoContent:
 		w.WriteHeader(204)
-		span.SetStatus(codes.Ok, http.StatusText(204))
 
 		return nil
 
 	case *TicketsTicketIdDeleteForbidden:
 		w.WriteHeader(403)
-		span.SetStatus(codes.Error, http.StatusText(403))
 
 		return nil
 
@@ -115,12 +122,19 @@ func encodeTicketsTicketIdDeleteResponse(response TicketsTicketIdDeleteRes, w ht
 	}
 }
 
-func encodeTicketsTicketIdGetResponse(response TicketsTicketIdGetRes, w http.ResponseWriter, span trace.Span) error {
+func encodeTicketsTicketIdGetResponse(response TicketsTicketIdGetRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
 	case *TicketsTicketIdGetOK:
+		if err := func() error {
+			if err := response.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrap(err, "validate")
+		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
-		span.SetStatus(codes.Ok, http.StatusText(200))
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -132,7 +146,6 @@ func encodeTicketsTicketIdGetResponse(response TicketsTicketIdGetRes, w http.Res
 
 	case *TicketsTicketIdGetNotFound:
 		w.WriteHeader(404)
-		span.SetStatus(codes.Error, http.StatusText(404))
 
 		return nil
 
@@ -141,24 +154,21 @@ func encodeTicketsTicketIdGetResponse(response TicketsTicketIdGetRes, w http.Res
 	}
 }
 
-func encodeTicketsTicketIdNotesNoteIdDeleteResponse(response *TicketsTicketIdNotesNoteIdDeleteNoContent, w http.ResponseWriter, span trace.Span) error {
+func encodeTicketsTicketIdNotesNoteIdDeleteResponse(response *TicketsTicketIdNotesNoteIdDeleteNoContent, w http.ResponseWriter) error {
 	w.WriteHeader(204)
-	span.SetStatus(codes.Ok, http.StatusText(204))
 
 	return nil
 }
 
-func encodeTicketsTicketIdNotesNoteIdPutResponse(response TicketsTicketIdNotesNoteIdPutRes, w http.ResponseWriter, span trace.Span) error {
+func encodeTicketsTicketIdNotesNoteIdPutResponse(response TicketsTicketIdNotesNoteIdPutRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
 	case *TicketsTicketIdNotesNoteIdPutOK:
 		w.WriteHeader(200)
-		span.SetStatus(codes.Ok, http.StatusText(200))
 
 		return nil
 
 	case *TicketsTicketIdNotesNoteIdPutForbidden:
 		w.WriteHeader(403)
-		span.SetStatus(codes.Error, http.StatusText(403))
 
 		return nil
 
@@ -167,10 +177,17 @@ func encodeTicketsTicketIdNotesNoteIdPutResponse(response TicketsTicketIdNotesNo
 	}
 }
 
-func encodeTicketsTicketIdNotesNoteIdReviewsPostResponse(response *Review, w http.ResponseWriter, span trace.Span) error {
+func encodeTicketsTicketIdNotesNoteIdReviewsPostResponse(response *Review, w http.ResponseWriter) error {
+	if err := func() error {
+		if err := response.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "validate")
+	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(201)
-	span.SetStatus(codes.Ok, http.StatusText(201))
 
 	e := new(jx.Encoder)
 	response.Encode(e)
@@ -181,24 +198,29 @@ func encodeTicketsTicketIdNotesNoteIdReviewsPostResponse(response *Review, w htt
 	return nil
 }
 
-func encodeTicketsTicketIdNotesNoteIdReviewsReviewIdDeleteResponse(response *TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteNoContent, w http.ResponseWriter, span trace.Span) error {
+func encodeTicketsTicketIdNotesNoteIdReviewsReviewIdDeleteResponse(response *TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteNoContent, w http.ResponseWriter) error {
 	w.WriteHeader(204)
-	span.SetStatus(codes.Ok, http.StatusText(204))
 
 	return nil
 }
 
-func encodeTicketsTicketIdNotesNoteIdReviewsReviewIdPutResponse(response *TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK, w http.ResponseWriter, span trace.Span) error {
+func encodeTicketsTicketIdNotesNoteIdReviewsReviewIdPutResponse(response *TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK, w http.ResponseWriter) error {
 	w.WriteHeader(200)
-	span.SetStatus(codes.Ok, http.StatusText(200))
 
 	return nil
 }
 
-func encodeTicketsTicketIdNotesPostResponse(response *Note, w http.ResponseWriter, span trace.Span) error {
+func encodeTicketsTicketIdNotesPostResponse(response *Note, w http.ResponseWriter) error {
+	if err := func() error {
+		if err := response.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "validate")
+	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(201)
-	span.SetStatus(codes.Ok, http.StatusText(201))
 
 	e := new(jx.Encoder)
 	response.Encode(e)
@@ -209,17 +231,15 @@ func encodeTicketsTicketIdNotesPostResponse(response *Note, w http.ResponseWrite
 	return nil
 }
 
-func encodeTicketsTicketIdPatchResponse(response TicketsTicketIdPatchRes, w http.ResponseWriter, span trace.Span) error {
+func encodeTicketsTicketIdPatchResponse(response TicketsTicketIdPatchRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
 	case *TicketsTicketIdPatchOK:
 		w.WriteHeader(200)
-		span.SetStatus(codes.Ok, http.StatusText(200))
 
 		return nil
 
 	case *TicketsTicketIdPatchForbidden:
 		w.WriteHeader(403)
-		span.SetStatus(codes.Error, http.StatusText(403))
 
 		return nil
 
@@ -228,10 +248,34 @@ func encodeTicketsTicketIdPatchResponse(response TicketsTicketIdPatchRes, w http
 	}
 }
 
-func encodeUsersGetResponse(response []User, w http.ResponseWriter, span trace.Span) error {
+func encodeUsersGetResponse(response []User, w http.ResponseWriter) error {
+	if err := func() error {
+		if response == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range response {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "validate")
+	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
-	span.SetStatus(codes.Ok, http.StatusText(200))
 
 	e := new(jx.Encoder)
 	e.ArrStart()
@@ -246,17 +290,15 @@ func encodeUsersGetResponse(response []User, w http.ResponseWriter, span trace.S
 	return nil
 }
 
-func encodeUsersPutResponse(response UsersPutRes, w http.ResponseWriter, span trace.Span) error {
+func encodeUsersPutResponse(response UsersPutRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
 	case *UsersPutOK:
 		w.WriteHeader(200)
-		span.SetStatus(codes.Ok, http.StatusText(200))
 
 		return nil
 
 	case *UsersPutForbidden:
 		w.WriteHeader(403)
-		span.SetStatus(codes.Error, http.StatusText(403))
 
 		return nil
 

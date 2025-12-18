@@ -31,6 +31,7 @@ func (c Config) MySQLConfig() *mysql.Config {
 	mc.DBName = c.DBName
 	mc.Collation = "utf8mb4_general_ci"
 	mc.AllowNativePasswords = true
+	mc.ParseTime = true
 
 	return mc
 }
