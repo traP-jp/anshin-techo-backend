@@ -45,6 +45,7 @@ func (h *Handler) TicketsPost(ctx context.Context, req *api.TicketsPostReq) (api
 		if errors.Is(err, repository.ErrUserNotFound) {
 			return &api.TicketsPostBadRequest{}, nil
 		}
+
 		return nil, fmt.Errorf("create ticket in repository: %w", err)
 	}
 	ticket, err := h.repo.GetTicketByID(ctx, ticketID)
@@ -89,6 +90,7 @@ func (h *Handler) TicketsGet(ctx context.Context, params api.TicketsGetParams) (
 		if errors.Is(err, repository.ErrInvalidSort){
 			return &api.TicketsGetBadRequest{}, nil
 		}
+
 		return nil, fmt.Errorf("get tickets from repository: %w", err)
 	}
 
@@ -253,6 +255,7 @@ func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTi
 		if errors.Is(err, repository.ErrUserNotFound) {
 			return &api.TicketsTicketIdPatchBadRequest{}, nil
 		}
+		
 		return nil, fmt.Errorf("update ticket in repository: %w", err)
 	}
 	
