@@ -62,6 +62,16 @@ func validateTicketSort(sort string) bool {
 	}
 }
 
+func validateTags (tags []string) bool {
+	for _, tag := range tags {
+		if strings.Contains(tag, ",") {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (r *Repository) ensureUsersExist(ctx context.Context, traqIDs []string) error {
 	if len(traqIDs) == 0{
 		return nil
@@ -183,6 +193,9 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 	if !validateStatus(params.Status) {
 		return 0, fmt.Errorf("invalid status: %s", params.Status)
 	}
+	if !validateTags(params.Tags) {
+		return 0, fmt.Errorf("invalid tags: tags must not contain commas")
+	}
 
 	if err := r.ensureUsersExist(ctx, append(append([]string{params.Assignee}, params.SubAssignees...), params.Stakeholders...)); err != nil {
 		return 0, err
@@ -291,6 +304,10 @@ func (r *Repository) GetTicketByID(ctx context.Context, ticketID int64) (*Ticket
 func (r *Repository) UpdateTicket(ctx context.Context, ticketID int64, params CreateTicketParams) error {
 	if !validateStatus(params.Status) {
 		return fmt.Errorf("invalid status: %s", params.Status)
+	}
+
+	if !validateTags(params.Tags) {
+		return fmt.Errorf("invalid tags: tags must not contain commas")
 	}
 
 	if err := r.ensureUsersExist(ctx, append(append([]string{params.Assignee}, params.SubAssignees...), params.Stakeholders...)); err != nil {
