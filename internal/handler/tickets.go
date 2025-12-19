@@ -60,21 +60,19 @@ func (h *Handler) TicketsPost(ctx context.Context, req *api.TicketsPostReq) (api
 
 // GET /tickets
 func (h *Handler) TicketsGet(ctx context.Context, params api.TicketsGetParams) (api.TicketsGetRes, error) {
-	repoParams := repository.GetTicketsParams{}
+	repoParams := repository.GetTicketsParams{
+		Assignee: "",
+		Status:   "",
+		Sort:     "",
+	}
 	if params.Assignee.Set {
 		repoParams.Assignee = params.Assignee.Value
-	} else {
-		repoParams.Assignee = ""
 	}
 	if params.Status.Set {
 		repoParams.Status = string(params.Status.Value)
-	} else {
-		repoParams.Status = ""
 	}
 	if params.Sort.Set {
 		repoParams.Sort = string(params.Sort.Value)
-	} else {
-		repoParams.Sort = ""
 	}
 	tickets, err := h.repo.GetTickets(ctx, repoParams)
 	if err != nil {
