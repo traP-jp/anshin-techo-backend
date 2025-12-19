@@ -135,7 +135,7 @@ func (r *Repository) GetTickets(ctx context.Context, params GetTicketsParams) ([
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("failed to iterate tickets: %w", err)
 	}
-	
+
 	return tickets, nil
 }
 
@@ -209,30 +209,45 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 		return 0, fmt.Errorf("failed to get last insert id: %w", err)
 	}
 
-	for _, subAssignee := range params.SubAssignees {
-		_, err = tx.ExecContext(ctx, `
-			INSERT INTO ticket_sub_assignees (ticket_id, sub_assignee) VALUES (?, ?)
-		`, ticketID, subAssignee)
+	if len(params.SubAssignees) > 0 {
+		values := make([]string, 0, len(params.SubAssignees))
+		args := make([]interface{}, 0, len(params.SubAssignees)*2)
+		for _, subAssignee := range params.SubAssignees {
+			values = append(values, "(?, ?)")
+			args = append(args, ticketID, subAssignee)
+		}
+		query := fmt.Sprintf("INSERT INTO ticket_sub_assignees (ticket_id, sub_assignee) VALUES %s", strings.Join(values, ","))
+		_, err = tx.ExecContext(ctx, query, args...)
 		if err != nil {
-			return 0, fmt.Errorf("failed to insert sub-assignee: %w", err)
+			return 0, fmt.Errorf("failed to insert sub_assignees: %w", err)
 		}
 	}
 
-	for _, stakeholder := range params.Stakeholders {
-		_, err = tx.ExecContext(ctx, `
-			INSERT INTO ticket_stakeholders (ticket_id, stakeholder) VALUES (?, ?)
-		`, ticketID, stakeholder)
+	if len(params.Stakeholders) > 0 {
+		values := make([]string, 0, len(params.Stakeholders))
+		args := make([]interface{}, 0, len(params.Stakeholders)*2)
+		for _, stakeholder := range params.Stakeholders {
+			values = append(values, "(?, ?)")
+			args = append(args, ticketID, stakeholder)
+		}
+		query := fmt.Sprintf("INSERT INTO ticket_stakeholders (ticket_id, stakeholder) VALUES %s", strings.Join(values, ","))
+		_, err = tx.ExecContext(ctx, query, args...)
 		if err != nil {
-			return 0, fmt.Errorf("failed to insert stakeholder: %w", err)
+			return 0, fmt.Errorf("failed to insert stakeholders: %w", err)
 		}
 	}
 
-	for _, tag := range params.Tags {
-		_, err = tx.ExecContext(ctx, `
-			INSERT INTO ticket_tags (ticket_id, tag) VALUES (?, ?)
-		`, ticketID, tag)
+	if len(params.Tags) > 0 {
+		values := make([]string, 0, len(params.Tags))
+		args := make([]interface{}, 0, len(params.Tags)*2)
+		for _, tag := range params.Tags {
+			values = append(values, "(?, ?)")
+			args = append(args, ticketID, tag)
+		}
+		query := fmt.Sprintf("INSERT INTO ticket_tags (ticket_id, tag) VALUES %s", strings.Join(values, ","))
+		_, err = tx.ExecContext(ctx, query, args...)
 		if err != nil {
-			return 0, fmt.Errorf("failed to insert tag: %w", err)
+			return 0, fmt.Errorf("failed to insert tags: %w", err)
 		}
 	}
 
@@ -352,31 +367,51 @@ func (r *Repository) UpdateTicket(ctx context.Context, ticketID int64, params Cr
 	if _, err := tx.ExecContext(ctx, `DELETE FROM ticket_sub_assignees WHERE ticket_id = ?`, ticketID); err != nil {
 		return fmt.Errorf("failed to delete sub_assignees: %w", err)
 	}
-	for _, subAssignee := range params.SubAssignees {
-		// TODO: 遅いのでまとめてINSERT
-		_, err = tx.ExecContext(ctx, `INSERT INTO ticket_sub_assignees (ticket_id, sub_assignee) VALUES (?, ?)`, ticketID, subAssignee)
+	if len(params.SubAssignees) > 0 {
+		values := make([]string, 0, len(params.SubAssignees))
+		args := make([]interface{}, 0, len(params.SubAssignees)*2)
+		for _, subAssignee := range params.SubAssignees {
+			values = append(values, "(?, ?)")
+			args = append(args, ticketID, subAssignee)
+		}
+		query := fmt.Sprintf("INSERT INTO ticket_sub_assignees (ticket_id, sub_assignee) VALUES %s", strings.Join(values, ","))
+		_, err = tx.ExecContext(ctx, query, args...)
 		if err != nil {
-			return fmt.Errorf("failed to insert sub_assignee: %w", err)
+			return fmt.Errorf("failed to insert sub_assignees: %w", err)
 		}
 	}
 
 	if _, err := tx.ExecContext(ctx, `DELETE FROM ticket_stakeholders WHERE ticket_id = ?`, ticketID); err != nil {
 		return fmt.Errorf("failed to delete stakeholders: %w", err)
 	}
-	for _, stakeholder := range params.Stakeholders {
-		_, err = tx.ExecContext(ctx, `INSERT INTO ticket_stakeholders (ticket_id, stakeholder) VALUES (?, ?)`, ticketID, stakeholder)
+	if len(params.Stakeholders) > 0 {
+		values := make([]string, 0, len(params.Stakeholders))
+		args := make([]interface{}, 0, len(params.Stakeholders)*2)
+		for _, stakeholder := range params.Stakeholders {
+			values = append(values, "(?, ?)")
+			args = append(args, ticketID, stakeholder)
+		}
+		query := fmt.Sprintf("INSERT INTO ticket_stakeholders (ticket_id, stakeholder) VALUES %s", strings.Join(values, ","))
+		_, err = tx.ExecContext(ctx, query, args...)
 		if err != nil {
-			return fmt.Errorf("failed to insert stakeholder: %w", err)
+			return fmt.Errorf("failed to insert stakeholders: %w", err)
 		}
 	}
 
 	if _, err := tx.ExecContext(ctx, `DELETE FROM ticket_tags WHERE ticket_id = ?`, ticketID); err != nil {
 		return fmt.Errorf("failed to delete tags: %w", err)
 	}
-	for _, tag := range params.Tags {
-		_, err = tx.ExecContext(ctx, `INSERT INTO ticket_tags (ticket_id, tag) VALUES (?, ?)`, ticketID, tag)
+	if len(params.Tags) > 0 {
+		values := make([]string, 0, len(params.Tags))
+		args := make([]interface{}, 0, len(params.Tags)*2)
+		for _, tag := range params.Tags {
+			values = append(values, "(?, ?)")
+			args = append(args, ticketID, tag)
+		}
+		query := fmt.Sprintf("INSERT INTO ticket_tags (ticket_id, tag) VALUES %s", strings.Join(values, ","))
+		_, err = tx.ExecContext(ctx, query, args...)
 		if err != nil {
-			return fmt.Errorf("failed to insert tag: %w", err)
+			return fmt.Errorf("failed to insert tags: %w", err)
 		}
 	}
 
