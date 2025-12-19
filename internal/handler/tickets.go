@@ -59,9 +59,24 @@ func (h *Handler) TicketsPost(ctx context.Context, req *api.TicketsPostReq) (api
 }
 
 // GET /tickets
-func (h *Handler) TicketsGet(ctx context.Context, _ api.TicketsGetParams) (api.TicketsGetRes, error) {
-	// TODO: 絞り込みはまだ実装していない
-	tickets, err := h.repo.GetTickets(ctx)
+func (h *Handler) TicketsGet(ctx context.Context, params api.TicketsGetParams) (api.TicketsGetRes, error) {
+	repoParams := repository.GetTicketsParams{}
+	if params.Assignee.Set {
+		repoParams.Assignee = params.Assignee.Value
+	} else {
+		repoParams.Assignee = ""
+	}
+	if params.Status.Set {
+		repoParams.Status = string(params.Status.Value)
+	} else {
+		repoParams.Status = ""
+	}
+	if params.Sort.Set {
+		repoParams.Sort = string(params.Sort.Value)
+	} else {
+		repoParams.Sort = ""
+	}
+	tickets, err := h.repo.GetTickets(ctx, repoParams)
 	if err != nil {
 		return nil, fmt.Errorf("get tickets from repository: %w", err)
 	}

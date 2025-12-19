@@ -34,6 +34,12 @@ type (
 		Due          sql.NullTime
 		Tags         []string
 	}
+
+	GetTicketsParams struct {
+		Assignee string
+		Status   string
+		Sort 	   string
+	}
 )
 
 var ErrTicketNotFound = fmt.Errorf("ticket not found")
@@ -47,62 +53,88 @@ func validateStatus(status string) bool {
 	}
 }
 
-func (r *Repository) GetTickets(ctx context.Context) ([]*Ticket, error) {
-	// TODO: N+1問題を解消する
-	tickets := []*Ticket{}
-	if err := r.db.SelectContext(ctx, &tickets, "SELECT * FROM tickets WHERE deleted_at IS NULL"); err != nil {
-		return nil, fmt.Errorf("failed to select tickets: %w", err)
+func validateTicketSort(sort string) bool {
+	switch sort {
+		case "due_asc", "due_desc", "created_desc":
+			return true
+		default:
+			return false
 	}
-	ticketsMap := make(map[int64]*Ticket)
-	for _, ticket := range tickets {
-		ticketsMap[ticket.ID] = ticket
-	}
+}
 
-	subAssignees := []struct {
-		TicketID    int64  `db:"ticket_id"`
-		SubAssignee string `db:"sub_assignee"`
-	}{}
-	if err := r.db.SelectContext(ctx, &subAssignees, `
-		SELECT * FROM ticket_sub_assignees
-	`); err != nil {
-		return nil, fmt.Errorf("failed to select ticket_sub_assignees: %w", err)
+func (r *Repository) GetTickets(ctx context.Context, params GetTicketsParams) ([]*Ticket, error) {
+	query := `
+		SELECT
+			t.id, t.title, t.status, t.assignee, t.due, t.description, t.created_at, t.updated_at, t.deleted_at,
+			GROUP_CONCAT(DISTINCT tsa.sub_assignee) AS sub_assignees,
+			GROUP_CONCAT(DISTINCT ts.stakeholder) AS stakeholders,
+			GROUP_CONCAT(DISTINCT tt.tag) AS tags
+		FROM tickets t
+		LEFT JOIN ticket_sub_assignees tsa ON t.id = tsa.ticket_id
+		LEFT JOIN ticket_stakeholders ts ON t.id = ts.ticket_id
+		LEFT JOIN ticket_tags tt ON t.id = tt.ticket_id
+		WHERE t.deleted_at IS NULL`
+
+	args := []interface{}{}
+	if params.Assignee != "" {
+		query += " AND t.assignee = ?"
+		args = append(args, params.Assignee)
 	}
-	for _, subAssignee := range subAssignees {
-		if ticket, ok := ticketsMap[subAssignee.TicketID]; ok {
-			ticket.SubAssignees = append(ticket.SubAssignees, subAssignee.SubAssignee)
+	if params.Status != "" {
+		query += " AND t.status = ?"
+		args = append(args, params.Status)
+	}
+	query += " GROUP BY t.id"
+	if validateTicketSort(params.Sort) {
+		switch params.Sort {
+		case "due_asc":
+			query += " ORDER BY t.due ASC"
+		case "due_desc":
+			query += " ORDER BY t.due DESC"
+		case "created_desc":
+			query += " ORDER BY t.created_at DESC"
 		}
+	} else {
+		query += " ORDER BY t.created_at DESC"
 	}
 
-	stakeholders := []struct {
-		TicketID    int64  `db:"ticket_id"`
-		Stakeholder string `db:"stakeholder"`
-	}{}
-	if err := r.db.SelectContext(ctx, &stakeholders, `
-		SELECT * FROM ticket_stakeholders
-	`); err != nil {
-		return nil, fmt.Errorf("failed to select ticket_stakeholders: %w", err)
+	rows, err := r.db.QueryxContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tickets: %w", err)
 	}
-	for _, stakeholder := range stakeholders {
-		if ticket, ok := ticketsMap[stakeholder.TicketID]; ok {
-			ticket.Stakeholders = append(ticket.Stakeholders, stakeholder.Stakeholder)
+	defer rows.Close()
+
+	var tickets []*Ticket
+	for rows.Next() {
+		var t Ticket
+		var subAssignees, stakeholders, tags sql.NullString
+		err := rows.Scan(
+			&t.ID, &t.Title, &t.Status, &t.Assignee, &t.Due, &t.Description, &t.CreatedAt, &t.UpdatedAt, &t.DeletedAt,
+			&subAssignees, &stakeholders, &tags,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan ticket: %w", err)
 		}
-	}
-
-	tags := []struct {
-		TicketID int64  `db:"ticket_id"`
-		Tag      string `db:"tag"`
-	}{}
-	if err := r.db.SelectContext(ctx, &tags, `
-		SELECT * FROM ticket_tags
-	`); err != nil {
-		return nil, fmt.Errorf("failed to select ticket_tags: %w", err)
-	}
-	for _, tag := range tags {
-		if ticket, ok := ticketsMap[tag.TicketID]; ok {
-			ticket.Tags = append(ticket.Tags, tag.Tag)
+		if subAssignees.Valid && subAssignees.String != "" {
+			t.SubAssignees = strings.Split(subAssignees.String, ",")
+		} else {
+			t.SubAssignees = []string{}
 		}
+		if stakeholders.Valid && stakeholders.String != "" {
+			t.Stakeholders = strings.Split(stakeholders.String, ",")
+		} else {
+			t.Stakeholders = []string{}
+		}
+		if tags.Valid && tags.String != "" {
+			t.Tags = strings.Split(tags.String, ",")
+		} else {
+			t.Tags = []string{}
+		}
+		tickets = append(tickets, &t)
 	}
-
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate tickets: %w", err)
+	}
 	return tickets, nil
 }
 
