@@ -62,6 +62,46 @@ func validateTicketSort(sort string) bool {
 	}
 }
 
+func (r *Repository) ensureUsersExist(ctx context.Context, traqIDs []string) error {
+	if len(traqIDs) == 0{
+		return nil
+	}
+	uniqueTraqIDs := make(map[string]struct{})
+	for _, traqID := range traqIDs {
+		uniqueTraqIDs[traqID] = struct{}{}
+	}
+	values := make([]interface{}, 0, len(uniqueTraqIDs))
+	args := make([]string, 0, len(uniqueTraqIDs))
+	for id := range uniqueTraqIDs {
+		values = append(values, id)
+		args = append(args, "?")
+	}
+	query := fmt.Sprintf("SELECT traq_id FROM users WHERE traq_id IN (%s)", strings.Join(args, ","))
+	rows, err := r.db.QueryContext(ctx, query, values...)
+	if err != nil {
+		return fmt.Errorf("query users: %w", err)
+	}
+	defer rows.Close()
+	found := map[string]struct{}{}
+	for rows.Next() {
+		var traqID string
+		if err := rows.Scan(&traqID); err != nil {
+			return fmt.Errorf("failed to scan user: %w", err)
+		}
+		found[traqID] = struct{}{}
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("failed to iterate users: %w", err)
+	}
+	for _, traqID := range args {
+		if _, ok := found[traqID]; !ok {
+			return fmt.Errorf("user not found: %s", traqID)
+		}
+	}
+
+	return nil
+}
+
 func (r *Repository) GetTickets(ctx context.Context, params GetTicketsParams) ([]*Ticket, error) {
 	query := `
 		SELECT
@@ -144,48 +184,8 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 		return 0, fmt.Errorf("invalid status: %s", params.Status)
 	}
 
-	uniqueUserIDs := make(map[string]struct{})
-	uniqueUserIDs[params.Assignee] = struct{}{}
-	for _, subAssignee := range params.SubAssignees {
-		uniqueUserIDs[subAssignee] = struct{}{}
-	}
-	for _, stakeholder := range params.Stakeholders {
-		uniqueUserIDs[stakeholder] = struct{}{}
-	}
-
-	ids := make([]interface{}, 0, len(uniqueUserIDs))
-	for id := range uniqueUserIDs {
-		ids = append(ids, id)
-	}
-	
-	placeholders := make([]string, len(ids))
-	for i := range ids {
-		placeholders[i] = "?"
-	}
-	query := fmt.Sprintf("SELECT traq_id FROM users WHERE traq_id IN (%s)", strings.Join(placeholders, ","))
-	rows, err := r.db.QueryContext(ctx, query, ids...)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get users: %w", err)
-	}
-	defer rows.Close()
-	found := map[string]struct{}{}
-	for rows.Next() {
-		var traqID string
-		if err := rows.Scan(&traqID); err != nil {
-			return 0, fmt.Errorf("failed to scan user: %w", err)
-		}
-		found[traqID] = struct{}{}
-	}
-	if err := rows.Err(); err != nil {
-		return 0, fmt.Errorf("failed to iterate users: %w", err)
-	}
-	if _, ok := found[params.Assignee]; !ok {
-		return 0, fmt.Errorf("assignee not found: %s", params.Assignee)
-	}
-	for _, subAssignee := range params.SubAssignees {
-		if _, ok := found[subAssignee]; !ok {
-			return 0, fmt.Errorf("sub-assignee not found: %s", subAssignee)
-		}
+	if err := r.ensureUsersExist(ctx, append(append([]string{params.Assignee}, params.SubAssignees...), params.Stakeholders...)); err != nil {
+		return 0, err
 	}
 
 	tx, err := r.db.BeginTxx(ctx, nil)
@@ -293,53 +293,10 @@ func (r *Repository) UpdateTicket(ctx context.Context, ticketID int64, params Cr
 		return fmt.Errorf("invalid status: %s", params.Status)
 	}
 
-	uniqueUserIDs := make(map[string]struct{})
-	uniqueUserIDs[params.Assignee] = struct{}{}
-	for _, subAssignee := range params.SubAssignees {
-		uniqueUserIDs[subAssignee] = struct{}{}
+	if err := r.ensureUsersExist(ctx, append(append([]string{params.Assignee}, params.SubAssignees...), params.Stakeholders...)); err != nil {
+		return err
 	}
-	for _, stakeholder := range params.Stakeholders {
-		uniqueUserIDs[stakeholder] = struct{}{}
-	}
-
-	ids := make([]interface{}, 0, len(uniqueUserIDs))
-	for id := range uniqueUserIDs {
-		ids = append(ids, id)
-	}
-	placeholders := make([]string, len(ids))
-	for i := range ids {
-		placeholders[i] = "?"
-	}
-	query := fmt.Sprintf("SELECT traq_id FROM users WHERE traq_id IN (%s)", strings.Join(placeholders, ","))
-	rows, err := r.db.QueryContext(ctx, query, ids...)
-	if err != nil {
-		return fmt.Errorf("failed to get users: %w", err)
-	}
-	defer rows.Close()
-	found := map[string]struct{}{}
-	for rows.Next() {
-		var traqID string
-		if err := rows.Scan(&traqID); err != nil {
-			return fmt.Errorf("failed to scan user: %w", err)
-		}
-		found[traqID] = struct{}{}
-	}
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("failed to iterate users: %w", err)
-	}
-	if _, ok := found[params.Assignee]; !ok {
-		return fmt.Errorf("assignee not found: %s", params.Assignee)
-	}
-	for _, subAssignee := range params.SubAssignees {
-		if _, ok := found[subAssignee]; !ok {
-			return fmt.Errorf("sub-assignee not found: %s", subAssignee)
-		}
-	}
-	for _, stakeholder := range params.Stakeholders {
-		if _, ok := found[stakeholder]; !ok {
-			return fmt.Errorf("stakeholder not found: %s", stakeholder)
-		}
-	}
+	
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
