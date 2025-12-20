@@ -156,7 +156,7 @@ func (h *Handler) DeleteTicketByID(ctx context.Context, params api.DeleteTicketB
 	if role != "manager" {
 		return &api.DeleteTicketByIDForbidden{}, nil
 	}
-	
+
 	id := params.TicketId
 	if err := h.repo.DeleteTicket(ctx, id); err != nil {
 		if errors.Is(err, repository.ErrTicketNotFound) {
@@ -228,7 +228,7 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 		for _, authorized := range append(append(ticket.Stakeholders, ticket.SubAssignees...), ticket.Assignee) {
 			if authorized == updater {
 				ok = true
-				
+
 				break
 			}
 		}
