@@ -92,7 +92,7 @@ func (s *Server) handleConfigGetRequest(args [0]string, argsEscaped bool, w http
 
 	var rawBody []byte
 
-	var response *Config
+	var response ConfigGetRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -108,7 +108,7 @@ func (s *Server) handleConfigGetRequest(args [0]string, argsEscaped bool, w http
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *Config
+			Response = ConfigGetRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,

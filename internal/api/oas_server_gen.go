@@ -13,7 +13,7 @@ type Handler interface {
 	// 設定情報の取得.
 	//
 	// GET /config
-	ConfigGet(ctx context.Context) (*Config, error)
+	ConfigGet(ctx context.Context) (ConfigGetRes, error)
 	// ConfigPost implements POST /config operation.
 	//
 	// 本職権限のみ実行可能.

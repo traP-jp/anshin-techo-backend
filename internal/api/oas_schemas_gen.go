@@ -36,7 +36,13 @@ func (s *Config) SetRevisePrompt(val string) {
 	s.RevisePrompt = val
 }
 
+func (*Config) configGetRes()  {}
 func (*Config) configPostRes() {}
+
+// ConfigGetForbidden is response for ConfigGet operation.
+type ConfigGetForbidden struct{}
+
+func (*ConfigGetForbidden) configGetRes() {}
 
 // ConfigPostForbidden is response for ConfigPost operation.
 type ConfigPostForbidden struct{}

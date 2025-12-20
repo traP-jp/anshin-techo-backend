@@ -9,11 +9,9 @@ import (
 )
 
 func InjectServer(db *sqlx.DB) (*api.Server, error) {
-	// photo := photo_service.NewPhotoService()
 	repo := repository.New(db)
-	// h := handler.New(photo, repo)
 	h := handler.New(repo)
-	s, err := api.NewServer(h,h)
+	s, err := api.NewServer(h, h)
 	if err != nil {
 		return nil, err
 	}
