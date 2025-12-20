@@ -141,7 +141,7 @@ func (r *Repository) GetTickets(ctx context.Context, params GetTicketsParams) ([
 	}
 	if params.Status != "" {
 		if err := validateStatus(params.Status); err != nil {
-			return nil, ErrInvalidStatus
+			return nil, err
 		}
 		query += " AND t.status = ?"
 		args = append(args, params.Status)
