@@ -42,9 +42,6 @@ func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (a
 		if errors.Is(err, repository.ErrTagContainsComma) {
 			return &api.CreateTicketBadRequest{}, nil
 		}
-		if errors.Is(err, repository.ErrUserNotFound) {
-			return &api.CreateTicketBadRequest{}, nil
-		}
 
 		return nil, fmt.Errorf("create ticket in repository: %w", err)
 	}
@@ -65,7 +62,7 @@ func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (a
 		CreatedAt:    ticket.CreatedAt,
 		UpdatedAt:    api.OptDateTime{Value: ticket.UpdatedAt, Set: true},
 	}
-	
+
 	return res, nil
 }
 
@@ -87,9 +84,6 @@ func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (
 	}
 	tickets, err := h.repo.GetTickets(ctx, repoParams)
 	if err != nil {
-		if errors.Is(err, repository.ErrUserNotFound) {
-			return &api.GetTicketsBadRequest{}, nil
-		}
 		if errors.Is(err, repository.ErrInvalidStatus) {
 			return &api.GetTicketsBadRequest{}, nil
 		}
@@ -104,7 +98,7 @@ func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (
 	for _, ticket := range tickets {
 
 		res = append(res, api.Ticket{
-			ID: ticket.ID,
+			ID:    ticket.ID,
 			Title: ticket.Title,
 			Description: api.OptString{
 				Value: ticket.Description.String,
@@ -139,7 +133,7 @@ func (h *Handler) DeleteTicketByID(ctx context.Context, params api.DeleteTicketB
 		if errors.Is(err, repository.ErrTicketNotFound) {
 			return &api.DeleteTicketByIDNotFound{}, nil
 		}
-		
+
 		return nil, fmt.Errorf("delete ticket in repository: %w", err)
 	}
 	result := api.DeleteTicketByIDNoContent{}
@@ -188,10 +182,10 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 		if errors.Is(err, repository.ErrTicketNotFound) {
 			return &api.UpdateTicketByIDNotFound{}, nil
 		}
-		
+
 		return nil, fmt.Errorf("get ticket from repository: %w", err)
 	}
-	
+
 	title := ticket.Title
 	if req.Value.Title.Set {
 		title = req.Value.Title.Value
@@ -253,9 +247,6 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 			return &api.UpdateTicketByIDBadRequest{}, nil
 		}
 		if errors.Is(err, repository.ErrTagContainsComma) {
-			return &api.UpdateTicketByIDBadRequest{}, nil
-		}
-		if errors.Is(err, repository.ErrUserNotFound) {
 			return &api.UpdateTicketByIDBadRequest{}, nil
 		}
 		
