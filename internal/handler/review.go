@@ -56,8 +56,8 @@ func (h *Handler) CreateReview(ctx context.Context, req *api.CreateReviewReq, pa
 	return apiReview, nil
 }
 
-// TicketsTicketIdNotesNoteIdReviewsReviewIdDelete implements DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
-func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdDelete(ctx context.Context, params api.TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteParams) error {
+// DeleteReview implements DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
+func (h *Handler) DeleteReview(ctx context.Context, params api.DeleteReviewParams) error {
 	reviewer, ok := traqIDFromContext(ctx)
 	if !ok {
 		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
@@ -77,8 +77,8 @@ func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdDelete(ctx context.Co
 	return nil
 }
 
-// TicketsTicketIdNotesNoteIdReviewsReviewIdPut implements PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
-func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdPut(ctx context.Context, req api.OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq, params api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutParams) (api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutRes, error) {
+// UpdateReview implements PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
+func (h *Handler) UpdateReview(ctx context.Context, req api.OptUpdateReviewReq, params api.UpdateReviewParams) (api.UpdateReviewRes, error) {
 	reviewer, ok := traqIDFromContext(ctx)
 	if !ok {
 		return nil, echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
@@ -117,11 +117,11 @@ func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdPut(ctx context.Conte
 	if err != nil {
 		switch err {
 		case repository.ErrReviewNotFound:
-			return &api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutNotFound{}, nil
+			return &api.UpdateReviewNotFound{}, nil
 		case repository.ErrReviewForbidden:
-			return &api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutForbidden{}, nil
+			return &api.UpdateReviewForbidden{}, nil
 		case repository.ErrReviewerNotFound:
-			return &api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutNotFound{}, nil
+			return &api.UpdateReviewNotFound{}, nil
 		case repository.ErrInvalidReviewType, repository.ErrInvalidReviewWeight:
 			return nil, echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		default:
@@ -129,7 +129,7 @@ func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdPut(ctx context.Conte
 		}
 	}
 
-	return &api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK{}, nil
+	return &api.UpdateReviewOK{}, nil
 }
 func toRepositoryReviewType(t api.ReviewType) (string, error) {
 	switch t {

@@ -25,12 +25,12 @@ type TicketsTicketIdNotesNoteIdPutRes interface {
 	ticketsTicketIdNotesNoteIdPutRes()
 }
 
-type TicketsTicketIdNotesNoteIdReviewsReviewIdPutRes interface {
-	ticketsTicketIdNotesNoteIdReviewsReviewIdPutRes()
-}
-
 type TicketsTicketIdPatchRes interface {
 	ticketsTicketIdPatchRes()
+}
+
+type UpdateReviewRes interface {
+	updateReviewRes()
 }
 
 type UsersPutRes interface {

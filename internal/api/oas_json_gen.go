@@ -884,39 +884,6 @@ func (s *OptTicketStatus) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq as json.
-func (o OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) Encode(e *jx.Encoder) {
-	if !o.Set {
-		return
-	}
-	o.Value.Encode(e)
-}
-
-// Decode decodes TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq from json.
-func (o *OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) Decode(d *jx.Decoder) error {
-	if o == nil {
-		return errors.New("invalid: unable to decode OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq to nil")
-	}
-	o.Set = true
-	if err := o.Value.Decode(d); err != nil {
-		return err
-	}
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
 // Encode encodes TicketsTicketIdPatchReq as json.
 func (o OptTicketsTicketIdPatchReq) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -946,6 +913,39 @@ func (s OptTicketsTicketIdPatchReq) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptTicketsTicketIdPatchReq) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes UpdateReviewReq as json.
+func (o OptUpdateReviewReq) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes UpdateReviewReq from json.
+func (o *OptUpdateReviewReq) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptUpdateReviewReq to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptUpdateReviewReq) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptUpdateReviewReq) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -2352,103 +2352,6 @@ func (s *TicketsTicketIdNotesNoteIdPutReq) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
-func (s *TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) encodeFields(e *jx.Encoder) {
-	{
-		if s.Type.Set {
-			e.FieldStart("type")
-			s.Type.Encode(e)
-		}
-	}
-	{
-		if s.Weight.Set {
-			e.FieldStart("weight")
-			s.Weight.Encode(e)
-		}
-	}
-	{
-		if s.Comment.Set {
-			e.FieldStart("comment")
-			s.Comment.Encode(e)
-		}
-	}
-}
-
-var jsonFieldsNameOfTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq = [3]string{
-	0: "type",
-	1: "weight",
-	2: "comment",
-}
-
-// Decode decodes TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq from json.
-func (s *TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq to nil")
-	}
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "type":
-			if err := func() error {
-				s.Type.Reset()
-				if err := s.Type.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"type\"")
-			}
-		case "weight":
-			if err := func() error {
-				s.Weight.Reset()
-				if err := s.Weight.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"weight\"")
-			}
-		case "comment":
-			if err := func() error {
-				s.Comment.Reset()
-				if err := s.Comment.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"comment\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq")
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
 func (s *TicketsTicketIdNotesPostReq) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -2793,6 +2696,103 @@ func (s *TicketsTicketIdPatchReq) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *TicketsTicketIdPatchReq) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *UpdateReviewReq) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *UpdateReviewReq) encodeFields(e *jx.Encoder) {
+	{
+		if s.Type.Set {
+			e.FieldStart("type")
+			s.Type.Encode(e)
+		}
+	}
+	{
+		if s.Weight.Set {
+			e.FieldStart("weight")
+			s.Weight.Encode(e)
+		}
+	}
+	{
+		if s.Comment.Set {
+			e.FieldStart("comment")
+			s.Comment.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfUpdateReviewReq = [3]string{
+	0: "type",
+	1: "weight",
+	2: "comment",
+}
+
+// Decode decodes UpdateReviewReq from json.
+func (s *UpdateReviewReq) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode UpdateReviewReq to nil")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "type":
+			if err := func() error {
+				s.Type.Reset()
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "weight":
+			if err := func() error {
+				s.Weight.Reset()
+				if err := s.Weight.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"weight\"")
+			}
+		case "comment":
+			if err := func() error {
+				s.Comment.Reset()
+				if err := s.Comment.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"comment\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode UpdateReviewReq")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *UpdateReviewReq) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *UpdateReviewReq) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

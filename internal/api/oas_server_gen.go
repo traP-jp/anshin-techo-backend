@@ -28,6 +28,12 @@ type Handler interface {
 	//
 	// POST /tickets/{ticketId}/notes/{noteId}/reviews
 	CreateReview(ctx context.Context, req *CreateReviewReq, params CreateReviewParams) (*Review, error)
+	// DeleteReview implements deleteReview operation.
+	//
+	// レビュー取り消し.
+	//
+	// DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
+	DeleteReview(ctx context.Context, params DeleteReviewParams) error
 	// TicketsGet implements GET /tickets operation.
 	//
 	// チケット一覧取得.
@@ -65,18 +71,6 @@ type Handler interface {
 	//
 	// PUT /tickets/{ticketId}/notes/{noteId}
 	TicketsTicketIdNotesNoteIdPut(ctx context.Context, req *TicketsTicketIdNotesNoteIdPutReq, params TicketsTicketIdNotesNoteIdPutParams) (TicketsTicketIdNotesNoteIdPutRes, error)
-	// TicketsTicketIdNotesNoteIdReviewsReviewIdDelete implements DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
-	//
-	// レビュー取り消し.
-	//
-	// DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
-	TicketsTicketIdNotesNoteIdReviewsReviewIdDelete(ctx context.Context, params TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteParams) error
-	// TicketsTicketIdNotesNoteIdReviewsReviewIdPut implements PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
-	//
-	// ReviewのAuthorのみ実行可能。.
-	//
-	// PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
-	TicketsTicketIdNotesNoteIdReviewsReviewIdPut(ctx context.Context, req OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq, params TicketsTicketIdNotesNoteIdReviewsReviewIdPutParams) (TicketsTicketIdNotesNoteIdReviewsReviewIdPutRes, error)
 	// TicketsTicketIdNotesPost implements POST /tickets/{ticketId}/notes operation.
 	//
 	// ノート追加.
@@ -89,6 +83,12 @@ type Handler interface {
 	//
 	// PATCH /tickets/{ticketId}
 	TicketsTicketIdPatch(ctx context.Context, req OptTicketsTicketIdPatchReq, params TicketsTicketIdPatchParams) (TicketsTicketIdPatchRes, error)
+	// UpdateReview implements updateReview operation.
+	//
+	// ReviewのAuthorのみ実行可能。.
+	//
+	// PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
+	UpdateReview(ctx context.Context, req OptUpdateReviewReq, params UpdateReviewParams) (UpdateReviewRes, error)
 	// UsersGet implements GET /users operation.
 	//
 	// ユーザー一覧取得.

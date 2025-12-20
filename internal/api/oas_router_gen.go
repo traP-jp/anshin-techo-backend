@@ -242,13 +242,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 										// Leaf node.
 										switch r.Method {
 										case "DELETE":
-											s.handleTicketsTicketIdNotesNoteIdReviewsReviewIdDeleteRequest([3]string{
+											s.handleDeleteReviewRequest([3]string{
 												args[0],
 												args[1],
 												args[2],
 											}, elemIsEscaped, w, r)
 										case "PUT":
-											s.handleTicketsTicketIdNotesNoteIdReviewsReviewIdPutRequest([3]string{
+											s.handleUpdateReviewRequest([3]string{
 												args[0],
 												args[1],
 												args[2],
@@ -621,18 +621,18 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										// Leaf node.
 										switch method {
 										case "DELETE":
-											r.name = TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteOperation
+											r.name = DeleteReviewOperation
 											r.summary = "レビュー取り消し"
-											r.operationID = ""
+											r.operationID = "deleteReview"
 											r.operationGroup = ""
 											r.pathPattern = "/tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}"
 											r.args = args
 											r.count = 3
 											return r, true
 										case "PUT":
-											r.name = TicketsTicketIdNotesNoteIdReviewsReviewIdPutOperation
+											r.name = UpdateReviewOperation
 											r.summary = "レビュー修正"
-											r.operationID = ""
+											r.operationID = "updateReview"
 											r.operationGroup = ""
 											r.pathPattern = "/tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}"
 											r.args = args
