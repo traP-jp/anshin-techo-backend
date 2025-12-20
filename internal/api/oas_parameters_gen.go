@@ -14,6 +14,124 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
+// CreateReviewParams is parameters of createReview operation.
+type CreateReviewParams struct {
+	TicketId int64
+	NoteId   int64
+}
+
+func unpackCreateReviewParams(packed middleware.Parameters) (params CreateReviewParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "ticketId",
+			In:   "path",
+		}
+		params.TicketId = packed[key].(int64)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "noteId",
+			In:   "path",
+		}
+		params.NoteId = packed[key].(int64)
+	}
+	return params
+}
+
+func decodeCreateReviewParams(args [2]string, argsEscaped bool, r *http.Request) (params CreateReviewParams, _ error) {
+	// Decode path: ticketId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "ticketId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToInt64(val)
+				if err != nil {
+					return err
+				}
+
+				params.TicketId = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "ticketId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode path: noteId.
+	if err := func() error {
+		param := args[1]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[1])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "noteId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToInt64(val)
+				if err != nil {
+					return err
+				}
+
+				params.NoteId = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "noteId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // TicketsGetParams is parameters of GET /tickets operation.
 type TicketsGetParams struct {
 	// 担当者IDでフィルタ.
@@ -486,124 +604,6 @@ func unpackTicketsTicketIdNotesNoteIdPutParams(packed middleware.Parameters) (pa
 }
 
 func decodeTicketsTicketIdNotesNoteIdPutParams(args [2]string, argsEscaped bool, r *http.Request) (params TicketsTicketIdNotesNoteIdPutParams, _ error) {
-	// Decode path: ticketId.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "ticketId",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
-					return err
-				}
-
-				c, err := conv.ToInt64(val)
-				if err != nil {
-					return err
-				}
-
-				params.TicketId = c
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "ticketId",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	// Decode path: noteId.
-	if err := func() error {
-		param := args[1]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[1])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "noteId",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
-					return err
-				}
-
-				c, err := conv.ToInt64(val)
-				if err != nil {
-					return err
-				}
-
-				params.NoteId = c
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "noteId",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
-// TicketsTicketIdNotesNoteIdReviewsPostParams is parameters of POST /tickets/{ticketId}/notes/{noteId}/reviews operation.
-type TicketsTicketIdNotesNoteIdReviewsPostParams struct {
-	TicketId int64
-	NoteId   int64
-}
-
-func unpackTicketsTicketIdNotesNoteIdReviewsPostParams(packed middleware.Parameters) (params TicketsTicketIdNotesNoteIdReviewsPostParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "ticketId",
-			In:   "path",
-		}
-		params.TicketId = packed[key].(int64)
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "noteId",
-			In:   "path",
-		}
-		params.NoteId = packed[key].(int64)
-	}
-	return params
-}
-
-func decodeTicketsTicketIdNotesNoteIdReviewsPostParams(args [2]string, argsEscaped bool, r *http.Request) (params TicketsTicketIdNotesNoteIdReviewsPostParams, _ error) {
 	// Decode path: ticketId.
 	if err := func() error {
 		param := args[0]

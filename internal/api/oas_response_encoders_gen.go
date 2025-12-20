@@ -41,6 +41,27 @@ func encodeConfigPostResponse(response ConfigPostRes, w http.ResponseWriter) err
 	}
 }
 
+func encodeCreateReviewResponse(response *Review, w http.ResponseWriter) error {
+	if err := func() error {
+		if err := response.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "validate")
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
 func encodeTicketsGetResponse(response TicketsGetRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
 	case *TicketsGetOKApplicationJSON:
@@ -180,27 +201,6 @@ func encodeTicketsTicketIdNotesNoteIdPutResponse(response TicketsTicketIdNotesNo
 	default:
 		return errors.Errorf("unexpected response type: %T", response)
 	}
-}
-
-func encodeTicketsTicketIdNotesNoteIdReviewsPostResponse(response *Review, w http.ResponseWriter) error {
-	if err := func() error {
-		if err := response.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "validate")
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(201)
-
-	e := new(jx.Encoder)
-	response.Encode(e)
-	if _, err := e.WriteTo(w); err != nil {
-		return errors.Wrap(err, "write")
-	}
-
-	return nil
 }
 
 func encodeTicketsTicketIdNotesNoteIdReviewsReviewIdDeleteResponse(response *TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteNoContent, w http.ResponseWriter) error {

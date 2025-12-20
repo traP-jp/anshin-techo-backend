@@ -575,6 +575,7 @@ paths:
           format: int64
 
     post:
+      operationId: "createReview"
       tags:
         - Reviews
       summary: "レビュー追加"

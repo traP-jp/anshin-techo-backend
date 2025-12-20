@@ -210,7 +210,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								if len(elem) == 0 {
 									switch r.Method {
 									case "POST":
-										s.handleTicketsTicketIdNotesNoteIdReviewsPostRequest([2]string{
+										s.handleCreateReviewRequest([2]string{
 											args[0],
 											args[1],
 										}, elemIsEscaped, w, r)
@@ -587,9 +587,9 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 								if len(elem) == 0 {
 									switch method {
 									case "POST":
-										r.name = TicketsTicketIdNotesNoteIdReviewsPostOperation
+										r.name = CreateReviewOperation
 										r.summary = "レビュー追加"
-										r.operationID = ""
+										r.operationID = "createReview"
 										r.operationGroup = ""
 										r.pathPattern = "/tickets/{ticketId}/notes/{noteId}/reviews"
 										r.args = args

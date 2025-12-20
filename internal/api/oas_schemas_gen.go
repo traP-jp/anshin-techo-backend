@@ -23,6 +23,43 @@ func (*ConfigPostOK) configPostRes() {}
 
 type ConfigPostReq struct{}
 
+type CreateReviewReq struct {
+	Type ReviewType `json:"type"`
+	// 承認の強さ.
+	Weight  OptInt    `json:"weight"`
+	Comment OptString `json:"comment"`
+}
+
+// GetType returns the value of Type.
+func (s *CreateReviewReq) GetType() ReviewType {
+	return s.Type
+}
+
+// GetWeight returns the value of Weight.
+func (s *CreateReviewReq) GetWeight() OptInt {
+	return s.Weight
+}
+
+// GetComment returns the value of Comment.
+func (s *CreateReviewReq) GetComment() OptString {
+	return s.Comment
+}
+
+// SetType sets the value of Type.
+func (s *CreateReviewReq) SetType(val ReviewType) {
+	s.Type = val
+}
+
+// SetWeight sets the value of Weight.
+func (s *CreateReviewReq) SetWeight(val OptInt) {
+	s.Weight = val
+}
+
+// SetComment sets the value of Comment.
+func (s *CreateReviewReq) SetComment(val OptString) {
+	s.Comment = val
+}
+
 // Ref: #/components/schemas/Note
 type Note struct {
 	// ノートID.
@@ -1625,43 +1662,6 @@ func (s *TicketsTicketIdNotesNoteIdPutReq) SetStatus(val OptNoteStatus) {
 // SetResetReviews sets the value of ResetReviews.
 func (s *TicketsTicketIdNotesNoteIdPutReq) SetResetReviews(val OptBool) {
 	s.ResetReviews = val
-}
-
-type TicketsTicketIdNotesNoteIdReviewsPostReq struct {
-	Type ReviewType `json:"type"`
-	// 承認の強さ.
-	Weight  OptInt    `json:"weight"`
-	Comment OptString `json:"comment"`
-}
-
-// GetType returns the value of Type.
-func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) GetType() ReviewType {
-	return s.Type
-}
-
-// GetWeight returns the value of Weight.
-func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) GetWeight() OptInt {
-	return s.Weight
-}
-
-// GetComment returns the value of Comment.
-func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) GetComment() OptString {
-	return s.Comment
-}
-
-// SetType sets the value of Type.
-func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) SetType(val ReviewType) {
-	s.Type = val
-}
-
-// SetWeight sets the value of Weight.
-func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) SetWeight(val OptInt) {
-	s.Weight = val
-}
-
-// SetComment sets the value of Comment.
-func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) SetComment(val OptString) {
-	s.Comment = val
 }
 
 // TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteNoContent is response for TicketsTicketIdNotesNoteIdReviewsReviewIdDelete operation.

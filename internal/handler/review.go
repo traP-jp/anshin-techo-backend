@@ -11,7 +11,7 @@ import (
 	"github.com/traP-jp/anshin-techo-backend/internal/repository"
 )
 
-func (h *Handler) TicketsTicketIdNotesNoteIdReviewsPost(ctx context.Context, req *api.TicketsTicketIdNotesNoteIdReviewsPostReq, params api.TicketsTicketIdNotesNoteIdReviewsPostParams) (*api.Review, error) {
+func (h *Handler) TicketsTicketIdNotesNoteIdReviewsPost(ctx context.Context, req *api.CreateReviewReq, params api.CreateReviewParams) (*api.Review, error) {
 	reviewer, ok := traqIDFromContext(ctx)
 	if !ok {
 		return nil, echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
@@ -84,7 +84,14 @@ func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdPut(ctx context.Conte
 		return nil, echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
 	}
 
-	repoParams := repository.UpdateReviewParams{}
+	repoParams := repository.UpdateReviewParams{
+		Type:       "",
+		TypeSet:    false,
+		Weight:     0,
+		WeightSet:  false,
+		Comment:    sql.NullString{String: "", Valid: false},
+		CommentSet: false,
+	}
 	if req.Set {
 		if req.Value.Type.Set {
 			repoType, err := toRepositoryReviewType(req.Value.Type.Value)

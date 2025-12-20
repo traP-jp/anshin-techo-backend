@@ -102,6 +102,134 @@ func (s *ConfigPostReq) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *CreateReviewReq) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *CreateReviewReq) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		if s.Weight.Set {
+			e.FieldStart("weight")
+			s.Weight.Encode(e)
+		}
+	}
+	{
+		if s.Comment.Set {
+			e.FieldStart("comment")
+			s.Comment.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfCreateReviewReq = [3]string{
+	0: "type",
+	1: "weight",
+	2: "comment",
+}
+
+// Decode decodes CreateReviewReq from json.
+func (s *CreateReviewReq) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode CreateReviewReq to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "type":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "weight":
+			if err := func() error {
+				s.Weight.Reset()
+				if err := s.Weight.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"weight\"")
+			}
+		case "comment":
+			if err := func() error {
+				s.Comment.Reset()
+				if err := s.Comment.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"comment\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode CreateReviewReq")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfCreateReviewReq) {
+					name = jsonFieldsNameOfCreateReviewReq[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *CreateReviewReq) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *CreateReviewReq) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *Note) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -2219,134 +2347,6 @@ func (s *TicketsTicketIdNotesNoteIdPutReq) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *TicketsTicketIdNotesNoteIdPutReq) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("type")
-		s.Type.Encode(e)
-	}
-	{
-		if s.Weight.Set {
-			e.FieldStart("weight")
-			s.Weight.Encode(e)
-		}
-	}
-	{
-		if s.Comment.Set {
-			e.FieldStart("comment")
-			s.Comment.Encode(e)
-		}
-	}
-}
-
-var jsonFieldsNameOfTicketsTicketIdNotesNoteIdReviewsPostReq = [3]string{
-	0: "type",
-	1: "weight",
-	2: "comment",
-}
-
-// Decode decodes TicketsTicketIdNotesNoteIdReviewsPostReq from json.
-func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode TicketsTicketIdNotesNoteIdReviewsPostReq to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "type":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				if err := s.Type.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"type\"")
-			}
-		case "weight":
-			if err := func() error {
-				s.Weight.Reset()
-				if err := s.Weight.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"weight\"")
-			}
-		case "comment":
-			if err := func() error {
-				s.Comment.Reset()
-				if err := s.Comment.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"comment\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode TicketsTicketIdNotesNoteIdReviewsPostReq")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000001,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfTicketsTicketIdNotesNoteIdReviewsPostReq) {
-					name = jsonFieldsNameOfTicketsTicketIdNotesNoteIdReviewsPostReq[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

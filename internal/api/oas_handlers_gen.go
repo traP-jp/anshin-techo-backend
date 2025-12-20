@@ -269,6 +269,155 @@ func (s *Server) handleConfigPostRequest(args [0]string, argsEscaped bool, w htt
 	}
 }
 
+// handleCreateReviewRequest handles createReview operation.
+//
+// 承認(approve)の場合、Weightの上限はユーザー権限に基づく(本職5/補佐4/他0)。
+// Weight合計が5以上になると、Noteのstatusが`waiting_sent`になる。
+// すでにレビュー済みの場合は失敗する。.
+//
+// POST /tickets/{ticketId}/notes/{noteId}/reviews
+func (s *Server) handleCreateReviewRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	ctx := r.Context()
+
+	var (
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: CreateReviewOperation,
+			ID:   "createReview",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityTraQAuth(ctx, CreateReviewOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "TraQAuth",
+					Err:              err,
+				}
+				defer recordError("Security:TraQAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeCreateReviewParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+	request, rawBody, close, err := s.decodeCreateReviewRequest(r)
+	if err != nil {
+		err = &ogenerrors.DecodeRequestError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeRequest", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+	defer func() {
+		if err := close(); err != nil {
+			recordError("CloseRequest", err)
+		}
+	}()
+
+	var response *Review
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    CreateReviewOperation,
+			OperationSummary: "レビュー追加",
+			OperationID:      "createReview",
+			Body:             request,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "ticketId",
+					In:   "path",
+				}: params.TicketId,
+				{
+					Name: "noteId",
+					In:   "path",
+				}: params.NoteId,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = *CreateReviewReq
+			Params   = CreateReviewParams
+			Response = *Review
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackCreateReviewParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.CreateReview(ctx, request, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.CreateReview(ctx, request, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeCreateReviewResponse(response, w); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
 // handleTicketsGetRequest handles GET /tickets operation.
 //
 // チケット一覧取得.
@@ -1061,155 +1210,6 @@ func (s *Server) handleTicketsTicketIdNotesNoteIdPutRequest(args [2]string, args
 	}
 
 	if err := encodeTicketsTicketIdNotesNoteIdPutResponse(response, w); err != nil {
-		defer recordError("EncodeResponse", err)
-		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
-			s.cfg.ErrorHandler(ctx, w, r, err)
-		}
-		return
-	}
-}
-
-// handleTicketsTicketIdNotesNoteIdReviewsPostRequest handles POST /tickets/{ticketId}/notes/{noteId}/reviews operation.
-//
-// 承認(approve)の場合、Weightの上限はユーザー権限に基づく(本職5/補佐4/他0)。
-// Weight合計が5以上になると、Noteのstatusが`waiting_sent`になる。
-// すでにレビュー済みの場合は失敗する。.
-//
-// POST /tickets/{ticketId}/notes/{noteId}/reviews
-func (s *Server) handleTicketsTicketIdNotesNoteIdReviewsPostRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
-	statusWriter := &codeRecorder{ResponseWriter: w}
-	w = statusWriter
-	ctx := r.Context()
-
-	var (
-		err          error
-		opErrContext = ogenerrors.OperationContext{
-			Name: TicketsTicketIdNotesNoteIdReviewsPostOperation,
-			ID:   "",
-		}
-	)
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			sctx, ok, err := s.securityTraQAuth(ctx, TicketsTicketIdNotesNoteIdReviewsPostOperation, r)
-			if err != nil {
-				err = &ogenerrors.SecurityError{
-					OperationContext: opErrContext,
-					Security:         "TraQAuth",
-					Err:              err,
-				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
-				return
-			}
-			if ok {
-				satisfied[0] |= 1 << 0
-				ctx = sctx
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			err = &ogenerrors.SecurityError{
-				OperationContext: opErrContext,
-				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
-			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
-			return
-		}
-	}
-	params, err := decodeTicketsTicketIdNotesNoteIdReviewsPostParams(args, argsEscaped, r)
-	if err != nil {
-		err = &ogenerrors.DecodeParamsError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeParams", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	var rawBody []byte
-	request, rawBody, close, err := s.decodeTicketsTicketIdNotesNoteIdReviewsPostRequest(r)
-	if err != nil {
-		err = &ogenerrors.DecodeRequestError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeRequest", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-	defer func() {
-		if err := close(); err != nil {
-			recordError("CloseRequest", err)
-		}
-	}()
-
-	var response *Review
-	if m := s.cfg.Middleware; m != nil {
-		mreq := middleware.Request{
-			Context:          ctx,
-			OperationName:    TicketsTicketIdNotesNoteIdReviewsPostOperation,
-			OperationSummary: "レビュー追加",
-			OperationID:      "",
-			Body:             request,
-			RawBody:          rawBody,
-			Params: middleware.Parameters{
-				{
-					Name: "ticketId",
-					In:   "path",
-				}: params.TicketId,
-				{
-					Name: "noteId",
-					In:   "path",
-				}: params.NoteId,
-			},
-			Raw: r,
-		}
-
-		type (
-			Request  = *TicketsTicketIdNotesNoteIdReviewsPostReq
-			Params   = TicketsTicketIdNotesNoteIdReviewsPostParams
-			Response = *Review
-		)
-		response, err = middleware.HookMiddleware[
-			Request,
-			Params,
-			Response,
-		](
-			m,
-			mreq,
-			unpackTicketsTicketIdNotesNoteIdReviewsPostParams,
-			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.TicketsTicketIdNotesNoteIdReviewsPost(ctx, request, params)
-				return response, err
-			},
-		)
-	} else {
-		response, err = s.h.TicketsTicketIdNotesNoteIdReviewsPost(ctx, request, params)
-	}
-	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	if err := encodeTicketsTicketIdNotesNoteIdReviewsPostResponse(response, w); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
