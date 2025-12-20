@@ -40,6 +40,7 @@ var operationRolesTraQAuth = map[string][]string{
 	DeleteReviewOperation:                     []string{},
 	TicketsGetOperation:                       []string{},
 	TicketsPostOperation:                      []string{},
+	TicketsTicketIdAiGeneratePostOperation:    []string{},
 	TicketsTicketIdDeleteOperation:            []string{},
 	TicketsTicketIdGetOperation:               []string{},
 	TicketsTicketIdNotesNoteIdDeleteOperation: []string{},

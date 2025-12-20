@@ -46,6 +46,12 @@ type Handler interface {
 	//
 	// POST /tickets
 	TicketsPost(ctx context.Context, req *TicketsPostReq) (TicketsPostRes, error)
+	// TicketsTicketIdAiGeneratePost implements POST /tickets/{ticketId}/ai/generate operation.
+	//
+	// チケットの情報と過去のノート（履歴）を元に、次の返信メールのドラフトを生成する。.
+	//
+	// POST /tickets/{ticketId}/ai/generate
+	TicketsTicketIdAiGeneratePost(ctx context.Context, req *TicketsTicketIdAiGeneratePostReq, params TicketsTicketIdAiGeneratePostParams) (TicketsTicketIdAiGeneratePostRes, error)
 	// TicketsTicketIdDelete implements DELETE /tickets/{ticketId} operation.
 	//
 	// 本職のみ実行可能。.

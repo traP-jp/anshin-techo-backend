@@ -1460,6 +1460,49 @@ type TicketsPostUnauthorized struct{}
 
 func (*TicketsPostUnauthorized) ticketsPostRes() {}
 
+// TicketsTicketIdAiGeneratePostInternalServerError is response for TicketsTicketIdAiGeneratePost operation.
+type TicketsTicketIdAiGeneratePostInternalServerError struct{}
+
+func (*TicketsTicketIdAiGeneratePostInternalServerError) ticketsTicketIdAiGeneratePostRes() {}
+
+// TicketsTicketIdAiGeneratePostNotFound is response for TicketsTicketIdAiGeneratePost operation.
+type TicketsTicketIdAiGeneratePostNotFound struct{}
+
+func (*TicketsTicketIdAiGeneratePostNotFound) ticketsTicketIdAiGeneratePostRes() {}
+
+type TicketsTicketIdAiGeneratePostOK struct {
+	// 生成されたテキスト.
+	Content OptString `json:"content"`
+}
+
+// GetContent returns the value of Content.
+func (s *TicketsTicketIdAiGeneratePostOK) GetContent() OptString {
+	return s.Content
+}
+
+// SetContent sets the value of Content.
+func (s *TicketsTicketIdAiGeneratePostOK) SetContent(val OptString) {
+	s.Content = val
+}
+
+func (*TicketsTicketIdAiGeneratePostOK) ticketsTicketIdAiGeneratePostRes() {}
+
+type TicketsTicketIdAiGeneratePostReq struct {
+	// ユーザーからの追加指示 (例: '丁寧に断ってください'
+	// '来週の日程を提示して').
+	Instruction OptString `json:"instruction"`
+}
+
+// GetInstruction returns the value of Instruction.
+func (s *TicketsTicketIdAiGeneratePostReq) GetInstruction() OptString {
+	return s.Instruction
+}
+
+// SetInstruction sets the value of Instruction.
+func (s *TicketsTicketIdAiGeneratePostReq) SetInstruction(val OptString) {
+	s.Instruction = val
+}
+
 // TicketsTicketIdDeleteForbidden is response for TicketsTicketIdDelete operation.
 type TicketsTicketIdDeleteForbidden struct{}
 

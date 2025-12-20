@@ -142,6 +142,35 @@ func encodeTicketsPostResponse(response TicketsPostRes, w http.ResponseWriter) e
 	}
 }
 
+func encodeTicketsTicketIdAiGeneratePostResponse(response TicketsTicketIdAiGeneratePostRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *TicketsTicketIdAiGeneratePostOK:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *TicketsTicketIdAiGeneratePostNotFound:
+		w.WriteHeader(404)
+
+		return nil
+
+	case *TicketsTicketIdAiGeneratePostInternalServerError:
+		w.WriteHeader(500)
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
 func encodeTicketsTicketIdDeleteResponse(response TicketsTicketIdDeleteRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
 	case *TicketsTicketIdDeleteNoContent:

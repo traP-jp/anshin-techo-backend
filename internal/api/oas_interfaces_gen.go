@@ -13,6 +13,10 @@ type TicketsPostRes interface {
 	ticketsPostRes()
 }
 
+type TicketsTicketIdAiGeneratePostRes interface {
+	ticketsTicketIdAiGeneratePostRes()
+}
+
 type TicketsTicketIdDeleteRes interface {
 	ticketsTicketIdDeleteRes()
 }

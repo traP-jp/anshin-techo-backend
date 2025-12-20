@@ -1922,6 +1922,132 @@ func (s *TicketsPostReq) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *TicketsTicketIdAiGeneratePostOK) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *TicketsTicketIdAiGeneratePostOK) encodeFields(e *jx.Encoder) {
+	{
+		if s.Content.Set {
+			e.FieldStart("content")
+			s.Content.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfTicketsTicketIdAiGeneratePostOK = [1]string{
+	0: "content",
+}
+
+// Decode decodes TicketsTicketIdAiGeneratePostOK from json.
+func (s *TicketsTicketIdAiGeneratePostOK) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TicketsTicketIdAiGeneratePostOK to nil")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "content":
+			if err := func() error {
+				s.Content.Reset()
+				if err := s.Content.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"content\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode TicketsTicketIdAiGeneratePostOK")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *TicketsTicketIdAiGeneratePostOK) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TicketsTicketIdAiGeneratePostOK) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *TicketsTicketIdAiGeneratePostReq) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *TicketsTicketIdAiGeneratePostReq) encodeFields(e *jx.Encoder) {
+	{
+		if s.Instruction.Set {
+			e.FieldStart("instruction")
+			s.Instruction.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfTicketsTicketIdAiGeneratePostReq = [1]string{
+	0: "instruction",
+}
+
+// Decode decodes TicketsTicketIdAiGeneratePostReq from json.
+func (s *TicketsTicketIdAiGeneratePostReq) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TicketsTicketIdAiGeneratePostReq to nil")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "instruction":
+			if err := func() error {
+				s.Instruction.Reset()
+				if err := s.Instruction.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"instruction\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode TicketsTicketIdAiGeneratePostReq")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *TicketsTicketIdAiGeneratePostReq) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TicketsTicketIdAiGeneratePostReq) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *TicketsTicketIdGetOK) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)

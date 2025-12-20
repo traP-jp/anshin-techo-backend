@@ -12,6 +12,7 @@ const (
 	DeleteReviewOperation                     OperationName = "DeleteReview"
 	TicketsGetOperation                       OperationName = "TicketsGet"
 	TicketsPostOperation                      OperationName = "TicketsPost"
+	TicketsTicketIdAiGeneratePostOperation    OperationName = "TicketsTicketIdAiGeneratePost"
 	TicketsTicketIdDeleteOperation            OperationName = "TicketsTicketIdDelete"
 	TicketsTicketIdGetOperation               OperationName = "TicketsTicketIdGet"
 	TicketsTicketIdNotesNoteIdDeleteOperation OperationName = "TicketsTicketIdNotesNoteIdDelete"
