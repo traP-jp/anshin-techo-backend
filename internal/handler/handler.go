@@ -10,7 +10,6 @@ import (
 )
 
 type Handler struct {
-	//photo *photo.Service
 	repo *repository.Repository
 }
 
@@ -31,11 +30,9 @@ func traqIDFromContext(ctx context.Context) (string, bool) {
 }
 
 func New(
-	//photo *photo.Service,
 	repo *repository.Repository,
 ) *Handler {
 	return &Handler{
-		//photo,
 		repo,
 	}
 }
