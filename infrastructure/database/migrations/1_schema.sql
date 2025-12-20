@@ -26,14 +26,14 @@ CREATE TABLE IF NOT EXISTS tickets (
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS ticket_sub_assignees (
     ticket_id INT UNSIGNED,
     sub_assignee VARCHAR(64) NOT NULL,
     PRIMARY KEY(ticket_id, sub_assignee),
-    FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE,
+    FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS ticket_stakeholders (
