@@ -12,15 +12,19 @@ import (
 )
 
 // POST /tickets
+// 本職・補佐のみ
 func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (api.CreateTicketRes, error) {
 	creator := getUserID(ctx)
-	_, err := h.repo.GetUserRoleByTraqID(ctx, creator)
+	role, err := h.repo.GetUserRoleByTraqID(ctx, creator)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
 			return &api.CreateTicketForbidden{}, nil
 		}
 
 		return nil, fmt.Errorf("get user role from repository: %w", err)
+	}
+	if role != "manager" && role != "assistant" {
+		return &api.CreateTicketForbidden{}, nil
 	}
 
 	description := sql.NullString{String: "", Valid: false}
@@ -77,6 +81,7 @@ func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (a
 }
 
 // GET /tickets
+// 誰でも
 func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (api.GetTicketsRes, error) {
 	repoParams := repository.GetTicketsParams{
 		Assignee: "",
@@ -137,6 +142,7 @@ func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (
 }
 
 // DELETE /tickets/{ticketId}
+// 本職のみ
 func (h *Handler) DeleteTicketByID(ctx context.Context, params api.DeleteTicketByIDParams) (api.DeleteTicketByIDRes, error) {
 	deleter := getUserID(ctx)
 	role, err := h.repo.GetUserRoleByTraqID(ctx, deleter)
@@ -147,7 +153,7 @@ func (h *Handler) DeleteTicketByID(ctx context.Context, params api.DeleteTicketB
 
 		return nil, fmt.Errorf("get user role from repository: %w", err)
 	}
-	if role != "manager" && role != "assistant" {
+	if role != "manager" {
 		return &api.DeleteTicketByIDForbidden{}, nil
 	}
 	
@@ -199,17 +205,8 @@ func (h *Handler) GetTicketByID(ctx context.Context, params api.GetTicketByIDPar
 }
 
 // PATCH /tickets/{ticketId}
+// 本職・補佐・関係者のみ
 func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketByIDReq, params api.UpdateTicketByIDParams) (api.UpdateTicketByIDRes, error) {
-	updater := getUserID(ctx)
-	_, err := h.repo.GetUserRoleByTraqID(ctx, updater)
-	if err != nil {
-		if errors.Is(err, repository.ErrUserNotFound) {
-			return &api.UpdateTicketByIDForbidden{}, nil
-		}
-
-		return nil, fmt.Errorf("get user role from repository: %w", err)
-	}
-
 	id := params.TicketId
 	if !req.Set {
 		return nil, fmt.Errorf("request body is required")
@@ -222,6 +219,26 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 		}
 
 		return nil, fmt.Errorf("get ticket from repository: %w", err)
+	}
+
+	updater := getUserID(ctx)
+	role, err := h.repo.GetUserRoleByTraqID(ctx, updater)
+	if err != nil {
+		return nil, fmt.Errorf("get user role from repository: %w", err)
+	}
+	ok := false
+	if role == "manager" || role == "assistant" {
+		ok = true
+	} else {
+		for _, authorized := range append(append(ticket.Stakeholders, ticket.SubAssignees...), ticket.Assignee) {
+			if authorized == updater {
+				ok = true
+				break
+			}
+		}
+	}
+	if !ok {
+		return &api.UpdateTicketByIDForbidden{}, nil
 	}
 
 	title := ticket.Title
