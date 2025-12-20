@@ -23,13 +23,13 @@ func (h *Handler) TicketsTicketIdNotesPost(ctx context.Context, req *api.Tickets
 
 	return &api.Note{
 		ID:       note.ID,
-		TicketID: note.TicketID, 
+		TicketID: note.TicketID,
 		Author:   note.UserID,
 		Content:  note.Content,
 		Type:     api.NoteType(note.Type),
-		Status:   api.OptNoteStatus{Value: "", Set: false}, 
-		Reviews:  []api.Review{},      
-		
+		Status:   api.OptNoteStatus{Value: "", Set: false},
+		Reviews:  []api.Review{},
+
 		CreatedAt: api.OptDateTime{
 			Value: note.CreatedAt,
 			Set:   true,
