@@ -217,6 +217,31 @@ components:
         - weight
         - status
 
+    Config:
+      type: object
+      properties:
+        reminder_interval:
+          type: object
+          description: "リマインドのタイミング設定"
+          properties:
+            overdue_day:
+              type: array
+              items:
+                type: integer
+              description: "期限超過後にリマインドする日数のリスト"
+            notesent_hour:
+              type: integer
+              description: "送信予定からリマインドするまでの時間(時間単位)"
+          required:
+            - overdue_day
+            - notesent_hour
+        revise_prompt:
+          type: string
+          description: "レビュアーに渡すリビジョン指示テキスト"
+      required:
+        - reminder_interval
+        - revise_prompt
+
   securitySchemes:
     # 開発用簡易認証
     traQAuth:
@@ -241,8 +266,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                description: "設定JSON (構造は未定)"
+                $ref: "#/components/schemas/Config"
 
     post:
       tags:
@@ -254,10 +278,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
+              $ref: "#/components/schemas/Config"
       responses:
         "200":
           description: "更新成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Config"
         "403":
           description: "権限エラー"
 

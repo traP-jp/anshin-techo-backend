@@ -13,13 +13,13 @@ type Handler interface {
 	// 設定情報の取得.
 	//
 	// GET /config
-	ConfigGet(ctx context.Context) error
+	ConfigGet(ctx context.Context) (*Config, error)
 	// ConfigPost implements POST /config operation.
 	//
 	// 本職権限のみ実行可能.
 	//
 	// POST /config
-	ConfigPost(ctx context.Context, req *ConfigPostReq) (ConfigPostRes, error)
+	ConfigPost(ctx context.Context, req *Config) (ConfigPostRes, error)
 	// CreateReview implements createReview operation.
 	//
 	// 承認(approve)の場合、Weightの上限はユーザー権限に基づく(本職5/補佐4/他0)。
