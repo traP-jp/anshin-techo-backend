@@ -56,6 +56,7 @@ func (s *Service) PostMessage(ctx context.Context, channelID string, content str
 		PostMessageRequest(traq.PostMessageRequest{
 			Content: content,
 			Embed:   &embedTrue,
+			Nonce:   nil,
 		}).
 		Execute()
 	if err != nil {
@@ -72,6 +73,7 @@ func (s *Service) PostDirectMessage(ctx context.Context, userID string, content 
 		PostMessageRequest(traq.PostMessageRequest{
 			Content: content,
 			Embed:   &embedTrue,
+			Nonce:   nil,
 		}).
 		Execute()
 	if err != nil {
