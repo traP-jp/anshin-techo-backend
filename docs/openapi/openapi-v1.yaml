@@ -217,6 +217,48 @@ components:
         - weight
         - status
 
+    Config:
+      type: object
+      properties:
+        reminder_interval:
+          type: object
+          description: "リマインドのタイミング設定"
+          properties:
+            overdue_day:
+              type: array
+              items:
+                type: integer
+              description: "期限超過後にリマインドする日数のリスト"
+            notesent_hour:
+              type: integer
+              description: "送信予定からリマインドするまでの時間(時間単位)"
+          required:
+            - overdue_day
+            - notesent_hour
+        revise_prompt:
+          type: string
+          description: "レビュアーに渡すリビジョン指示テキスト"
+      required:
+        - reminder_interval
+        - revise_prompt
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: "エラーメッセージ"
+      required:
+        - message
+
+  responses:
+    ErrorResponse:
+      description: "予期しないエラー"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
   securitySchemes:
     # 開発用簡易認証
     traQAuth:
@@ -241,8 +283,11 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                description: "設定JSON (構造は未定)"
+                $ref: "#/components/schemas/Config"
+        "403":
+          description: "権限エラー"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
 
     post:
       tags:
@@ -254,12 +299,18 @@ paths:
         content:
           application/json:
             schema:
-              type: object
+              $ref: "#/components/schemas/Config"
       responses:
         "200":
           description: "更新成功"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Config"
         "403":
           description: "権限エラー"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
 
   # --- Users ---
   /users:
@@ -276,6 +327,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/User"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
 
     put:
       tags:
@@ -295,6 +348,8 @@ paths:
           description: "成功"
         "403":
           description: "権限エラー"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
 
   # --- Tickets ---
   /tickets:
@@ -333,6 +388,8 @@ paths:
           description: "不正なクエリパラメータ"
         "401":
           description: "認証エラー"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
 
     post:
       operationId: createTicket
@@ -388,6 +445,8 @@ paths:
           description: "不正なリクエストボディ"
         "401":
           description: "認証エラー"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
 
   /tickets/{ticketId}:
     parameters:
@@ -421,6 +480,8 @@ paths:
                         description: "このチケットに紐づくノート一覧"
         "404":
           description: "チケットが見つからない"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
 
     patch:
       operationId: updateTicketByID
@@ -466,6 +527,8 @@ paths:
           description: "権限なし"
         "404":
           description: "チケットが見つからない"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
 
     delete:
       operationId: deleteTicketByID
@@ -480,6 +543,8 @@ paths:
           description: "権限なし"
         "404":
           description: "チケットが見つからない"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
 
   # --- Notes ---
   /tickets/{ticketId}/notes:
@@ -517,6 +582,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Note"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
 
   /tickets/{ticketId}/notes/{noteId}:
     parameters:
@@ -560,6 +627,8 @@ paths:
           description: "成功"
         "403":
           description: "権限なし"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
 
     delete:
       tags:
@@ -568,6 +637,8 @@ paths:
       responses:
         "204":
           description: "削除成功"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
 
   # --- Reviews ---
   /tickets/{ticketId}/notes/{noteId}/reviews:
@@ -616,6 +687,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Review"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
 
   /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}:
     parameters:
@@ -663,6 +736,8 @@ paths:
           description: "権限なし"
         "404":
           description: "レビューが見つからない"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
 
     delete:
       operationId: "deleteReview"
@@ -672,3 +747,5 @@ paths:
       responses:
         "204":
           description: "削除成功"
+        default:
+          $ref: "#/components/responses/ErrorResponse"

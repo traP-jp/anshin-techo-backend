@@ -8,20 +8,74 @@ import (
 	"github.com/go-faster/errors"
 )
 
-// 設定JSON (構造は未定).
-type ConfigGetOK struct{}
+// Ref: #/components/schemas/Config
+type Config struct {
+	// リマインドのタイミング設定.
+	ReminderInterval ConfigReminderInterval `json:"reminder_interval"`
+	// レビュアーに渡すリビジョン指示テキスト.
+	RevisePrompt string `json:"revise_prompt"`
+}
+
+// GetReminderInterval returns the value of ReminderInterval.
+func (s *Config) GetReminderInterval() ConfigReminderInterval {
+	return s.ReminderInterval
+}
+
+// GetRevisePrompt returns the value of RevisePrompt.
+func (s *Config) GetRevisePrompt() string {
+	return s.RevisePrompt
+}
+
+// SetReminderInterval sets the value of ReminderInterval.
+func (s *Config) SetReminderInterval(val ConfigReminderInterval) {
+	s.ReminderInterval = val
+}
+
+// SetRevisePrompt sets the value of RevisePrompt.
+func (s *Config) SetRevisePrompt(val string) {
+	s.RevisePrompt = val
+}
+
+func (*Config) configGetRes()  {}
+func (*Config) configPostRes() {}
+
+// ConfigGetForbidden is response for ConfigGet operation.
+type ConfigGetForbidden struct{}
+
+func (*ConfigGetForbidden) configGetRes() {}
 
 // ConfigPostForbidden is response for ConfigPost operation.
 type ConfigPostForbidden struct{}
 
 func (*ConfigPostForbidden) configPostRes() {}
 
-// ConfigPostOK is response for ConfigPost operation.
-type ConfigPostOK struct{}
+// リマインドのタイミング設定.
+type ConfigReminderInterval struct {
+	// 期限超過後にリマインドする日数のリスト.
+	OverdueDay []int `json:"overdue_day"`
+	// 送信予定からリマインドするまでの時間(時間単位).
+	NotesentHour int `json:"notesent_hour"`
+}
 
-func (*ConfigPostOK) configPostRes() {}
+// GetOverdueDay returns the value of OverdueDay.
+func (s *ConfigReminderInterval) GetOverdueDay() []int {
+	return s.OverdueDay
+}
 
-type ConfigPostReq struct{}
+// GetNotesentHour returns the value of NotesentHour.
+func (s *ConfigReminderInterval) GetNotesentHour() int {
+	return s.NotesentHour
+}
+
+// SetOverdueDay sets the value of OverdueDay.
+func (s *ConfigReminderInterval) SetOverdueDay(val []int) {
+	s.OverdueDay = val
+}
+
+// SetNotesentHour sets the value of NotesentHour.
+func (s *ConfigReminderInterval) SetNotesentHour(val int) {
+	s.NotesentHour = val
+}
 
 type CreateReviewReq struct {
 	Type ReviewType `json:"type"`

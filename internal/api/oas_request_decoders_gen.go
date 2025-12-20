@@ -16,7 +16,7 @@ import (
 )
 
 func (s *Server) decodeConfigPostRequest(r *http.Request) (
-	req *ConfigPostReq,
+	req *Config,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -63,7 +63,7 @@ func (s *Server) decodeConfigPostRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request ConfigPostReq
+		var request Config
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -79,6 +79,14 @@ func (s *Server) decodeConfigPostRequest(r *http.Request) (
 				Err:         err,
 			}
 			return req, rawBody, close, err
+		}
+		if err := func() error {
+			if err := request.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return req, rawBody, close, errors.Wrap(err, "validate")
 		}
 		return &request, rawBody, close, nil
 	default:

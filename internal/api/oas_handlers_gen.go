@@ -92,7 +92,7 @@ func (s *Server) handleConfigGetRequest(args [0]string, argsEscaped bool, w http
 
 	var rawBody []byte
 
-	var response *ConfigGetOK
+	var response ConfigGetRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -108,7 +108,7 @@ func (s *Server) handleConfigGetRequest(args [0]string, argsEscaped bool, w http
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *ConfigGetOK
+			Response = ConfigGetRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -119,12 +119,12 @@ func (s *Server) handleConfigGetRequest(args [0]string, argsEscaped bool, w http
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				err = s.h.ConfigGet(ctx)
+				response, err = s.h.ConfigGet(ctx)
 				return response, err
 			},
 		)
 	} else {
-		err = s.h.ConfigGet(ctx)
+		response, err = s.h.ConfigGet(ctx)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -234,7 +234,7 @@ func (s *Server) handleConfigPostRequest(args [0]string, argsEscaped bool, w htt
 		}
 
 		type (
-			Request  = *ConfigPostReq
+			Request  = *Config
 			Params   = struct{}
 			Response = ConfigPostRes
 		)
