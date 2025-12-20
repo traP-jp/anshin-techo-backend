@@ -21,6 +21,8 @@ tags:
     description: "ユーザー情報・権限管理"
   - name: Config
     description: "システム設定"
+  - name: AI
+    description: "LLMを用いた生成・支援機能"
 
 components:
   schemas:
@@ -667,3 +669,42 @@ paths:
       responses:
         "204":
           description: "削除成功"
+  # --- AI ---
+  /tickets/{ticketId}/ai/generate:
+    parameters:
+      - name: ticketId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    post:
+      tags:
+        - AI
+      summary: "AIによる返信ドラフト生成"
+      description: "チケットの情報と過去のノート（履歴）を元に、次の返信メールのドラフトを生成する。"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                instruction:
+                  type: string
+                  description: "ユーザーからの追加指示 (例: '丁寧に断ってください' '来週の日程を提示して')"
+      responses:
+        "200":
+          description: "生成成功"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: string
+                    description: "生成されたテキスト"
+        "404":
+          description: "チケットが見つからない"
+        "500":
+          description: "AI生成エラー"
