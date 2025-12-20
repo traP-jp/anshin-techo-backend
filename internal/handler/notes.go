@@ -8,6 +8,8 @@ import (
 )
 
 // POST /tickets/{ticketId}/notes
+//
+//nolint:revive
 func (h *Handler) TicketsTicketIdNotesPost(ctx context.Context, req *api.TicketsTicketIdNotesPostReq, params api.TicketsTicketIdNotesPostParams) (*api.Note, error) {
 	userID := getUserID(ctx)
 	if userID == "" {
@@ -25,7 +27,7 @@ func (h *Handler) TicketsTicketIdNotesPost(ctx context.Context, req *api.Tickets
 		Author:   note.UserID,
 		Content:  note.Content,
 		Type:     api.NoteType(note.Type),
-		Status:   api.OptNoteStatus{}, 
+		Status:   api.OptNoteStatus{Value: "", Set: false}, 
 		Reviews:  []api.Review{},      
 		
 		CreatedAt: api.OptDateTime{
@@ -40,6 +42,8 @@ func (h *Handler) TicketsTicketIdNotesPost(ctx context.Context, req *api.Tickets
 }
 
 // PUT /tickets/{ticketId}/notes/{noteId}
+//
+//nolint:revive
 func (h *Handler) TicketsTicketIdNotesNoteIdPut(ctx context.Context, req *api.TicketsTicketIdNotesNoteIdPutReq, params api.TicketsTicketIdNotesNoteIdPutParams) (api.TicketsTicketIdNotesNoteIdPutRes, error) {
 	if !req.Content.Set {
 		return nil, fmt.Errorf("content is required for update")
@@ -53,6 +57,8 @@ func (h *Handler) TicketsTicketIdNotesNoteIdPut(ctx context.Context, req *api.Ti
 }
 
 // DELETE /tickets/{ticketId}/notes/{noteId}
+//
+//nolint:revive
 func (h *Handler) TicketsTicketIdNotesNoteIdDelete(ctx context.Context, params api.TicketsTicketIdNotesNoteIdDeleteParams) error {
 	if err := h.repo.DeleteNote(ctx, params.TicketId, params.NoteId); err != nil {
 		return fmt.Errorf("delete note: %w", err)

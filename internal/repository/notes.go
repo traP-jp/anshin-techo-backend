@@ -34,7 +34,17 @@ func (r *Repository) CreateNote(ctx context.Context, ticketID int64, author, con
 		return nil, fmt.Errorf("get last insert id: %w", err)
 	}
 
-	note := &Note{}
+	note := &Note{
+		ID:        0,
+		TicketID:  0,
+		UserID:    "",
+		Content:   "",
+		Type:      "",
+		Status:    "",
+		CreatedAt: time.Time{},
+		UpdatedAt: time.Time{},
+		DeletedAt: sql.NullTime{Time: time.Time{}, Valid: false},
+	}
 	getQuery := `SELECT * FROM notes WHERE id = ?`
 	if err := r.db.GetContext(ctx, note, getQuery, id); err != nil {
 		return nil, fmt.Errorf("get created note: %w", err)
@@ -50,6 +60,7 @@ func (r *Repository) GetNotes(ctx context.Context, ticketID int64) ([]*Note, err
 	if err := r.db.SelectContext(ctx, &notes, query, ticketID); err != nil {
 		return nil, err
 	}
+
 	return notes, nil
 }
 
