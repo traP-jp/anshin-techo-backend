@@ -17,7 +17,7 @@ func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (a
 	if !ok {
 		return &api.CreateTicketUnauthorized{}, nil
 	}
-	_ , err := h.repo.GetUserRoleByTraqID(ctx, creator)
+	_, err := h.repo.GetUserRoleByTraqID(ctx, creator)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
 			return &api.CreateTicketForbidden{}, nil
