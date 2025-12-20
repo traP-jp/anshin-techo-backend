@@ -37,9 +37,4 @@ func (h *Handler) TicketsTicketIdNotesNoteIdDelete(_ context.Context, _ api.Tick
 	return fmt.Errorf("not implemented")
 }
 
-// TicketsTicketIdNotesNoteIdReviewsReviewIdDelete implements DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
-func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdDelete(_ context.Context, _ api.TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteParams) error {
-	return fmt.Errorf("not implemented")
-}
-
 //revive:enable:var-naming
