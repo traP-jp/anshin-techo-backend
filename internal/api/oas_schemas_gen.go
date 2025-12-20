@@ -60,8 +60,341 @@ func (s *CreateReviewReq) SetComment(val OptString) {
 	s.Comment = val
 }
 
+// CreateTicketBadRequest is response for CreateTicket operation.
+type CreateTicketBadRequest struct{}
+
+func (*CreateTicketBadRequest) createTicketRes() {}
+
+type CreateTicketReq struct {
+	Title       string       `json:"title"`
+	Description OptString    `json:"description"`
+	Status      TicketStatus `json:"status"`
+	// 主担当 (traQ ID).
+	Assignee string `json:"assignee"`
+	// 副担当リスト (traQ ID).
+	SubAssignees []string `json:"sub_assignees"`
+	// その他関係者 (traQ ID).
+	Stakeholders []string `json:"stakeholders"`
+	Due          OptDate  `json:"due"`
+	Tags         []string `json:"tags"`
+}
+
+// GetTitle returns the value of Title.
+func (s *CreateTicketReq) GetTitle() string {
+	return s.Title
+}
+
+// GetDescription returns the value of Description.
+func (s *CreateTicketReq) GetDescription() OptString {
+	return s.Description
+}
+
+// GetStatus returns the value of Status.
+func (s *CreateTicketReq) GetStatus() TicketStatus {
+	return s.Status
+}
+
+// GetAssignee returns the value of Assignee.
+func (s *CreateTicketReq) GetAssignee() string {
+	return s.Assignee
+}
+
+// GetSubAssignees returns the value of SubAssignees.
+func (s *CreateTicketReq) GetSubAssignees() []string {
+	return s.SubAssignees
+}
+
+// GetStakeholders returns the value of Stakeholders.
+func (s *CreateTicketReq) GetStakeholders() []string {
+	return s.Stakeholders
+}
+
+// GetDue returns the value of Due.
+func (s *CreateTicketReq) GetDue() OptDate {
+	return s.Due
+}
+
+// GetTags returns the value of Tags.
+func (s *CreateTicketReq) GetTags() []string {
+	return s.Tags
+}
+
+// SetTitle sets the value of Title.
+func (s *CreateTicketReq) SetTitle(val string) {
+	s.Title = val
+}
+
+// SetDescription sets the value of Description.
+func (s *CreateTicketReq) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetStatus sets the value of Status.
+func (s *CreateTicketReq) SetStatus(val TicketStatus) {
+	s.Status = val
+}
+
+// SetAssignee sets the value of Assignee.
+func (s *CreateTicketReq) SetAssignee(val string) {
+	s.Assignee = val
+}
+
+// SetSubAssignees sets the value of SubAssignees.
+func (s *CreateTicketReq) SetSubAssignees(val []string) {
+	s.SubAssignees = val
+}
+
+// SetStakeholders sets the value of Stakeholders.
+func (s *CreateTicketReq) SetStakeholders(val []string) {
+	s.Stakeholders = val
+}
+
+// SetDue sets the value of Due.
+func (s *CreateTicketReq) SetDue(val OptDate) {
+	s.Due = val
+}
+
+// SetTags sets the value of Tags.
+func (s *CreateTicketReq) SetTags(val []string) {
+	s.Tags = val
+}
+
+// CreateTicketUnauthorized is response for CreateTicket operation.
+type CreateTicketUnauthorized struct{}
+
+func (*CreateTicketUnauthorized) createTicketRes() {}
+
 // DeleteReviewNoContent is response for DeleteReview operation.
 type DeleteReviewNoContent struct{}
+
+// DeleteTicketByIDForbidden is response for DeleteTicketByID operation.
+type DeleteTicketByIDForbidden struct{}
+
+func (*DeleteTicketByIDForbidden) deleteTicketByIDRes() {}
+
+// DeleteTicketByIDNoContent is response for DeleteTicketByID operation.
+type DeleteTicketByIDNoContent struct{}
+
+func (*DeleteTicketByIDNoContent) deleteTicketByIDRes() {}
+
+// DeleteTicketByIDNotFound is response for DeleteTicketByID operation.
+type DeleteTicketByIDNotFound struct{}
+
+func (*DeleteTicketByIDNotFound) deleteTicketByIDRes() {}
+
+// GetTicketByIDNotFound is response for GetTicketByID operation.
+type GetTicketByIDNotFound struct{}
+
+func (*GetTicketByIDNotFound) getTicketByIDRes() {}
+
+// Merged schema.
+type GetTicketByIDOK struct {
+	// チケットID.
+	ID int64 `json:"id"`
+	// 案件名.
+	Title string `json:"title"`
+	// 詳細.
+	Description OptString `json:"description"`
+	// 主担当のtraQ ID.
+	Assignee string `json:"assignee"`
+	// 副担当リスト (traQ ID).
+	SubAssignees []string `json:"sub_assignees"`
+	// その他関係者リスト (traQ ID)。.
+	Stakeholders []string     `json:"stakeholders"`
+	Status       TicketStatus `json:"status"`
+	// タグ (例: 協賛, 問い合わせ).
+	Tags []string `json:"tags"`
+	// 期日。未指定時は自動設定される。.
+	Due       OptNilDate  `json:"due"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt OptDateTime `json:"updated_at"`
+	// このチケットに紐づくノート一覧.
+	Notes []Note `json:"notes"`
+}
+
+// GetID returns the value of ID.
+func (s *GetTicketByIDOK) GetID() int64 {
+	return s.ID
+}
+
+// GetTitle returns the value of Title.
+func (s *GetTicketByIDOK) GetTitle() string {
+	return s.Title
+}
+
+// GetDescription returns the value of Description.
+func (s *GetTicketByIDOK) GetDescription() OptString {
+	return s.Description
+}
+
+// GetAssignee returns the value of Assignee.
+func (s *GetTicketByIDOK) GetAssignee() string {
+	return s.Assignee
+}
+
+// GetSubAssignees returns the value of SubAssignees.
+func (s *GetTicketByIDOK) GetSubAssignees() []string {
+	return s.SubAssignees
+}
+
+// GetStakeholders returns the value of Stakeholders.
+func (s *GetTicketByIDOK) GetStakeholders() []string {
+	return s.Stakeholders
+}
+
+// GetStatus returns the value of Status.
+func (s *GetTicketByIDOK) GetStatus() TicketStatus {
+	return s.Status
+}
+
+// GetTags returns the value of Tags.
+func (s *GetTicketByIDOK) GetTags() []string {
+	return s.Tags
+}
+
+// GetDue returns the value of Due.
+func (s *GetTicketByIDOK) GetDue() OptNilDate {
+	return s.Due
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *GetTicketByIDOK) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *GetTicketByIDOK) GetUpdatedAt() OptDateTime {
+	return s.UpdatedAt
+}
+
+// GetNotes returns the value of Notes.
+func (s *GetTicketByIDOK) GetNotes() []Note {
+	return s.Notes
+}
+
+// SetID sets the value of ID.
+func (s *GetTicketByIDOK) SetID(val int64) {
+	s.ID = val
+}
+
+// SetTitle sets the value of Title.
+func (s *GetTicketByIDOK) SetTitle(val string) {
+	s.Title = val
+}
+
+// SetDescription sets the value of Description.
+func (s *GetTicketByIDOK) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetAssignee sets the value of Assignee.
+func (s *GetTicketByIDOK) SetAssignee(val string) {
+	s.Assignee = val
+}
+
+// SetSubAssignees sets the value of SubAssignees.
+func (s *GetTicketByIDOK) SetSubAssignees(val []string) {
+	s.SubAssignees = val
+}
+
+// SetStakeholders sets the value of Stakeholders.
+func (s *GetTicketByIDOK) SetStakeholders(val []string) {
+	s.Stakeholders = val
+}
+
+// SetStatus sets the value of Status.
+func (s *GetTicketByIDOK) SetStatus(val TicketStatus) {
+	s.Status = val
+}
+
+// SetTags sets the value of Tags.
+func (s *GetTicketByIDOK) SetTags(val []string) {
+	s.Tags = val
+}
+
+// SetDue sets the value of Due.
+func (s *GetTicketByIDOK) SetDue(val OptNilDate) {
+	s.Due = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *GetTicketByIDOK) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *GetTicketByIDOK) SetUpdatedAt(val OptDateTime) {
+	s.UpdatedAt = val
+}
+
+// SetNotes sets the value of Notes.
+func (s *GetTicketByIDOK) SetNotes(val []Note) {
+	s.Notes = val
+}
+
+func (*GetTicketByIDOK) getTicketByIDRes() {}
+
+// GetTicketsBadRequest is response for GetTickets operation.
+type GetTicketsBadRequest struct{}
+
+func (*GetTicketsBadRequest) getTicketsRes() {}
+
+type GetTicketsOKApplicationJSON []Ticket
+
+func (*GetTicketsOKApplicationJSON) getTicketsRes() {}
+
+type GetTicketsSort string
+
+const (
+	GetTicketsSortDueAsc      GetTicketsSort = "due_asc"
+	GetTicketsSortDueDesc     GetTicketsSort = "due_desc"
+	GetTicketsSortCreatedDesc GetTicketsSort = "created_desc"
+)
+
+// AllValues returns all GetTicketsSort values.
+func (GetTicketsSort) AllValues() []GetTicketsSort {
+	return []GetTicketsSort{
+		GetTicketsSortDueAsc,
+		GetTicketsSortDueDesc,
+		GetTicketsSortCreatedDesc,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s GetTicketsSort) MarshalText() ([]byte, error) {
+	switch s {
+	case GetTicketsSortDueAsc:
+		return []byte(s), nil
+	case GetTicketsSortDueDesc:
+		return []byte(s), nil
+	case GetTicketsSortCreatedDesc:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *GetTicketsSort) UnmarshalText(data []byte) error {
+	switch GetTicketsSort(data) {
+	case GetTicketsSortDueAsc:
+		*s = GetTicketsSortDueAsc
+		return nil
+	case GetTicketsSortDueDesc:
+		*s = GetTicketsSortDueDesc
+		return nil
+	case GetTicketsSortCreatedDesc:
+		*s = GetTicketsSortCreatedDesc
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// GetTicketsUnauthorized is response for GetTickets operation.
+type GetTicketsUnauthorized struct{}
+
+func (*GetTicketsUnauthorized) getTicketsRes() {}
 
 // Ref: #/components/schemas/Note
 type Note struct {
@@ -426,6 +759,52 @@ func (o OptDateTime) Or(d time.Time) time.Time {
 	return d
 }
 
+// NewOptGetTicketsSort returns new OptGetTicketsSort with value set to v.
+func NewOptGetTicketsSort(v GetTicketsSort) OptGetTicketsSort {
+	return OptGetTicketsSort{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptGetTicketsSort is optional GetTicketsSort.
+type OptGetTicketsSort struct {
+	Value GetTicketsSort
+	Set   bool
+}
+
+// IsSet returns true if OptGetTicketsSort was set.
+func (o OptGetTicketsSort) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptGetTicketsSort) Reset() {
+	var v GetTicketsSort
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptGetTicketsSort) SetTo(v GetTicketsSort) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptGetTicketsSort) Get() (v GetTicketsSort, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptGetTicketsSort) Or(d GetTicketsSort) GetTicketsSort {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptInt returns new OptInt with value set to v.
 func NewOptInt(v int) OptInt {
 	return OptInt{
@@ -719,98 +1098,6 @@ func (o OptTicketStatus) Or(d TicketStatus) TicketStatus {
 	return d
 }
 
-// NewOptTicketsGetSort returns new OptTicketsGetSort with value set to v.
-func NewOptTicketsGetSort(v TicketsGetSort) OptTicketsGetSort {
-	return OptTicketsGetSort{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptTicketsGetSort is optional TicketsGetSort.
-type OptTicketsGetSort struct {
-	Value TicketsGetSort
-	Set   bool
-}
-
-// IsSet returns true if OptTicketsGetSort was set.
-func (o OptTicketsGetSort) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptTicketsGetSort) Reset() {
-	var v TicketsGetSort
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptTicketsGetSort) SetTo(v TicketsGetSort) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptTicketsGetSort) Get() (v TicketsGetSort, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptTicketsGetSort) Or(d TicketsGetSort) TicketsGetSort {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptTicketsTicketIdPatchReq returns new OptTicketsTicketIdPatchReq with value set to v.
-func NewOptTicketsTicketIdPatchReq(v TicketsTicketIdPatchReq) OptTicketsTicketIdPatchReq {
-	return OptTicketsTicketIdPatchReq{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptTicketsTicketIdPatchReq is optional TicketsTicketIdPatchReq.
-type OptTicketsTicketIdPatchReq struct {
-	Value TicketsTicketIdPatchReq
-	Set   bool
-}
-
-// IsSet returns true if OptTicketsTicketIdPatchReq was set.
-func (o OptTicketsTicketIdPatchReq) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptTicketsTicketIdPatchReq) Reset() {
-	var v TicketsTicketIdPatchReq
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptTicketsTicketIdPatchReq) SetTo(v TicketsTicketIdPatchReq) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptTicketsTicketIdPatchReq) Get() (v TicketsTicketIdPatchReq, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptTicketsTicketIdPatchReq) Or(d TicketsTicketIdPatchReq) TicketsTicketIdPatchReq {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptUpdateReviewReq returns new OptUpdateReviewReq with value set to v.
 func NewOptUpdateReviewReq(v UpdateReviewReq) OptUpdateReviewReq {
 	return OptUpdateReviewReq{
@@ -851,6 +1138,52 @@ func (o OptUpdateReviewReq) Get() (v UpdateReviewReq, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptUpdateReviewReq) Or(d UpdateReviewReq) UpdateReviewReq {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptUpdateTicketByIDReq returns new OptUpdateTicketByIDReq with value set to v.
+func NewOptUpdateTicketByIDReq(v UpdateTicketByIDReq) OptUpdateTicketByIDReq {
+	return OptUpdateTicketByIDReq{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUpdateTicketByIDReq is optional UpdateTicketByIDReq.
+type OptUpdateTicketByIDReq struct {
+	Value UpdateTicketByIDReq
+	Set   bool
+}
+
+// IsSet returns true if OptUpdateTicketByIDReq was set.
+func (o OptUpdateTicketByIDReq) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUpdateTicketByIDReq) Reset() {
+	var v UpdateTicketByIDReq
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUpdateTicketByIDReq) SetTo(v UpdateTicketByIDReq) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUpdateTicketByIDReq) Get() (v UpdateTicketByIDReq, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUpdateTicketByIDReq) Or(d UpdateTicketByIDReq) UpdateTicketByIDReq {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -1199,7 +1532,7 @@ func (s *Ticket) SetUpdatedAt(val OptDateTime) {
 	s.UpdatedAt = val
 }
 
-func (*Ticket) ticketsPostRes() {}
+func (*Ticket) createTicketRes() {}
 
 // チケットの進行状況
 // - not_planned: 方針決定待ち
@@ -1294,339 +1627,6 @@ func (s *TicketStatus) UnmarshalText(data []byte) error {
 	}
 }
 
-// TicketsGetBadRequest is response for TicketsGet operation.
-type TicketsGetBadRequest struct{}
-
-func (*TicketsGetBadRequest) ticketsGetRes() {}
-
-type TicketsGetOKApplicationJSON []Ticket
-
-func (*TicketsGetOKApplicationJSON) ticketsGetRes() {}
-
-type TicketsGetSort string
-
-const (
-	TicketsGetSortDueAsc      TicketsGetSort = "due_asc"
-	TicketsGetSortDueDesc     TicketsGetSort = "due_desc"
-	TicketsGetSortCreatedDesc TicketsGetSort = "created_desc"
-)
-
-// AllValues returns all TicketsGetSort values.
-func (TicketsGetSort) AllValues() []TicketsGetSort {
-	return []TicketsGetSort{
-		TicketsGetSortDueAsc,
-		TicketsGetSortDueDesc,
-		TicketsGetSortCreatedDesc,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s TicketsGetSort) MarshalText() ([]byte, error) {
-	switch s {
-	case TicketsGetSortDueAsc:
-		return []byte(s), nil
-	case TicketsGetSortDueDesc:
-		return []byte(s), nil
-	case TicketsGetSortCreatedDesc:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *TicketsGetSort) UnmarshalText(data []byte) error {
-	switch TicketsGetSort(data) {
-	case TicketsGetSortDueAsc:
-		*s = TicketsGetSortDueAsc
-		return nil
-	case TicketsGetSortDueDesc:
-		*s = TicketsGetSortDueDesc
-		return nil
-	case TicketsGetSortCreatedDesc:
-		*s = TicketsGetSortCreatedDesc
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// TicketsGetUnauthorized is response for TicketsGet operation.
-type TicketsGetUnauthorized struct{}
-
-func (*TicketsGetUnauthorized) ticketsGetRes() {}
-
-// TicketsPostBadRequest is response for TicketsPost operation.
-type TicketsPostBadRequest struct{}
-
-func (*TicketsPostBadRequest) ticketsPostRes() {}
-
-type TicketsPostReq struct {
-	Title       string       `json:"title"`
-	Description OptString    `json:"description"`
-	Status      TicketStatus `json:"status"`
-	// 主担当 (traQ ID).
-	Assignee string `json:"assignee"`
-	// 副担当リスト (traQ ID).
-	SubAssignees []string `json:"sub_assignees"`
-	// その他関係者 (traQ ID).
-	Stakeholders []string `json:"stakeholders"`
-	Due          OptDate  `json:"due"`
-	Tags         []string `json:"tags"`
-}
-
-// GetTitle returns the value of Title.
-func (s *TicketsPostReq) GetTitle() string {
-	return s.Title
-}
-
-// GetDescription returns the value of Description.
-func (s *TicketsPostReq) GetDescription() OptString {
-	return s.Description
-}
-
-// GetStatus returns the value of Status.
-func (s *TicketsPostReq) GetStatus() TicketStatus {
-	return s.Status
-}
-
-// GetAssignee returns the value of Assignee.
-func (s *TicketsPostReq) GetAssignee() string {
-	return s.Assignee
-}
-
-// GetSubAssignees returns the value of SubAssignees.
-func (s *TicketsPostReq) GetSubAssignees() []string {
-	return s.SubAssignees
-}
-
-// GetStakeholders returns the value of Stakeholders.
-func (s *TicketsPostReq) GetStakeholders() []string {
-	return s.Stakeholders
-}
-
-// GetDue returns the value of Due.
-func (s *TicketsPostReq) GetDue() OptDate {
-	return s.Due
-}
-
-// GetTags returns the value of Tags.
-func (s *TicketsPostReq) GetTags() []string {
-	return s.Tags
-}
-
-// SetTitle sets the value of Title.
-func (s *TicketsPostReq) SetTitle(val string) {
-	s.Title = val
-}
-
-// SetDescription sets the value of Description.
-func (s *TicketsPostReq) SetDescription(val OptString) {
-	s.Description = val
-}
-
-// SetStatus sets the value of Status.
-func (s *TicketsPostReq) SetStatus(val TicketStatus) {
-	s.Status = val
-}
-
-// SetAssignee sets the value of Assignee.
-func (s *TicketsPostReq) SetAssignee(val string) {
-	s.Assignee = val
-}
-
-// SetSubAssignees sets the value of SubAssignees.
-func (s *TicketsPostReq) SetSubAssignees(val []string) {
-	s.SubAssignees = val
-}
-
-// SetStakeholders sets the value of Stakeholders.
-func (s *TicketsPostReq) SetStakeholders(val []string) {
-	s.Stakeholders = val
-}
-
-// SetDue sets the value of Due.
-func (s *TicketsPostReq) SetDue(val OptDate) {
-	s.Due = val
-}
-
-// SetTags sets the value of Tags.
-func (s *TicketsPostReq) SetTags(val []string) {
-	s.Tags = val
-}
-
-// TicketsPostUnauthorized is response for TicketsPost operation.
-type TicketsPostUnauthorized struct{}
-
-func (*TicketsPostUnauthorized) ticketsPostRes() {}
-
-// TicketsTicketIdDeleteForbidden is response for TicketsTicketIdDelete operation.
-type TicketsTicketIdDeleteForbidden struct{}
-
-func (*TicketsTicketIdDeleteForbidden) ticketsTicketIdDeleteRes() {}
-
-// TicketsTicketIdDeleteNoContent is response for TicketsTicketIdDelete operation.
-type TicketsTicketIdDeleteNoContent struct{}
-
-func (*TicketsTicketIdDeleteNoContent) ticketsTicketIdDeleteRes() {}
-
-// TicketsTicketIdDeleteNotFound is response for TicketsTicketIdDelete operation.
-type TicketsTicketIdDeleteNotFound struct{}
-
-func (*TicketsTicketIdDeleteNotFound) ticketsTicketIdDeleteRes() {}
-
-// TicketsTicketIdGetNotFound is response for TicketsTicketIdGet operation.
-type TicketsTicketIdGetNotFound struct{}
-
-func (*TicketsTicketIdGetNotFound) ticketsTicketIdGetRes() {}
-
-// Merged schema.
-type TicketsTicketIdGetOK struct {
-	// チケットID.
-	ID int64 `json:"id"`
-	// 案件名.
-	Title string `json:"title"`
-	// 詳細.
-	Description OptString `json:"description"`
-	// 主担当のtraQ ID.
-	Assignee string `json:"assignee"`
-	// 副担当リスト (traQ ID).
-	SubAssignees []string `json:"sub_assignees"`
-	// その他関係者リスト (traQ ID)。.
-	Stakeholders []string     `json:"stakeholders"`
-	Status       TicketStatus `json:"status"`
-	// タグ (例: 協賛, 問い合わせ).
-	Tags []string `json:"tags"`
-	// 期日。未指定時は自動設定される。.
-	Due       OptNilDate  `json:"due"`
-	CreatedAt time.Time   `json:"created_at"`
-	UpdatedAt OptDateTime `json:"updated_at"`
-	// このチケットに紐づくノート一覧.
-	Notes []Note `json:"notes"`
-}
-
-// GetID returns the value of ID.
-func (s *TicketsTicketIdGetOK) GetID() int64 {
-	return s.ID
-}
-
-// GetTitle returns the value of Title.
-func (s *TicketsTicketIdGetOK) GetTitle() string {
-	return s.Title
-}
-
-// GetDescription returns the value of Description.
-func (s *TicketsTicketIdGetOK) GetDescription() OptString {
-	return s.Description
-}
-
-// GetAssignee returns the value of Assignee.
-func (s *TicketsTicketIdGetOK) GetAssignee() string {
-	return s.Assignee
-}
-
-// GetSubAssignees returns the value of SubAssignees.
-func (s *TicketsTicketIdGetOK) GetSubAssignees() []string {
-	return s.SubAssignees
-}
-
-// GetStakeholders returns the value of Stakeholders.
-func (s *TicketsTicketIdGetOK) GetStakeholders() []string {
-	return s.Stakeholders
-}
-
-// GetStatus returns the value of Status.
-func (s *TicketsTicketIdGetOK) GetStatus() TicketStatus {
-	return s.Status
-}
-
-// GetTags returns the value of Tags.
-func (s *TicketsTicketIdGetOK) GetTags() []string {
-	return s.Tags
-}
-
-// GetDue returns the value of Due.
-func (s *TicketsTicketIdGetOK) GetDue() OptNilDate {
-	return s.Due
-}
-
-// GetCreatedAt returns the value of CreatedAt.
-func (s *TicketsTicketIdGetOK) GetCreatedAt() time.Time {
-	return s.CreatedAt
-}
-
-// GetUpdatedAt returns the value of UpdatedAt.
-func (s *TicketsTicketIdGetOK) GetUpdatedAt() OptDateTime {
-	return s.UpdatedAt
-}
-
-// GetNotes returns the value of Notes.
-func (s *TicketsTicketIdGetOK) GetNotes() []Note {
-	return s.Notes
-}
-
-// SetID sets the value of ID.
-func (s *TicketsTicketIdGetOK) SetID(val int64) {
-	s.ID = val
-}
-
-// SetTitle sets the value of Title.
-func (s *TicketsTicketIdGetOK) SetTitle(val string) {
-	s.Title = val
-}
-
-// SetDescription sets the value of Description.
-func (s *TicketsTicketIdGetOK) SetDescription(val OptString) {
-	s.Description = val
-}
-
-// SetAssignee sets the value of Assignee.
-func (s *TicketsTicketIdGetOK) SetAssignee(val string) {
-	s.Assignee = val
-}
-
-// SetSubAssignees sets the value of SubAssignees.
-func (s *TicketsTicketIdGetOK) SetSubAssignees(val []string) {
-	s.SubAssignees = val
-}
-
-// SetStakeholders sets the value of Stakeholders.
-func (s *TicketsTicketIdGetOK) SetStakeholders(val []string) {
-	s.Stakeholders = val
-}
-
-// SetStatus sets the value of Status.
-func (s *TicketsTicketIdGetOK) SetStatus(val TicketStatus) {
-	s.Status = val
-}
-
-// SetTags sets the value of Tags.
-func (s *TicketsTicketIdGetOK) SetTags(val []string) {
-	s.Tags = val
-}
-
-// SetDue sets the value of Due.
-func (s *TicketsTicketIdGetOK) SetDue(val OptNilDate) {
-	s.Due = val
-}
-
-// SetCreatedAt sets the value of CreatedAt.
-func (s *TicketsTicketIdGetOK) SetCreatedAt(val time.Time) {
-	s.CreatedAt = val
-}
-
-// SetUpdatedAt sets the value of UpdatedAt.
-func (s *TicketsTicketIdGetOK) SetUpdatedAt(val OptDateTime) {
-	s.UpdatedAt = val
-}
-
-// SetNotes sets the value of Notes.
-func (s *TicketsTicketIdGetOK) SetNotes(val []Note) {
-	s.Notes = val
-}
-
-func (*TicketsTicketIdGetOK) ticketsTicketIdGetRes() {}
-
 // TicketsTicketIdNotesNoteIdDeleteNoContent is response for TicketsTicketIdNotesNoteIdDelete operation.
 type TicketsTicketIdNotesNoteIdDeleteNoContent struct{}
 
@@ -1714,117 +1714,6 @@ func (s *TicketsTicketIdNotesPostReq) SetMentionNotification(val bool) {
 	s.MentionNotification = val
 }
 
-// TicketsTicketIdPatchBadRequest is response for TicketsTicketIdPatch operation.
-type TicketsTicketIdPatchBadRequest struct{}
-
-func (*TicketsTicketIdPatchBadRequest) ticketsTicketIdPatchRes() {}
-
-// TicketsTicketIdPatchForbidden is response for TicketsTicketIdPatch operation.
-type TicketsTicketIdPatchForbidden struct{}
-
-func (*TicketsTicketIdPatchForbidden) ticketsTicketIdPatchRes() {}
-
-// TicketsTicketIdPatchNotFound is response for TicketsTicketIdPatch operation.
-type TicketsTicketIdPatchNotFound struct{}
-
-func (*TicketsTicketIdPatchNotFound) ticketsTicketIdPatchRes() {}
-
-// TicketsTicketIdPatchOK is response for TicketsTicketIdPatch operation.
-type TicketsTicketIdPatchOK struct{}
-
-func (*TicketsTicketIdPatchOK) ticketsTicketIdPatchRes() {}
-
-type TicketsTicketIdPatchReq struct {
-	Title        OptString       `json:"title"`
-	Description  OptString       `json:"description"`
-	Status       OptTicketStatus `json:"status"`
-	Assignee     OptString       `json:"assignee"`
-	SubAssignees []string        `json:"sub_assignees"`
-	Stakeholders []string        `json:"stakeholders"`
-	Due          OptDate         `json:"due"`
-	Tags         []string        `json:"tags"`
-}
-
-// GetTitle returns the value of Title.
-func (s *TicketsTicketIdPatchReq) GetTitle() OptString {
-	return s.Title
-}
-
-// GetDescription returns the value of Description.
-func (s *TicketsTicketIdPatchReq) GetDescription() OptString {
-	return s.Description
-}
-
-// GetStatus returns the value of Status.
-func (s *TicketsTicketIdPatchReq) GetStatus() OptTicketStatus {
-	return s.Status
-}
-
-// GetAssignee returns the value of Assignee.
-func (s *TicketsTicketIdPatchReq) GetAssignee() OptString {
-	return s.Assignee
-}
-
-// GetSubAssignees returns the value of SubAssignees.
-func (s *TicketsTicketIdPatchReq) GetSubAssignees() []string {
-	return s.SubAssignees
-}
-
-// GetStakeholders returns the value of Stakeholders.
-func (s *TicketsTicketIdPatchReq) GetStakeholders() []string {
-	return s.Stakeholders
-}
-
-// GetDue returns the value of Due.
-func (s *TicketsTicketIdPatchReq) GetDue() OptDate {
-	return s.Due
-}
-
-// GetTags returns the value of Tags.
-func (s *TicketsTicketIdPatchReq) GetTags() []string {
-	return s.Tags
-}
-
-// SetTitle sets the value of Title.
-func (s *TicketsTicketIdPatchReq) SetTitle(val OptString) {
-	s.Title = val
-}
-
-// SetDescription sets the value of Description.
-func (s *TicketsTicketIdPatchReq) SetDescription(val OptString) {
-	s.Description = val
-}
-
-// SetStatus sets the value of Status.
-func (s *TicketsTicketIdPatchReq) SetStatus(val OptTicketStatus) {
-	s.Status = val
-}
-
-// SetAssignee sets the value of Assignee.
-func (s *TicketsTicketIdPatchReq) SetAssignee(val OptString) {
-	s.Assignee = val
-}
-
-// SetSubAssignees sets the value of SubAssignees.
-func (s *TicketsTicketIdPatchReq) SetSubAssignees(val []string) {
-	s.SubAssignees = val
-}
-
-// SetStakeholders sets the value of Stakeholders.
-func (s *TicketsTicketIdPatchReq) SetStakeholders(val []string) {
-	s.Stakeholders = val
-}
-
-// SetDue sets the value of Due.
-func (s *TicketsTicketIdPatchReq) SetDue(val OptDate) {
-	s.Due = val
-}
-
-// SetTags sets the value of Tags.
-func (s *TicketsTicketIdPatchReq) SetTags(val []string) {
-	s.Tags = val
-}
-
 type TraQAuth struct {
 	APIKey string
 	Roles  []string
@@ -1899,6 +1788,117 @@ func (s *UpdateReviewReq) SetWeight(val OptInt) {
 // SetComment sets the value of Comment.
 func (s *UpdateReviewReq) SetComment(val OptString) {
 	s.Comment = val
+}
+
+// UpdateTicketByIDBadRequest is response for UpdateTicketByID operation.
+type UpdateTicketByIDBadRequest struct{}
+
+func (*UpdateTicketByIDBadRequest) updateTicketByIDRes() {}
+
+// UpdateTicketByIDForbidden is response for UpdateTicketByID operation.
+type UpdateTicketByIDForbidden struct{}
+
+func (*UpdateTicketByIDForbidden) updateTicketByIDRes() {}
+
+// UpdateTicketByIDNotFound is response for UpdateTicketByID operation.
+type UpdateTicketByIDNotFound struct{}
+
+func (*UpdateTicketByIDNotFound) updateTicketByIDRes() {}
+
+// UpdateTicketByIDOK is response for UpdateTicketByID operation.
+type UpdateTicketByIDOK struct{}
+
+func (*UpdateTicketByIDOK) updateTicketByIDRes() {}
+
+type UpdateTicketByIDReq struct {
+	Title        OptString       `json:"title"`
+	Description  OptString       `json:"description"`
+	Status       OptTicketStatus `json:"status"`
+	Assignee     OptString       `json:"assignee"`
+	SubAssignees []string        `json:"sub_assignees"`
+	Stakeholders []string        `json:"stakeholders"`
+	Due          OptDate         `json:"due"`
+	Tags         []string        `json:"tags"`
+}
+
+// GetTitle returns the value of Title.
+func (s *UpdateTicketByIDReq) GetTitle() OptString {
+	return s.Title
+}
+
+// GetDescription returns the value of Description.
+func (s *UpdateTicketByIDReq) GetDescription() OptString {
+	return s.Description
+}
+
+// GetStatus returns the value of Status.
+func (s *UpdateTicketByIDReq) GetStatus() OptTicketStatus {
+	return s.Status
+}
+
+// GetAssignee returns the value of Assignee.
+func (s *UpdateTicketByIDReq) GetAssignee() OptString {
+	return s.Assignee
+}
+
+// GetSubAssignees returns the value of SubAssignees.
+func (s *UpdateTicketByIDReq) GetSubAssignees() []string {
+	return s.SubAssignees
+}
+
+// GetStakeholders returns the value of Stakeholders.
+func (s *UpdateTicketByIDReq) GetStakeholders() []string {
+	return s.Stakeholders
+}
+
+// GetDue returns the value of Due.
+func (s *UpdateTicketByIDReq) GetDue() OptDate {
+	return s.Due
+}
+
+// GetTags returns the value of Tags.
+func (s *UpdateTicketByIDReq) GetTags() []string {
+	return s.Tags
+}
+
+// SetTitle sets the value of Title.
+func (s *UpdateTicketByIDReq) SetTitle(val OptString) {
+	s.Title = val
+}
+
+// SetDescription sets the value of Description.
+func (s *UpdateTicketByIDReq) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetStatus sets the value of Status.
+func (s *UpdateTicketByIDReq) SetStatus(val OptTicketStatus) {
+	s.Status = val
+}
+
+// SetAssignee sets the value of Assignee.
+func (s *UpdateTicketByIDReq) SetAssignee(val OptString) {
+	s.Assignee = val
+}
+
+// SetSubAssignees sets the value of SubAssignees.
+func (s *UpdateTicketByIDReq) SetSubAssignees(val []string) {
+	s.SubAssignees = val
+}
+
+// SetStakeholders sets the value of Stakeholders.
+func (s *UpdateTicketByIDReq) SetStakeholders(val []string) {
+	s.Stakeholders = val
+}
+
+// SetDue sets the value of Due.
+func (s *UpdateTicketByIDReq) SetDue(val OptDate) {
+	s.Due = val
+}
+
+// SetTags sets the value of Tags.
+func (s *UpdateTicketByIDReq) SetTags(val []string) {
+	s.Tags = val
 }
 
 // Ref: #/components/schemas/User
