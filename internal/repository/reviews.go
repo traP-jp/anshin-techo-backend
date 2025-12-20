@@ -274,6 +274,49 @@ func (r *Repository) UpdateReview(ctx context.Context, ticketID, noteID, reviewI
 	return updated, nil
 }
 
+func (r *Repository) DeleteReview(ctx context.Context, ticketID, noteID, reviewID int64, reviewer string) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			fmt.Printf("failed to rollback: %v\n", err)
+		}
+	}()
+
+	var author string
+	if err := tx.QueryRowContext(ctx, `
+		SELECT r.author
+		FROM reviews r
+		JOIN notes n ON r.note_id = n.id
+		WHERE r.id = ? AND r.note_id = ? AND n.ticket_id = ? AND r.deleted_at IS NULL AND n.deleted_at IS NULL
+		FOR UPDATE
+	`, reviewID, noteID, ticketID).Scan(&author); err != nil {
+		if err == sql.ErrNoRows {
+			return ErrReviewNotFound
+		}
+
+		return fmt.Errorf("select review: %w", err)
+	}
+
+	if author != reviewer {
+		return ErrReviewForbidden
+	}
+
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE reviews SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?
+	`, reviewID); err != nil {
+		return fmt.Errorf("delete review: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return nil
+}
+
 func ensureReviewerNotDuplicated(ctx context.Context, tx *sqlx.Tx, noteID int64, reviewer string) error {
 	var exists int
 	if err := tx.QueryRowContext(ctx, `

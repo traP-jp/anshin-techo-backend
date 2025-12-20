@@ -56,6 +56,27 @@ func (h *Handler) TicketsTicketIdNotesNoteIdReviewsPost(ctx context.Context, req
 	return apiReview, nil
 }
 
+// TicketsTicketIdNotesNoteIdReviewsReviewIdDelete implements DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
+func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdDelete(ctx context.Context, params api.TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteParams) error {
+	reviewer, ok := traqIDFromContext(ctx)
+	if !ok {
+		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
+	}
+
+	if err := h.repo.DeleteReview(ctx, params.TicketId, params.NoteId, params.ReviewId, reviewer); err != nil {
+		switch err {
+		case repository.ErrReviewNotFound:
+			return echo.NewHTTPError(http.StatusNotFound, "review not found")
+		case repository.ErrReviewForbidden:
+			return echo.NewHTTPError(http.StatusForbidden, "forbidden")
+		default:
+			return fmt.Errorf("delete review in repository: %w", err)
+		}
+	}
+
+	return nil
+}
+
 // TicketsTicketIdNotesNoteIdReviewsReviewIdPut implements PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
 func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdPut(ctx context.Context, req api.OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq, params api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutParams) (api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutRes, error) {
 	reviewer, ok := traqIDFromContext(ctx)
