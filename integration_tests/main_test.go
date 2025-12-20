@@ -42,13 +42,13 @@ func run(m *testing.M) error {
 
 	mysqlConfig := c.MySQLConfig()
 
-	resource, err := pool.Run("mysql", "latest", []string{
-		"MYSQL_ROOT_PASSWORD=" + mysqlConfig.Passwd,
-		"MYSQL_DATABASE=" + mysqlConfig.DBName,
-		"MYSQL_ROOT_HOST=%",
+	resource, err := pool.Run("mariadb", "12", []string{
+		"MARIADB_ROOT_PASSWORD=" + mysqlConfig.Passwd,
+		"MARIADB_DATABASE=" + mysqlConfig.DBName,
+		"MARIADB_ROOT_HOST=%",
 	})
 	if err != nil {
-		return fmt.Errorf("start mysql docker: %w", err)
+		return fmt.Errorf("start mariadb docker: %w", err)
 	}
 
 	mysqlConfig.Addr = "localhost:" + resource.GetPort("3306/tcp")
@@ -84,7 +84,7 @@ func run(m *testing.M) error {
 	m.Run()
 
 	if err := pool.Purge(resource); err != nil {
-		return fmt.Errorf("purge mysql docker: %w", err)
+		return fmt.Errorf("purge mariadb docker: %w", err)
 	}
 
 	return nil
