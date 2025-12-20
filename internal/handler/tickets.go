@@ -172,11 +172,6 @@ func (h *Handler) DeleteTicketByID(ctx context.Context, params api.DeleteTicketB
 
 // GET /tickets/{ticketId}
 func (h *Handler) GetTicketByID(ctx context.Context, params api.GetTicketByIDParams) (api.GetTicketByIDRes, error) {
-	_, ok := traqIDFromContext(ctx)
-	if !ok {
-		return &api.GetTicketByIDUnauthorized{}, nil
-	}
-
 	id := params.TicketId
 	ticket, err := h.repo.GetTicketByID(ctx, id)
 	if err != nil {
