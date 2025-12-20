@@ -46,23 +46,6 @@ func (h *Handler) TicketsTicketIdPatch(_ context.Context, _ api.OptTicketsTicket
 	return nil, fmt.Errorf("not implemented")
 }
 
-// --- Notes ---
-
-// TicketsTicketIdNotesPost implements POST /tickets/{ticketId}/notes operation.
-func (h *Handler) TicketsTicketIdNotesPost(_ context.Context, _ *api.TicketsTicketIdNotesPostReq, _ api.TicketsTicketIdNotesPostParams) (*api.Note, error) {
-	return nil, fmt.Errorf("not implemented")
-}
-
-// TicketsTicketIdNotesNoteIdPut implements PUT /tickets/{ticketId}/notes/{noteId} operation.
-func (h *Handler) TicketsTicketIdNotesNoteIdPut(_ context.Context, _ *api.TicketsTicketIdNotesNoteIdPutReq, _ api.TicketsTicketIdNotesNoteIdPutParams) (api.TicketsTicketIdNotesNoteIdPutRes, error) {
-	return nil, fmt.Errorf("not implemented")
-}
-
-// TicketsTicketIdNotesNoteIdDelete implements DELETE /tickets/{ticketId}/notes/{noteId} operation.
-func (h *Handler) TicketsTicketIdNotesNoteIdDelete(_ context.Context, _ api.TicketsTicketIdNotesNoteIdDeleteParams) error {
-	return fmt.Errorf("not implemented")
-}
-
 // --- Reviews ---
 
 // TicketsTicketIdNotesNoteIdReviewsPost implements POST /tickets/{ticketId}/notes/{noteId}/reviews operation.

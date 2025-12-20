@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/traP-jp/anshin-techo-backend/internal/api"
 	"github.com/traP-jp/anshin-techo-backend/internal/repository"
 )
 
@@ -33,8 +32,4 @@ func (h *Handler) NewError(ctx context.Context, err error) error {
 	slog.ErrorContext(ctx, "internal server error", "error", err)
 
 	return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
-}
-
-func (h *Handler) HandleTraQAuth(ctx context.Context, _ api.OperationName, _ api.TraQAuth) (context.Context, error) {
-	return ctx, nil
 }
