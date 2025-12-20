@@ -11,12 +11,12 @@ import (
 	"github.com/traP-jp/anshin-techo-backend/internal/repository"
 )
 
-func (h *Handler) CreateReview(ctx context.Context, req *api.CreateReviewReq, params api.CreateReviewParams) (*api.Review, error) {
+func (h *Handler) CreateReview(ctx context.Context, req *api.CreateReviewReq, params api.CreateReviewParams) (api.CreateReviewRes, error) {
 	reviewer := getUserID(ctx)
 
 	repoType, err := toRepositoryReviewType(req.Type)
 	if err != nil {
-		return nil, err
+		return &api.CreateReviewBadRequest{}, nil
 	}
 
 	comment := sql.NullString{String: "", Valid: false}
@@ -33,13 +33,13 @@ func (h *Handler) CreateReview(ctx context.Context, req *api.CreateReviewReq, pa
 	if err != nil {
 		switch err {
 		case repository.ErrNoteNotFound:
-			return nil, echo.NewHTTPError(http.StatusNotFound, "note not found")
+			return &api.CreateReviewNotFound{}, nil
 		case repository.ErrReviewerNotFound:
-			return nil, echo.NewHTTPError(http.StatusNotFound, "reviewer not found")
+			return &api.CreateReviewNotFound{}, nil
 		case repository.ErrReviewAlreadyExists:
-			return nil, echo.NewHTTPError(http.StatusConflict, "already reviewed")
+			return &api.CreateReviewConflict{}, nil
 		case repository.ErrInvalidReviewType, repository.ErrInvalidReviewWeight:
-			return nil, echo.NewHTTPError(http.StatusBadRequest, err.Error())
+			return &api.CreateReviewBadRequest{}, nil
 		default:
 			return nil, fmt.Errorf("create review in repository: %w", err)
 		}

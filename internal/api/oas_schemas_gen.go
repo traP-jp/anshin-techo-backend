@@ -3,10 +3,15 @@
 package api
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/go-faster/errors"
 )
+
+func (s *ErrorResponseStatusCode) Error() string {
+	return fmt.Sprintf("code %d: %+v", s.StatusCode, s.Response)
+}
 
 // Ref: #/components/schemas/Config
 type Config struct {
@@ -76,6 +81,21 @@ func (s *ConfigReminderInterval) SetOverdueDay(val []int) {
 func (s *ConfigReminderInterval) SetNotesentHour(val int) {
 	s.NotesentHour = val
 }
+
+// CreateReviewBadRequest is response for CreateReview operation.
+type CreateReviewBadRequest struct{}
+
+func (*CreateReviewBadRequest) createReviewRes() {}
+
+// CreateReviewConflict is response for CreateReview operation.
+type CreateReviewConflict struct{}
+
+func (*CreateReviewConflict) createReviewRes() {}
+
+// CreateReviewNotFound is response for CreateReview operation.
+type CreateReviewNotFound struct{}
+
+func (*CreateReviewNotFound) createReviewRes() {}
 
 type CreateReviewReq struct {
 	Type ReviewType `json:"type"`
@@ -235,6 +255,48 @@ func (*DeleteTicketByIDNoContent) deleteTicketByIDRes() {}
 type DeleteTicketByIDNotFound struct{}
 
 func (*DeleteTicketByIDNotFound) deleteTicketByIDRes() {}
+
+// Ref: #/components/schemas/Error
+type Error struct {
+	// エラーメッセージ.
+	Message string `json:"message"`
+}
+
+// GetMessage returns the value of Message.
+func (s *Error) GetMessage() string {
+	return s.Message
+}
+
+// SetMessage sets the value of Message.
+func (s *Error) SetMessage(val string) {
+	s.Message = val
+}
+
+// ErrorResponseStatusCode wraps Error with StatusCode.
+type ErrorResponseStatusCode struct {
+	StatusCode int
+	Response   Error
+}
+
+// GetStatusCode returns the value of StatusCode.
+func (s *ErrorResponseStatusCode) GetStatusCode() int {
+	return s.StatusCode
+}
+
+// GetResponse returns the value of Response.
+func (s *ErrorResponseStatusCode) GetResponse() Error {
+	return s.Response
+}
+
+// SetStatusCode sets the value of StatusCode.
+func (s *ErrorResponseStatusCode) SetStatusCode(val int) {
+	s.StatusCode = val
+}
+
+// SetResponse sets the value of Response.
+func (s *ErrorResponseStatusCode) SetResponse(val Error) {
+	s.Response = val
+}
 
 // GetTicketByIDNotFound is response for GetTicketByID operation.
 type GetTicketByIDNotFound struct{}
@@ -1353,6 +1415,8 @@ func (s *Review) SetCreatedAt(val OptDateTime) {
 func (s *Review) SetUpdatedAt(val OptDateTime) {
 	s.UpdatedAt = val
 }
+
+func (*Review) createReviewRes() {}
 
 // レビュー状態 (active: 有効, stale: 修正により無効化済み).
 type ReviewStatus string

@@ -27,7 +27,7 @@ type Handler interface {
 	// すでにレビュー済みの場合は失敗する。.
 	//
 	// POST /tickets/{ticketId}/notes/{noteId}/reviews
-	CreateReview(ctx context.Context, req *CreateReviewReq, params CreateReviewParams) (*Review, error)
+	CreateReview(ctx context.Context, req *CreateReviewReq, params CreateReviewParams) (CreateReviewRes, error)
 	// CreateTicket implements createTicket operation.
 	//
 	// 新規チケットを作成する。.
@@ -101,6 +101,10 @@ type Handler interface {
 	//
 	// PUT /users
 	UsersPut(ctx context.Context, req []User) (UsersPutRes, error)
+	// NewError creates *ErrorResponseStatusCode from error returned by handler.
+	//
+	// Used for common default response.
+	NewError(ctx context.Context, err error) *ErrorResponseStatusCode
 }
 
 // Server implements http server based on OpenAPI v3 specification and
