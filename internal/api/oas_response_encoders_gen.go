@@ -117,6 +117,11 @@ func encodeTicketsTicketIdDeleteResponse(response TicketsTicketIdDeleteRes, w ht
 
 		return nil
 
+	case *TicketsTicketIdDeleteNotFound:
+		w.WriteHeader(404)
+
+		return nil
+
 	default:
 		return errors.Errorf("unexpected response type: %T", response)
 	}
@@ -240,6 +245,11 @@ func encodeTicketsTicketIdPatchResponse(response TicketsTicketIdPatchRes, w http
 
 	case *TicketsTicketIdPatchForbidden:
 		w.WriteHeader(403)
+
+		return nil
+
+	case *TicketsTicketIdPatchNotFound:
+		w.WriteHeader(404)
 
 		return nil
 
