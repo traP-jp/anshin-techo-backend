@@ -1667,8 +1667,23 @@ func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) SetComment(val OptString) {
 // TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteNoContent is response for TicketsTicketIdNotesNoteIdReviewsReviewIdDelete operation.
 type TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteNoContent struct{}
 
+// TicketsTicketIdNotesNoteIdReviewsReviewIdPutForbidden is response for TicketsTicketIdNotesNoteIdReviewsReviewIdPut operation.
+type TicketsTicketIdNotesNoteIdReviewsReviewIdPutForbidden struct{}
+
+func (*TicketsTicketIdNotesNoteIdReviewsReviewIdPutForbidden) ticketsTicketIdNotesNoteIdReviewsReviewIdPutRes() {
+}
+
+// TicketsTicketIdNotesNoteIdReviewsReviewIdPutNotFound is response for TicketsTicketIdNotesNoteIdReviewsReviewIdPut operation.
+type TicketsTicketIdNotesNoteIdReviewsReviewIdPutNotFound struct{}
+
+func (*TicketsTicketIdNotesNoteIdReviewsReviewIdPutNotFound) ticketsTicketIdNotesNoteIdReviewsReviewIdPutRes() {
+}
+
 // TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK is response for TicketsTicketIdNotesNoteIdReviewsReviewIdPut operation.
 type TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK struct{}
+
+func (*TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK) ticketsTicketIdNotesNoteIdReviewsReviewIdPutRes() {
+}
 
 type TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq struct {
 	Type    OptReviewType `json:"type"`

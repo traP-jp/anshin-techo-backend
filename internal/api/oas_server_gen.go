@@ -76,7 +76,7 @@ type Handler interface {
 	// ReviewのAuthorのみ実行可能。.
 	//
 	// PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
-	TicketsTicketIdNotesNoteIdReviewsReviewIdPut(ctx context.Context, req OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq, params TicketsTicketIdNotesNoteIdReviewsReviewIdPutParams) error
+	TicketsTicketIdNotesNoteIdReviewsReviewIdPut(ctx context.Context, req OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq, params TicketsTicketIdNotesNoteIdReviewsReviewIdPutParams) (TicketsTicketIdNotesNoteIdReviewsReviewIdPutRes, error)
 	// TicketsTicketIdNotesPost implements POST /tickets/{ticketId}/notes operation.
 	//
 	// ノート追加.

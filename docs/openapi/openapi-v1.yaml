@@ -646,6 +646,10 @@ paths:
       responses:
         "200":
           description: "成功"
+        "403":
+          description: "権限なし"
+        "404":
+          description: "レビューが見つからない"
 
     delete:
       tags:

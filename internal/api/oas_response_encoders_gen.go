@@ -209,10 +209,26 @@ func encodeTicketsTicketIdNotesNoteIdReviewsReviewIdDeleteResponse(response *Tic
 	return nil
 }
 
-func encodeTicketsTicketIdNotesNoteIdReviewsReviewIdPutResponse(response *TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK, w http.ResponseWriter) error {
-	w.WriteHeader(200)
+func encodeTicketsTicketIdNotesNoteIdReviewsReviewIdPutResponse(response TicketsTicketIdNotesNoteIdReviewsReviewIdPutRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK:
+		w.WriteHeader(200)
 
-	return nil
+		return nil
+
+	case *TicketsTicketIdNotesNoteIdReviewsReviewIdPutForbidden:
+		w.WriteHeader(403)
+
+		return nil
+
+	case *TicketsTicketIdNotesNoteIdReviewsReviewIdPutNotFound:
+		w.WriteHeader(404)
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
 }
 
 func encodeTicketsTicketIdNotesPostResponse(response *Note, w http.ResponseWriter) error {

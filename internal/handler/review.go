@@ -55,6 +55,54 @@ func (h *Handler) TicketsTicketIdNotesNoteIdReviewsPost(ctx context.Context, req
 
 	return apiReview, nil
 }
+
+// TicketsTicketIdNotesNoteIdReviewsReviewIdPut implements PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
+func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdPut(ctx context.Context, req api.OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq, params api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutParams) (api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutRes, error) {
+	reviewer, ok := traqIDFromContext(ctx)
+	if !ok {
+		return nil, echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
+	}
+
+	repoParams := repository.UpdateReviewParams{}
+	if req.Set {
+		if req.Value.Type.Set {
+			repoType, err := toRepositoryReviewType(req.Value.Type.Value)
+			if err != nil {
+				return nil, err
+			}
+			repoParams.Type = repoType
+			repoParams.TypeSet = true
+		}
+
+		if req.Value.Weight.Set {
+			repoParams.Weight = req.Value.Weight.Value
+			repoParams.WeightSet = true
+		}
+
+		if req.Value.Comment.Set {
+			repoParams.Comment = sql.NullString{String: req.Value.Comment.Value, Valid: true}
+			repoParams.CommentSet = true
+		}
+	}
+
+	_, err := h.repo.UpdateReview(ctx, params.TicketId, params.NoteId, params.ReviewId, reviewer, repoParams)
+	if err != nil {
+		switch err {
+		case repository.ErrReviewNotFound:
+			return &api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutNotFound{}, nil
+		case repository.ErrReviewForbidden:
+			return &api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutForbidden{}, nil
+		case repository.ErrReviewerNotFound:
+			return &api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutNotFound{}, nil
+		case repository.ErrInvalidReviewType, repository.ErrInvalidReviewWeight:
+			return nil, echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		default:
+			return nil, fmt.Errorf("update review in repository: %w", err)
+		}
+	}
+
+	return &api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK{}, nil
+}
 func toRepositoryReviewType(t api.ReviewType) (string, error) {
 	switch t {
 	case api.ReviewTypeApprove:

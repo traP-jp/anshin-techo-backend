@@ -37,11 +37,6 @@ func (h *Handler) TicketsTicketIdNotesNoteIdDelete(_ context.Context, _ api.Tick
 	return fmt.Errorf("not implemented")
 }
 
-// TicketsTicketIdNotesNoteIdReviewsReviewIdPut implements PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
-func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdPut(_ context.Context, _ api.OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq, _ api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutParams) error {
-	return fmt.Errorf("not implemented")
-}
-
 // TicketsTicketIdNotesNoteIdReviewsReviewIdDelete implements DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
 func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdDelete(_ context.Context, _ api.TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteParams) error {
 	return fmt.Errorf("not implemented")

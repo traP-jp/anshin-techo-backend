@@ -13,6 +13,8 @@ const reviewStatusActive = "active"
 
 var (
 	ErrNoteNotFound        = fmt.Errorf("note not found")
+	ErrReviewNotFound      = fmt.Errorf("review not found")
+	ErrReviewForbidden     = fmt.Errorf("review forbidden")
 	ErrReviewerNotFound    = fmt.Errorf("reviewer not found")
 	ErrReviewAlreadyExists = fmt.Errorf("review already exists")
 	ErrInvalidReviewType   = fmt.Errorf("invalid review type")
@@ -36,6 +38,15 @@ type CreateReviewParams struct {
 	Weight    int
 	WeightSet bool
 	Comment   sql.NullString
+}
+
+type UpdateReviewParams struct {
+	Type       string
+	TypeSet    bool
+	Weight     int
+	WeightSet  bool
+	Comment    sql.NullString
+	CommentSet bool
 }
 
 func (r *Repository) CreateReview(ctx context.Context, ticketID, noteID int64, reviewer string, params CreateReviewParams) (*Review, error) {
@@ -144,6 +155,123 @@ func normalizeReviewWeight(params CreateReviewParams, role string) (int, error) 
 	}
 
 	return params.Weight, nil
+}
+
+func normalizeUpdateWeight(newType string, weightSet bool, weight int, currentWeight int, role string) (int, error) {
+	if newType != "approve" {
+		return 0, nil
+	}
+
+	finalWeight := currentWeight
+	if weightSet {
+		finalWeight = weight
+	}
+
+	maxWeight := 0
+	switch role {
+	case "manager":
+		maxWeight = 5
+	case "assistant":
+		maxWeight = 4
+	default:
+		maxWeight = 0
+	}
+
+	if finalWeight <= 0 || finalWeight > maxWeight {
+		return 0, ErrInvalidReviewWeight
+	}
+
+	return finalWeight, nil
+}
+
+func (r *Repository) UpdateReview(ctx context.Context, ticketID, noteID, reviewID int64, reviewer string, params UpdateReviewParams) (*Review, error) {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			fmt.Printf("failed to rollback: %v\n", err)
+		}
+	}()
+
+	current := new(Review)
+	var noteStatus string
+	if err := tx.QueryRowxContext(ctx, `
+		SELECT r.id, r.note_id, r.type, r.status, r.weight, r.author, r.comment, r.created_at, r.updated_at, n.status AS note_status
+		FROM reviews r
+		JOIN notes n ON r.note_id = n.id
+		WHERE r.id = ? AND r.note_id = ? AND n.ticket_id = ? AND r.deleted_at IS NULL AND n.deleted_at IS NULL
+		FOR UPDATE
+	`, reviewID, noteID, ticketID).Scan(&current.ID, &current.NoteID, &current.Type, &current.Status, &current.Weight, &current.Author, &current.Comment, &current.CreatedAt, &current.UpdatedAt, &noteStatus); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrReviewNotFound
+		}
+
+		return nil, fmt.Errorf("select review: %w", err)
+	}
+
+	if current.Author != reviewer {
+		return nil, ErrReviewForbidden
+	}
+
+	newType := current.Type
+	if params.TypeSet {
+		if !isValidReviewType(params.Type) {
+			return nil, ErrInvalidReviewType
+		}
+		newType = params.Type
+	}
+
+	var role string
+	if err := tx.QueryRowContext(ctx, `SELECT role FROM users WHERE traq_id = ?`, reviewer).Scan(&role); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrReviewerNotFound
+		}
+
+		return nil, fmt.Errorf("select reviewer role: %w", err)
+	}
+
+	newWeight := current.Weight
+	var weightErr error
+	if newType == "approve" || params.TypeSet {
+		newWeight, weightErr = normalizeUpdateWeight(newType, params.WeightSet, params.Weight, current.Weight, role)
+		if weightErr != nil {
+			return nil, weightErr
+		}
+	} else if params.WeightSet {
+		newWeight = params.Weight
+	}
+
+	newComment := current.Comment
+	if params.CommentSet {
+		newComment = params.Comment
+	}
+
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE reviews SET type = ?, weight = ?, comment = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+	`, newType, newWeight, newComment, reviewID); err != nil {
+		return nil, fmt.Errorf("update review: %w", err)
+	}
+
+	if err := maybeUpdateNoteStatus(ctx, tx, noteID, noteStatus); err != nil {
+		return nil, err
+	}
+
+	updated := new(Review)
+	if err := tx.GetContext(ctx, updated, `
+		SELECT id, note_id, type, status, weight, author, comment, created_at, updated_at
+		FROM reviews
+		WHERE id = ?
+	`, reviewID); err != nil {
+		return nil, fmt.Errorf("select updated review: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return updated, nil
 }
 
 func ensureReviewerNotDuplicated(ctx context.Context, tx *sqlx.Tx, noteID int64, reviewer string) error {

@@ -1443,7 +1443,7 @@ func (s *Server) handleTicketsTicketIdNotesNoteIdReviewsReviewIdPutRequest(args 
 		}
 	}()
 
-	var response *TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK
+	var response TicketsTicketIdNotesNoteIdReviewsReviewIdPutRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -1472,7 +1472,7 @@ func (s *Server) handleTicketsTicketIdNotesNoteIdReviewsReviewIdPutRequest(args 
 		type (
 			Request  = OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq
 			Params   = TicketsTicketIdNotesNoteIdReviewsReviewIdPutParams
-			Response = *TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK
+			Response = TicketsTicketIdNotesNoteIdReviewsReviewIdPutRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -1483,12 +1483,12 @@ func (s *Server) handleTicketsTicketIdNotesNoteIdReviewsReviewIdPutRequest(args 
 			mreq,
 			unpackTicketsTicketIdNotesNoteIdReviewsReviewIdPutParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				err = s.h.TicketsTicketIdNotesNoteIdReviewsReviewIdPut(ctx, request, params)
+				response, err = s.h.TicketsTicketIdNotesNoteIdReviewsReviewIdPut(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		err = s.h.TicketsTicketIdNotesNoteIdReviewsReviewIdPut(ctx, request, params)
+		response, err = s.h.TicketsTicketIdNotesNoteIdReviewsReviewIdPut(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
