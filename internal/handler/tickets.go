@@ -13,10 +13,7 @@ import (
 
 // POST /tickets
 func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (api.CreateTicketRes, error) {
-	creator, ok := traqIDFromContext(ctx)
-	if !ok {
-		return &api.CreateTicketUnauthorized{}, nil
-	}
+	creator := getUserID(ctx)
 	_, err := h.repo.GetUserRoleByTraqID(ctx, creator)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
@@ -81,11 +78,6 @@ func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (a
 
 // GET /tickets
 func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (api.GetTicketsRes, error) {
-	_, ok := traqIDFromContext(ctx)
-	if !ok {
-		return &api.GetTicketsUnauthorized{}, nil
-	}
-
 	repoParams := repository.GetTicketsParams{
 		Assignee: "",
 		Status:   "",
@@ -146,10 +138,7 @@ func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (
 
 // DELETE /tickets/{ticketId}
 func (h *Handler) DeleteTicketByID(ctx context.Context, params api.DeleteTicketByIDParams) (api.DeleteTicketByIDRes, error) {
-	deleter, ok := traqIDFromContext(ctx)
-	if !ok {
-		return &api.DeleteTicketByIDUnauthorized{}, nil
-	}
+	deleter := getUserID(ctx)
 	role, err := h.repo.GetUserRoleByTraqID(ctx, deleter)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
@@ -158,7 +147,7 @@ func (h *Handler) DeleteTicketByID(ctx context.Context, params api.DeleteTicketB
 
 		return nil, fmt.Errorf("get user role from repository: %w", err)
 	}
-	if role == "member" {
+	if role != "manager" && role != "assistant" {
 		return &api.DeleteTicketByIDForbidden{}, nil
 	}
 	
@@ -211,10 +200,7 @@ func (h *Handler) GetTicketByID(ctx context.Context, params api.GetTicketByIDPar
 
 // PATCH /tickets/{ticketId}
 func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketByIDReq, params api.UpdateTicketByIDParams) (api.UpdateTicketByIDRes, error) {
-	updater, ok := traqIDFromContext(ctx)
-	if !ok {
-		return &api.UpdateTicketByIDUnauthorized{}, nil
-	}
+	updater := getUserID(ctx)
 	_, err := h.repo.GetUserRoleByTraqID(ctx, updater)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
