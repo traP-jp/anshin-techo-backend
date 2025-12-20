@@ -34,125 +34,183 @@ type (
 		Due          sql.NullTime
 		Tags         []string
 	}
+
+	GetTicketsParams struct {
+		Assignee string
+		Status   string
+		Sort     string
+	}
 )
 
-var ErrTicketNotFound = fmt.Errorf("ticket not found")
+var (
+	ErrTicketNotFound = fmt.Errorf("ticket not found")
+	ErrInvalidStatus = fmt.Errorf("invalid status")
+	ErrInvalidSort = fmt.Errorf("invalid sort option")
+	ErrTagContainsComma = fmt.Errorf("tag contains comma")
+	ErrUserNotFound = fmt.Errorf("user not found")
+)
 
-func validateStatus(status string) bool {
+func validateStatus(status string) error {
 	switch status {
 	case "not_planned", "not_written", "waiting_review", "waiting_sent", "sent", "milestone_scheduled", "completed", "forgotten":
-		return true
+		return nil
 	default:
-		return false
+		return fmt.Errorf("%w: %s", ErrInvalidStatus, status)
 	}
 }
 
-func (r *Repository) GetTickets(ctx context.Context) ([]*Ticket, error) {
-	// TODO: N+1問題を解消する
-	tickets := []*Ticket{}
-	if err := r.db.SelectContext(ctx, &tickets, "SELECT * FROM tickets WHERE deleted_at IS NULL"); err != nil {
-		return nil, fmt.Errorf("failed to select tickets: %w", err)
+func validateTicketSort(sort string) error {
+	switch sort {
+	case "due_asc", "due_desc", "created_desc":
+		return nil
+	default:
+		return fmt.Errorf("%w: %s", ErrInvalidSort, sort)
 	}
-	ticketsMap := make(map[int64]*Ticket)
-	for _, ticket := range tickets {
-		ticketsMap[ticket.ID] = ticket
-	}
+}
 
-	subAssignees := []struct {
-		TicketID    int64  `db:"ticket_id"`
-		SubAssignee string `db:"sub_assignee"`
-	}{}
-	if err := r.db.SelectContext(ctx, &subAssignees, `
-		SELECT * FROM ticket_sub_assignees
-	`); err != nil {
-		return nil, fmt.Errorf("failed to select ticket_sub_assignees: %w", err)
-	}
-	for _, subAssignee := range subAssignees {
-		if ticket, ok := ticketsMap[subAssignee.TicketID]; ok {
-			ticket.SubAssignees = append(ticket.SubAssignees, subAssignee.SubAssignee)
-		}
-	}
-
-	stakeholders := []struct {
-		TicketID    int64  `db:"ticket_id"`
-		Stakeholder string `db:"stakeholder"`
-	}{}
-	if err := r.db.SelectContext(ctx, &stakeholders, `
-		SELECT * FROM ticket_stakeholders
-	`); err != nil {
-		return nil, fmt.Errorf("failed to select ticket_stakeholders: %w", err)
-	}
-	for _, stakeholder := range stakeholders {
-		if ticket, ok := ticketsMap[stakeholder.TicketID]; ok {
-			ticket.Stakeholders = append(ticket.Stakeholders, stakeholder.Stakeholder)
-		}
-	}
-
-	tags := []struct {
-		TicketID int64  `db:"ticket_id"`
-		Tag      string `db:"tag"`
-	}{}
-	if err := r.db.SelectContext(ctx, &tags, `
-		SELECT * FROM ticket_tags
-	`); err != nil {
-		return nil, fmt.Errorf("failed to select ticket_tags: %w", err)
-	}
+func validateTags(tags []string) error {
 	for _, tag := range tags {
-		if ticket, ok := ticketsMap[tag.TicketID]; ok {
-			ticket.Tags = append(ticket.Tags, tag.Tag)
+		if strings.Contains(tag, ",") {
+			return fmt.Errorf("%w: %s", ErrTagContainsComma, tag)
 		}
 	}
 
-	return tickets, nil
+	return nil
 }
 
-func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams) (int64, error) {
-	if !validateStatus(params.Status) {
-		return 0, fmt.Errorf("invalid status: %s", params.Status)
+func (r *Repository) ensureUsersExist(ctx context.Context, traqIDs []string) error {
+	if len(traqIDs) == 0 {
+		return nil
 	}
-
-	uniqueUserIDs := make(map[string]struct{})
-	uniqueUserIDs[params.Assignee] = struct{}{}
-	for _, subAssignee := range params.SubAssignees {
-		uniqueUserIDs[subAssignee] = struct{}{}
+	uniqueTraqIDs := make(map[string]struct{})
+	for _, traqID := range traqIDs {
+		uniqueTraqIDs[traqID] = struct{}{}
 	}
-	for _, stakeholder := range params.Stakeholders {
-		uniqueUserIDs[stakeholder] = struct{}{}
-	}
-
-	ids := make([]interface{}, 0, len(uniqueUserIDs))
-	for id := range uniqueUserIDs {
-		ids = append(ids, id)
-	}
-	
-	placeholders := make([]string, len(ids))
-	for i := range ids {
-		placeholders[i] = "?"
+	placeholders := make([]string, 0, len(uniqueTraqIDs))
+	args := make([]interface{}, 0, len(uniqueTraqIDs))
+	for id := range uniqueTraqIDs {
+		placeholders = append(placeholders, "?")
+		args = append(args, id)
 	}
 	query := fmt.Sprintf("SELECT traq_id FROM users WHERE traq_id IN (%s)", strings.Join(placeholders, ","))
-	rows, err := r.db.QueryContext(ctx, query, ids...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get users: %w", err)
+		return fmt.Errorf("query users: %w", err)
 	}
 	defer rows.Close()
 	found := map[string]struct{}{}
 	for rows.Next() {
 		var traqID string
 		if err := rows.Scan(&traqID); err != nil {
-			return 0, fmt.Errorf("failed to scan user: %w", err)
+			return fmt.Errorf("failed to scan user: %w", err)
 		}
 		found[traqID] = struct{}{}
 	}
 	if err := rows.Err(); err != nil {
-		return 0, fmt.Errorf("failed to iterate users: %w", err)
+		return fmt.Errorf("failed to iterate users: %w", err)
 	}
-	if _, ok := found[params.Assignee]; !ok {
-		return 0, fmt.Errorf("assignee not found: %s", params.Assignee)
-	}
-	for _, subAssignee := range params.SubAssignees {
-		if _, ok := found[subAssignee]; !ok {
-			return 0, fmt.Errorf("sub-assignee not found: %s", subAssignee)
+	for traqID := range uniqueTraqIDs {
+		if _, ok := found[traqID]; !ok {
+			return fmt.Errorf("%w: %s", ErrUserNotFound, traqID)
 		}
+	}
+
+	return nil
+}
+
+func (r *Repository) GetTickets(ctx context.Context, params GetTicketsParams) ([]*Ticket, error) {
+	query := `
+		SELECT
+			t.id, t.title, t.status, t.assignee, t.due, t.description, t.created_at, t.updated_at, t.deleted_at,
+			GROUP_CONCAT(DISTINCT tsa.sub_assignee) AS sub_assignees,
+			GROUP_CONCAT(DISTINCT ts.stakeholder) AS stakeholders,
+			GROUP_CONCAT(DISTINCT tt.tag) AS tags
+		FROM tickets t
+		LEFT JOIN ticket_sub_assignees tsa ON t.id = tsa.ticket_id
+		LEFT JOIN ticket_stakeholders ts ON t.id = ts.ticket_id
+		LEFT JOIN ticket_tags tt ON t.id = tt.ticket_id
+		WHERE t.deleted_at IS NULL`
+
+	args := []interface{}{}
+	if params.Assignee != "" {
+		if err := r.ensureUsersExist(ctx, []string{params.Assignee}); err != nil {
+			return nil, err
+		}
+		query += " AND t.assignee = ?"
+		args = append(args, params.Assignee)
+	}
+	if params.Status != "" {
+		if err := validateStatus(params.Status); err != nil {
+			return nil, err
+		}
+		query += " AND t.status = ?"
+		args = append(args, params.Status)
+	}
+	query += " GROUP BY t.id"
+	if err := validateTicketSort(params.Sort); err == nil {
+		switch params.Sort {
+		case "due_asc":
+			query += " ORDER BY t.due ASC"
+		case "due_desc":
+			query += " ORDER BY t.due DESC"
+		case "created_desc":
+			query += " ORDER BY t.created_at DESC"
+		}
+	} else {
+		query += " ORDER BY t.created_at DESC"
+	}
+
+	rows, err := r.db.QueryxContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tickets: %w", err)
+	}
+	defer rows.Close()
+
+	var tickets []*Ticket
+	for rows.Next() {
+		var t Ticket
+		var subAssignees, stakeholders, tags sql.NullString
+		err := rows.Scan(
+			&t.ID, &t.Title, &t.Status, &t.Assignee, &t.Due, &t.Description, &t.CreatedAt, &t.UpdatedAt, &t.DeletedAt,
+			&subAssignees, &stakeholders, &tags,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan ticket: %w", err)
+		}
+		if subAssignees.Valid && subAssignees.String != "" {
+			t.SubAssignees = strings.Split(subAssignees.String, ",")
+		} else {
+			t.SubAssignees = []string{}
+		}
+		if stakeholders.Valid && stakeholders.String != "" {
+			t.Stakeholders = strings.Split(stakeholders.String, ",")
+		} else {
+			t.Stakeholders = []string{}
+		}
+		if tags.Valid && tags.String != "" {
+			t.Tags = strings.Split(tags.String, ",")
+		} else {
+			t.Tags = []string{}
+		}
+		tickets = append(tickets, &t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate tickets: %w", err)
+	}
+
+	return tickets, nil
+}
+
+func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams) (int64, error) {
+	if err := validateStatus(params.Status); err != nil {
+		return 0, err
+	}
+	if err := validateTags(params.Tags); err != nil {
+		return 0, err
+	}
+
+	if err := r.ensureUsersExist(ctx, append(append([]string{params.Assignee}, params.SubAssignees...), params.Stakeholders...)); err != nil {
+		return 0, err
 	}
 
 	tx, err := r.db.BeginTxx(ctx, nil)
@@ -176,30 +234,60 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 		return 0, fmt.Errorf("failed to get last insert id: %w", err)
 	}
 
-	for _, subAssignee := range params.SubAssignees {
-		_, err = tx.ExecContext(ctx, `
-			INSERT INTO ticket_sub_assignees (ticket_id, sub_assignee) VALUES (?, ?)
-		`, ticketID, subAssignee)
+	if len(params.SubAssignees) > 0 {
+		placeholders := make([]string, 0, len(params.SubAssignees))
+		args := make([]interface{}, 0, len(params.SubAssignees)*2)
+		seen := make(map[string]struct{})
+		for _, subAssignee := range params.SubAssignees {
+			if _, ok := seen[subAssignee]; ok {
+				continue
+			}
+			seen[subAssignee] = struct{}{}
+			placeholders = append(placeholders, "(?, ?)")
+			args = append(args, ticketID, subAssignee)
+		}
+		query := fmt.Sprintf("INSERT INTO ticket_sub_assignees (ticket_id, sub_assignee) VALUES %s", strings.Join(placeholders, ","))
+		_, err = tx.ExecContext(ctx, query, args...)
 		if err != nil {
-			return 0, fmt.Errorf("failed to insert sub-assignee: %w", err)
+			return 0, fmt.Errorf("failed to insert sub_assignees: %w", err)
 		}
 	}
 
-	for _, stakeholder := range params.Stakeholders {
-		_, err = tx.ExecContext(ctx, `
-			INSERT INTO ticket_stakeholders (ticket_id, stakeholder) VALUES (?, ?)
-		`, ticketID, stakeholder)
+	if len(params.Stakeholders) > 0 {
+		placeholders := make([]string, 0, len(params.Stakeholders))
+		args := make([]interface{}, 0, len(params.Stakeholders)*2)
+		seen := make(map[string]struct{})
+		for _, stakeholder := range params.Stakeholders {
+			if _, ok := seen[stakeholder]; ok {
+				continue
+			}
+			seen[stakeholder] = struct{}{}
+			placeholders = append(placeholders, "(?, ?)")
+			args = append(args, ticketID, stakeholder)
+		}
+		query := fmt.Sprintf("INSERT INTO ticket_stakeholders (ticket_id, stakeholder) VALUES %s", strings.Join(placeholders, ","))
+		_, err = tx.ExecContext(ctx, query, args...)
 		if err != nil {
-			return 0, fmt.Errorf("failed to insert stakeholder: %w", err)
+			return 0, fmt.Errorf("failed to insert stakeholders: %w", err)
 		}
 	}
 
-	for _, tag := range params.Tags {
-		_, err = tx.ExecContext(ctx, `
-			INSERT INTO ticket_tags (ticket_id, tag) VALUES (?, ?)
-		`, ticketID, tag)
+	if len(params.Tags) > 0 {
+		placeholders := make([]string, 0, len(params.Tags))
+		args := make([]interface{}, 0, len(params.Tags)*2)
+		seen := make(map[string]struct{})
+		for _, tag := range params.Tags {
+			if _, ok := seen[tag]; ok {
+				continue
+			}
+			seen[tag] = struct{}{}
+			placeholders = append(placeholders, "(?, ?)")
+			args = append(args, ticketID, tag)
+		}
+		query := fmt.Sprintf("INSERT INTO ticket_tags (ticket_id, tag) VALUES %s", strings.Join(placeholders, ","))
+		_, err = tx.ExecContext(ctx, query, args...)
 		if err != nil {
-			return 0, fmt.Errorf("failed to insert tag: %w", err)
+			return 0, fmt.Errorf("failed to insert tags: %w", err)
 		}
 	}
 
@@ -241,57 +329,18 @@ func (r *Repository) GetTicketByID(ctx context.Context, ticketID int64) (*Ticket
 }
 
 func (r *Repository) UpdateTicket(ctx context.Context, ticketID int64, params CreateTicketParams) error {
-	if !validateStatus(params.Status) {
-		return fmt.Errorf("invalid status: %s", params.Status)
+	if err := validateStatus(params.Status); err != nil {
+		return err
 	}
 
-	uniqueUserIDs := make(map[string]struct{})
-	uniqueUserIDs[params.Assignee] = struct{}{}
-	for _, subAssignee := range params.SubAssignees {
-		uniqueUserIDs[subAssignee] = struct{}{}
-	}
-	for _, stakeholder := range params.Stakeholders {
-		uniqueUserIDs[stakeholder] = struct{}{}
+	if err := validateTags(params.Tags); err != nil {
+		return err
 	}
 
-	ids := make([]interface{}, 0, len(uniqueUserIDs))
-	for id := range uniqueUserIDs {
-		ids = append(ids, id)
+	if err := r.ensureUsersExist(ctx, append(append([]string{params.Assignee}, params.SubAssignees...), params.Stakeholders...)); err != nil {
+		return err
 	}
-	placeholders := make([]string, len(ids))
-	for i := range ids {
-		placeholders[i] = "?"
-	}
-	query := fmt.Sprintf("SELECT traq_id FROM users WHERE traq_id IN (%s)", strings.Join(placeholders, ","))
-	rows, err := r.db.QueryContext(ctx, query, ids...)
-	if err != nil {
-		return fmt.Errorf("failed to get users: %w", err)
-	}
-	defer rows.Close()
-	found := map[string]struct{}{}
-	for rows.Next() {
-		var traqID string
-		if err := rows.Scan(&traqID); err != nil {
-			return fmt.Errorf("failed to scan user: %w", err)
-		}
-		found[traqID] = struct{}{}
-	}
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("failed to iterate users: %w", err)
-	}
-	if _, ok := found[params.Assignee]; !ok {
-		return fmt.Errorf("assignee not found: %s", params.Assignee)
-	}
-	for _, subAssignee := range params.SubAssignees {
-		if _, ok := found[subAssignee]; !ok {
-			return fmt.Errorf("sub-assignee not found: %s", subAssignee)
-		}
-	}
-	for _, stakeholder := range params.Stakeholders {
-		if _, ok := found[stakeholder]; !ok {
-			return fmt.Errorf("stakeholder not found: %s", stakeholder)
-		}
-	}
+
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -319,31 +368,66 @@ func (r *Repository) UpdateTicket(ctx context.Context, ticketID int64, params Cr
 	if _, err := tx.ExecContext(ctx, `DELETE FROM ticket_sub_assignees WHERE ticket_id = ?`, ticketID); err != nil {
 		return fmt.Errorf("failed to delete sub_assignees: %w", err)
 	}
-	for _, subAssignee := range params.SubAssignees {
-		// TODO: 遅いのでまとめてINSERT
-		_, err = tx.ExecContext(ctx, `INSERT INTO ticket_sub_assignees (ticket_id, sub_assignee) VALUES (?, ?)`, ticketID, subAssignee)
+	if len(params.SubAssignees) > 0 {
+		placeholders := make([]string, 0, len(params.SubAssignees))
+		args := make([]interface{}, 0, len(params.SubAssignees)*2)
+		seen := make(map[string]struct{})
+		for _, subAssignee := range params.SubAssignees {
+			if _, ok := seen[subAssignee]; ok {
+				continue
+			}
+			seen[subAssignee] = struct{}{}
+			placeholders = append(placeholders, "(?, ?)")
+			args = append(args, ticketID, subAssignee)
+		}
+		query := fmt.Sprintf("INSERT INTO ticket_sub_assignees (ticket_id, sub_assignee) VALUES %s", strings.Join(placeholders, ","))
+		_, err = tx.ExecContext(ctx, query, args...)
 		if err != nil {
-			return fmt.Errorf("failed to insert sub_assignee: %w", err)
+			return fmt.Errorf("failed to insert sub_assignees: %w", err)
 		}
 	}
 
 	if _, err := tx.ExecContext(ctx, `DELETE FROM ticket_stakeholders WHERE ticket_id = ?`, ticketID); err != nil {
 		return fmt.Errorf("failed to delete stakeholders: %w", err)
 	}
-	for _, stakeholder := range params.Stakeholders {
-		_, err = tx.ExecContext(ctx, `INSERT INTO ticket_stakeholders (ticket_id, stakeholder) VALUES (?, ?)`, ticketID, stakeholder)
+	if len(params.Stakeholders) > 0 {
+		placeholders := make([]string, 0, len(params.Stakeholders))
+		args := make([]interface{}, 0, len(params.Stakeholders)*2)
+		seen := make(map[string]struct{})
+		for _, stakeholder := range params.Stakeholders {
+			if _, ok := seen[stakeholder]; ok {
+				continue
+			}
+			seen[stakeholder] = struct{}{}
+			placeholders = append(placeholders, "(?, ?)")
+			args = append(args, ticketID, stakeholder)
+		}
+		query := fmt.Sprintf("INSERT INTO ticket_stakeholders (ticket_id, stakeholder) VALUES %s", strings.Join(placeholders, ","))
+		_, err = tx.ExecContext(ctx, query, args...)
 		if err != nil {
-			return fmt.Errorf("failed to insert stakeholder: %w", err)
+			return fmt.Errorf("failed to insert stakeholders: %w", err)
 		}
 	}
 
 	if _, err := tx.ExecContext(ctx, `DELETE FROM ticket_tags WHERE ticket_id = ?`, ticketID); err != nil {
 		return fmt.Errorf("failed to delete tags: %w", err)
 	}
-	for _, tag := range params.Tags {
-		_, err = tx.ExecContext(ctx, `INSERT INTO ticket_tags (ticket_id, tag) VALUES (?, ?)`, ticketID, tag)
+	if len(params.Tags) > 0 {
+		placeholders := make([]string, 0, len(params.Tags))
+		args := make([]interface{}, 0, len(params.Tags)*2)
+		seen := make(map[string]struct{})
+		for _, tag := range params.Tags {
+			if _, ok := seen[tag]; ok {
+				continue
+			}
+			seen[tag] = struct{}{}
+			placeholders = append(placeholders, "(?, ?)")
+			args = append(args, ticketID, tag)
+		}
+		query := fmt.Sprintf("INSERT INTO ticket_tags (ticket_id, tag) VALUES %s", strings.Join(placeholders, ","))
+		_, err = tx.ExecContext(ctx, query, args...)
 		if err != nil {
-			return fmt.Errorf("failed to insert tag: %w", err)
+			return fmt.Errorf("failed to insert tags: %w", err)
 		}
 	}
 

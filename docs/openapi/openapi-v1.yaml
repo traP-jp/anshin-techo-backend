@@ -328,6 +328,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Ticket"
+        "400":
+          description: "不正なクエリパラメータ"
         "401":
           description: "認証エラー"
 
@@ -380,6 +382,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Ticket"
+        "400":
+          description: "不正なリクエストボディ"
         "401":
           description: "認証エラー"
 
@@ -452,6 +456,8 @@ paths:
       responses:
         "200":
           description: "更新成功"
+        "400":
+          description: "不正なリクエストボディ"
         "403":
           description: "権限なし"
         "404":
@@ -575,6 +581,7 @@ paths:
           format: int64
 
     post:
+      operationId: "createReview"
       tags:
         - Reviews
       summary: "レビュー追加"
@@ -627,6 +634,7 @@ paths:
           format: int64
 
     put:
+      operationId: "updateReview"
       tags:
         - Reviews
       summary: "レビュー修正"
@@ -646,8 +654,13 @@ paths:
       responses:
         "200":
           description: "成功"
+        "403":
+          description: "権限なし"
+        "404":
+          description: "レビューが見つからない"
 
     delete:
+      operationId: "deleteReview"
       tags:
         - Reviews
       summary: "レビュー取り消し"

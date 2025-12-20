@@ -23,6 +23,46 @@ func (*ConfigPostOK) configPostRes() {}
 
 type ConfigPostReq struct{}
 
+type CreateReviewReq struct {
+	Type ReviewType `json:"type"`
+	// 承認の強さ.
+	Weight  OptInt    `json:"weight"`
+	Comment OptString `json:"comment"`
+}
+
+// GetType returns the value of Type.
+func (s *CreateReviewReq) GetType() ReviewType {
+	return s.Type
+}
+
+// GetWeight returns the value of Weight.
+func (s *CreateReviewReq) GetWeight() OptInt {
+	return s.Weight
+}
+
+// GetComment returns the value of Comment.
+func (s *CreateReviewReq) GetComment() OptString {
+	return s.Comment
+}
+
+// SetType sets the value of Type.
+func (s *CreateReviewReq) SetType(val ReviewType) {
+	s.Type = val
+}
+
+// SetWeight sets the value of Weight.
+func (s *CreateReviewReq) SetWeight(val OptInt) {
+	s.Weight = val
+}
+
+// SetComment sets the value of Comment.
+func (s *CreateReviewReq) SetComment(val OptString) {
+	s.Comment = val
+}
+
+// DeleteReviewNoContent is response for DeleteReview operation.
+type DeleteReviewNoContent struct{}
+
 // Ref: #/components/schemas/Note
 type Note struct {
 	// ノートID.
@@ -725,52 +765,6 @@ func (o OptTicketsGetSort) Or(d TicketsGetSort) TicketsGetSort {
 	return d
 }
 
-// NewOptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq returns new OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq with value set to v.
-func NewOptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq(v TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq {
-	return OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq is optional TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq.
-type OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq struct {
-	Value TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq
-	Set   bool
-}
-
-// IsSet returns true if OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq was set.
-func (o OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) Reset() {
-	var v TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) SetTo(v TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) Get() (v TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) Or(d TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptTicketsTicketIdPatchReq returns new OptTicketsTicketIdPatchReq with value set to v.
 func NewOptTicketsTicketIdPatchReq(v TicketsTicketIdPatchReq) OptTicketsTicketIdPatchReq {
 	return OptTicketsTicketIdPatchReq{
@@ -811,6 +805,52 @@ func (o OptTicketsTicketIdPatchReq) Get() (v TicketsTicketIdPatchReq, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptTicketsTicketIdPatchReq) Or(d TicketsTicketIdPatchReq) TicketsTicketIdPatchReq {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptUpdateReviewReq returns new OptUpdateReviewReq with value set to v.
+func NewOptUpdateReviewReq(v UpdateReviewReq) OptUpdateReviewReq {
+	return OptUpdateReviewReq{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUpdateReviewReq is optional UpdateReviewReq.
+type OptUpdateReviewReq struct {
+	Value UpdateReviewReq
+	Set   bool
+}
+
+// IsSet returns true if OptUpdateReviewReq was set.
+func (o OptUpdateReviewReq) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUpdateReviewReq) Reset() {
+	var v UpdateReviewReq
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUpdateReviewReq) SetTo(v UpdateReviewReq) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUpdateReviewReq) Get() (v UpdateReviewReq, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUpdateReviewReq) Or(d UpdateReviewReq) UpdateReviewReq {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -1254,6 +1294,11 @@ func (s *TicketStatus) UnmarshalText(data []byte) error {
 	}
 }
 
+// TicketsGetBadRequest is response for TicketsGet operation.
+type TicketsGetBadRequest struct{}
+
+func (*TicketsGetBadRequest) ticketsGetRes() {}
+
 type TicketsGetOKApplicationJSON []Ticket
 
 func (*TicketsGetOKApplicationJSON) ticketsGetRes() {}
@@ -1310,6 +1355,11 @@ func (s *TicketsGetSort) UnmarshalText(data []byte) error {
 type TicketsGetUnauthorized struct{}
 
 func (*TicketsGetUnauthorized) ticketsGetRes() {}
+
+// TicketsPostBadRequest is response for TicketsPost operation.
+type TicketsPostBadRequest struct{}
+
+func (*TicketsPostBadRequest) ticketsPostRes() {}
 
 type TicketsPostReq struct {
 	Title       string       `json:"title"`
@@ -1627,85 +1677,6 @@ func (s *TicketsTicketIdNotesNoteIdPutReq) SetResetReviews(val OptBool) {
 	s.ResetReviews = val
 }
 
-type TicketsTicketIdNotesNoteIdReviewsPostReq struct {
-	Type ReviewType `json:"type"`
-	// 承認の強さ.
-	Weight  OptInt    `json:"weight"`
-	Comment OptString `json:"comment"`
-}
-
-// GetType returns the value of Type.
-func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) GetType() ReviewType {
-	return s.Type
-}
-
-// GetWeight returns the value of Weight.
-func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) GetWeight() OptInt {
-	return s.Weight
-}
-
-// GetComment returns the value of Comment.
-func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) GetComment() OptString {
-	return s.Comment
-}
-
-// SetType sets the value of Type.
-func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) SetType(val ReviewType) {
-	s.Type = val
-}
-
-// SetWeight sets the value of Weight.
-func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) SetWeight(val OptInt) {
-	s.Weight = val
-}
-
-// SetComment sets the value of Comment.
-func (s *TicketsTicketIdNotesNoteIdReviewsPostReq) SetComment(val OptString) {
-	s.Comment = val
-}
-
-// TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteNoContent is response for TicketsTicketIdNotesNoteIdReviewsReviewIdDelete operation.
-type TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteNoContent struct{}
-
-// TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK is response for TicketsTicketIdNotesNoteIdReviewsReviewIdPut operation.
-type TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK struct{}
-
-type TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq struct {
-	Type    OptReviewType `json:"type"`
-	Weight  OptInt        `json:"weight"`
-	Comment OptString     `json:"comment"`
-}
-
-// GetType returns the value of Type.
-func (s *TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) GetType() OptReviewType {
-	return s.Type
-}
-
-// GetWeight returns the value of Weight.
-func (s *TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) GetWeight() OptInt {
-	return s.Weight
-}
-
-// GetComment returns the value of Comment.
-func (s *TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) GetComment() OptString {
-	return s.Comment
-}
-
-// SetType sets the value of Type.
-func (s *TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) SetType(val OptReviewType) {
-	s.Type = val
-}
-
-// SetWeight sets the value of Weight.
-func (s *TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) SetWeight(val OptInt) {
-	s.Weight = val
-}
-
-// SetComment sets the value of Comment.
-func (s *TicketsTicketIdNotesNoteIdReviewsReviewIdPutReq) SetComment(val OptString) {
-	s.Comment = val
-}
-
 type TicketsTicketIdNotesPostReq struct {
 	Type    NoteType `json:"type"`
 	Content string   `json:"content"`
@@ -1742,6 +1713,11 @@ func (s *TicketsTicketIdNotesPostReq) SetContent(val string) {
 func (s *TicketsTicketIdNotesPostReq) SetMentionNotification(val bool) {
 	s.MentionNotification = val
 }
+
+// TicketsTicketIdPatchBadRequest is response for TicketsTicketIdPatch operation.
+type TicketsTicketIdPatchBadRequest struct{}
+
+func (*TicketsTicketIdPatchBadRequest) ticketsTicketIdPatchRes() {}
 
 // TicketsTicketIdPatchForbidden is response for TicketsTicketIdPatch operation.
 type TicketsTicketIdPatchForbidden struct{}
@@ -1872,6 +1848,57 @@ func (s *TraQAuth) SetAPIKey(val string) {
 // SetRoles sets the value of Roles.
 func (s *TraQAuth) SetRoles(val []string) {
 	s.Roles = val
+}
+
+// UpdateReviewForbidden is response for UpdateReview operation.
+type UpdateReviewForbidden struct{}
+
+func (*UpdateReviewForbidden) updateReviewRes() {}
+
+// UpdateReviewNotFound is response for UpdateReview operation.
+type UpdateReviewNotFound struct{}
+
+func (*UpdateReviewNotFound) updateReviewRes() {}
+
+// UpdateReviewOK is response for UpdateReview operation.
+type UpdateReviewOK struct{}
+
+func (*UpdateReviewOK) updateReviewRes() {}
+
+type UpdateReviewReq struct {
+	Type    OptReviewType `json:"type"`
+	Weight  OptInt        `json:"weight"`
+	Comment OptString     `json:"comment"`
+}
+
+// GetType returns the value of Type.
+func (s *UpdateReviewReq) GetType() OptReviewType {
+	return s.Type
+}
+
+// GetWeight returns the value of Weight.
+func (s *UpdateReviewReq) GetWeight() OptInt {
+	return s.Weight
+}
+
+// GetComment returns the value of Comment.
+func (s *UpdateReviewReq) GetComment() OptString {
+	return s.Comment
+}
+
+// SetType sets the value of Type.
+func (s *UpdateReviewReq) SetType(val OptReviewType) {
+	s.Type = val
+}
+
+// SetWeight sets the value of Weight.
+func (s *UpdateReviewReq) SetWeight(val OptInt) {
+	s.Weight = val
+}
+
+// SetComment sets the value of Comment.
+func (s *UpdateReviewReq) SetComment(val OptString) {
+	s.Comment = val
 }
 
 // Ref: #/components/schemas/User
