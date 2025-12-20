@@ -5,32 +5,32 @@ type ConfigPostRes interface {
 	configPostRes()
 }
 
-type TicketsGetRes interface {
-	ticketsGetRes()
+type CreateTicketRes interface {
+	createTicketRes()
 }
 
-type TicketsPostRes interface {
-	ticketsPostRes()
+type DeleteTicketByIDRes interface {
+	deleteTicketByIDRes()
 }
 
-type TicketsTicketIdDeleteRes interface {
-	ticketsTicketIdDeleteRes()
+type GetTicketByIDRes interface {
+	getTicketByIDRes()
 }
 
-type TicketsTicketIdGetRes interface {
-	ticketsTicketIdGetRes()
+type GetTicketsRes interface {
+	getTicketsRes()
 }
 
 type TicketsTicketIdNotesNoteIdPutRes interface {
 	ticketsTicketIdNotesNoteIdPutRes()
 }
 
-type TicketsTicketIdPatchRes interface {
-	ticketsTicketIdPatchRes()
-}
-
 type UpdateReviewRes interface {
 	updateReviewRes()
+}
+
+type UpdateTicketByIDRes interface {
+	updateTicketByIDRes()
 }
 
 type UsersPutRes interface {

@@ -299,6 +299,7 @@ paths:
   # --- Tickets ---
   /tickets:
     get:
+      operationId: getTickets
       tags:
         - Tickets
       summary: "チケット一覧取得"
@@ -334,6 +335,7 @@ paths:
           description: "認証エラー"
 
     post:
+      operationId: createTicket
       tags:
         - Tickets
       summary: "チケット新規作成"
@@ -397,6 +399,7 @@ paths:
           format: int64
 
     get:
+      operationId: getTicketByID
       tags:
         - Tickets
       summary: "チケット詳細取得"
@@ -420,6 +423,7 @@ paths:
           description: "チケットが見つからない"
 
     patch:
+      operationId: updateTicketByID
       tags:
         - Tickets
       summary: "チケット情報更新"
@@ -464,6 +468,7 @@ paths:
           description: "チケットが見つからない"
 
     delete:
+      operationId: deleteTicketByID
       tags:
         - Tickets
       summary: "チケット削除"
