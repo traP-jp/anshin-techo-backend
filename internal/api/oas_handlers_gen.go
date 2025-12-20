@@ -269,6 +269,291 @@ func (s *Server) handleConfigPostRequest(args [0]string, argsEscaped bool, w htt
 	}
 }
 
+// handleCreateReviewRequest handles createReview operation.
+//
+// 承認(approve)の場合、Weightの上限はユーザー権限に基づく(本職5/補佐4/他0)。
+// Weight合計が5以上になると、Noteのstatusが`waiting_sent`になる。
+// すでにレビュー済みの場合は失敗する。.
+//
+// POST /tickets/{ticketId}/notes/{noteId}/reviews
+func (s *Server) handleCreateReviewRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	ctx := r.Context()
+
+	var (
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: CreateReviewOperation,
+			ID:   "createReview",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityTraQAuth(ctx, CreateReviewOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "TraQAuth",
+					Err:              err,
+				}
+				defer recordError("Security:TraQAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeCreateReviewParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+	request, rawBody, close, err := s.decodeCreateReviewRequest(r)
+	if err != nil {
+		err = &ogenerrors.DecodeRequestError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeRequest", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+	defer func() {
+		if err := close(); err != nil {
+			recordError("CloseRequest", err)
+		}
+	}()
+
+	var response *Review
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    CreateReviewOperation,
+			OperationSummary: "レビュー追加",
+			OperationID:      "createReview",
+			Body:             request,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "ticketId",
+					In:   "path",
+				}: params.TicketId,
+				{
+					Name: "noteId",
+					In:   "path",
+				}: params.NoteId,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = *CreateReviewReq
+			Params   = CreateReviewParams
+			Response = *Review
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackCreateReviewParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.CreateReview(ctx, request, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.CreateReview(ctx, request, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeCreateReviewResponse(response, w); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
+// handleDeleteReviewRequest handles deleteReview operation.
+//
+// レビュー取り消し.
+//
+// DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
+func (s *Server) handleDeleteReviewRequest(args [3]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	ctx := r.Context()
+
+	var (
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: DeleteReviewOperation,
+			ID:   "deleteReview",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityTraQAuth(ctx, DeleteReviewOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "TraQAuth",
+					Err:              err,
+				}
+				defer recordError("Security:TraQAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeDeleteReviewParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+
+	var response *DeleteReviewNoContent
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    DeleteReviewOperation,
+			OperationSummary: "レビュー取り消し",
+			OperationID:      "deleteReview",
+			Body:             nil,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "ticketId",
+					In:   "path",
+				}: params.TicketId,
+				{
+					Name: "noteId",
+					In:   "path",
+				}: params.NoteId,
+				{
+					Name: "reviewId",
+					In:   "path",
+				}: params.ReviewId,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = struct{}
+			Params   = DeleteReviewParams
+			Response = *DeleteReviewNoContent
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackDeleteReviewParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				err = s.h.DeleteReview(ctx, params)
+				return response, err
+			},
+		)
+	} else {
+		err = s.h.DeleteReview(ctx, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeDeleteReviewResponse(response, w); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
 // handleTicketsGetRequest handles GET /tickets operation.
 //
 // チケット一覧取得.
@@ -1069,442 +1354,6 @@ func (s *Server) handleTicketsTicketIdNotesNoteIdPutRequest(args [2]string, args
 	}
 }
 
-// handleTicketsTicketIdNotesNoteIdReviewsPostRequest handles POST /tickets/{ticketId}/notes/{noteId}/reviews operation.
-//
-// 承認(approve)の場合、Weightの上限はユーザー権限に基づく(本職5/補佐4/他0)。
-// Weight合計が5以上になると、Noteのstatusが`waiting_sent`になる。
-// すでにレビュー済みの場合は失敗する。.
-//
-// POST /tickets/{ticketId}/notes/{noteId}/reviews
-func (s *Server) handleTicketsTicketIdNotesNoteIdReviewsPostRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
-	statusWriter := &codeRecorder{ResponseWriter: w}
-	w = statusWriter
-	ctx := r.Context()
-
-	var (
-		err          error
-		opErrContext = ogenerrors.OperationContext{
-			Name: TicketsTicketIdNotesNoteIdReviewsPostOperation,
-			ID:   "",
-		}
-	)
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			sctx, ok, err := s.securityTraQAuth(ctx, TicketsTicketIdNotesNoteIdReviewsPostOperation, r)
-			if err != nil {
-				err = &ogenerrors.SecurityError{
-					OperationContext: opErrContext,
-					Security:         "TraQAuth",
-					Err:              err,
-				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
-				return
-			}
-			if ok {
-				satisfied[0] |= 1 << 0
-				ctx = sctx
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			err = &ogenerrors.SecurityError{
-				OperationContext: opErrContext,
-				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
-			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
-			return
-		}
-	}
-	params, err := decodeTicketsTicketIdNotesNoteIdReviewsPostParams(args, argsEscaped, r)
-	if err != nil {
-		err = &ogenerrors.DecodeParamsError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeParams", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	var rawBody []byte
-	request, rawBody, close, err := s.decodeTicketsTicketIdNotesNoteIdReviewsPostRequest(r)
-	if err != nil {
-		err = &ogenerrors.DecodeRequestError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeRequest", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-	defer func() {
-		if err := close(); err != nil {
-			recordError("CloseRequest", err)
-		}
-	}()
-
-	var response *Review
-	if m := s.cfg.Middleware; m != nil {
-		mreq := middleware.Request{
-			Context:          ctx,
-			OperationName:    TicketsTicketIdNotesNoteIdReviewsPostOperation,
-			OperationSummary: "レビュー追加",
-			OperationID:      "",
-			Body:             request,
-			RawBody:          rawBody,
-			Params: middleware.Parameters{
-				{
-					Name: "ticketId",
-					In:   "path",
-				}: params.TicketId,
-				{
-					Name: "noteId",
-					In:   "path",
-				}: params.NoteId,
-			},
-			Raw: r,
-		}
-
-		type (
-			Request  = *TicketsTicketIdNotesNoteIdReviewsPostReq
-			Params   = TicketsTicketIdNotesNoteIdReviewsPostParams
-			Response = *Review
-		)
-		response, err = middleware.HookMiddleware[
-			Request,
-			Params,
-			Response,
-		](
-			m,
-			mreq,
-			unpackTicketsTicketIdNotesNoteIdReviewsPostParams,
-			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.TicketsTicketIdNotesNoteIdReviewsPost(ctx, request, params)
-				return response, err
-			},
-		)
-	} else {
-		response, err = s.h.TicketsTicketIdNotesNoteIdReviewsPost(ctx, request, params)
-	}
-	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	if err := encodeTicketsTicketIdNotesNoteIdReviewsPostResponse(response, w); err != nil {
-		defer recordError("EncodeResponse", err)
-		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
-			s.cfg.ErrorHandler(ctx, w, r, err)
-		}
-		return
-	}
-}
-
-// handleTicketsTicketIdNotesNoteIdReviewsReviewIdDeleteRequest handles DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
-//
-// レビュー取り消し.
-//
-// DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
-func (s *Server) handleTicketsTicketIdNotesNoteIdReviewsReviewIdDeleteRequest(args [3]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
-	statusWriter := &codeRecorder{ResponseWriter: w}
-	w = statusWriter
-	ctx := r.Context()
-
-	var (
-		err          error
-		opErrContext = ogenerrors.OperationContext{
-			Name: TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteOperation,
-			ID:   "",
-		}
-	)
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			sctx, ok, err := s.securityTraQAuth(ctx, TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteOperation, r)
-			if err != nil {
-				err = &ogenerrors.SecurityError{
-					OperationContext: opErrContext,
-					Security:         "TraQAuth",
-					Err:              err,
-				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
-				return
-			}
-			if ok {
-				satisfied[0] |= 1 << 0
-				ctx = sctx
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			err = &ogenerrors.SecurityError{
-				OperationContext: opErrContext,
-				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
-			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
-			return
-		}
-	}
-	params, err := decodeTicketsTicketIdNotesNoteIdReviewsReviewIdDeleteParams(args, argsEscaped, r)
-	if err != nil {
-		err = &ogenerrors.DecodeParamsError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeParams", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	var rawBody []byte
-
-	var response *TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteNoContent
-	if m := s.cfg.Middleware; m != nil {
-		mreq := middleware.Request{
-			Context:          ctx,
-			OperationName:    TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteOperation,
-			OperationSummary: "レビュー取り消し",
-			OperationID:      "",
-			Body:             nil,
-			RawBody:          rawBody,
-			Params: middleware.Parameters{
-				{
-					Name: "ticketId",
-					In:   "path",
-				}: params.TicketId,
-				{
-					Name: "noteId",
-					In:   "path",
-				}: params.NoteId,
-				{
-					Name: "reviewId",
-					In:   "path",
-				}: params.ReviewId,
-			},
-			Raw: r,
-		}
-
-		type (
-			Request  = struct{}
-			Params   = TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteParams
-			Response = *TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteNoContent
-		)
-		response, err = middleware.HookMiddleware[
-			Request,
-			Params,
-			Response,
-		](
-			m,
-			mreq,
-			unpackTicketsTicketIdNotesNoteIdReviewsReviewIdDeleteParams,
-			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				err = s.h.TicketsTicketIdNotesNoteIdReviewsReviewIdDelete(ctx, params)
-				return response, err
-			},
-		)
-	} else {
-		err = s.h.TicketsTicketIdNotesNoteIdReviewsReviewIdDelete(ctx, params)
-	}
-	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	if err := encodeTicketsTicketIdNotesNoteIdReviewsReviewIdDeleteResponse(response, w); err != nil {
-		defer recordError("EncodeResponse", err)
-		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
-			s.cfg.ErrorHandler(ctx, w, r, err)
-		}
-		return
-	}
-}
-
-// handleTicketsTicketIdNotesNoteIdReviewsReviewIdPutRequest handles PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
-//
-// ReviewのAuthorのみ実行可能。.
-//
-// PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
-func (s *Server) handleTicketsTicketIdNotesNoteIdReviewsReviewIdPutRequest(args [3]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
-	statusWriter := &codeRecorder{ResponseWriter: w}
-	w = statusWriter
-	ctx := r.Context()
-
-	var (
-		err          error
-		opErrContext = ogenerrors.OperationContext{
-			Name: TicketsTicketIdNotesNoteIdReviewsReviewIdPutOperation,
-			ID:   "",
-		}
-	)
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			sctx, ok, err := s.securityTraQAuth(ctx, TicketsTicketIdNotesNoteIdReviewsReviewIdPutOperation, r)
-			if err != nil {
-				err = &ogenerrors.SecurityError{
-					OperationContext: opErrContext,
-					Security:         "TraQAuth",
-					Err:              err,
-				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
-				return
-			}
-			if ok {
-				satisfied[0] |= 1 << 0
-				ctx = sctx
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			err = &ogenerrors.SecurityError{
-				OperationContext: opErrContext,
-				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
-			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
-			return
-		}
-	}
-	params, err := decodeTicketsTicketIdNotesNoteIdReviewsReviewIdPutParams(args, argsEscaped, r)
-	if err != nil {
-		err = &ogenerrors.DecodeParamsError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeParams", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	var rawBody []byte
-	request, rawBody, close, err := s.decodeTicketsTicketIdNotesNoteIdReviewsReviewIdPutRequest(r)
-	if err != nil {
-		err = &ogenerrors.DecodeRequestError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeRequest", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-	defer func() {
-		if err := close(); err != nil {
-			recordError("CloseRequest", err)
-		}
-	}()
-
-	var response *TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK
-	if m := s.cfg.Middleware; m != nil {
-		mreq := middleware.Request{
-			Context:          ctx,
-			OperationName:    TicketsTicketIdNotesNoteIdReviewsReviewIdPutOperation,
-			OperationSummary: "レビュー修正",
-			OperationID:      "",
-			Body:             request,
-			RawBody:          rawBody,
-			Params: middleware.Parameters{
-				{
-					Name: "ticketId",
-					In:   "path",
-				}: params.TicketId,
-				{
-					Name: "noteId",
-					In:   "path",
-				}: params.NoteId,
-				{
-					Name: "reviewId",
-					In:   "path",
-				}: params.ReviewId,
-			},
-			Raw: r,
-		}
-
-		type (
-			Request  = OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq
-			Params   = TicketsTicketIdNotesNoteIdReviewsReviewIdPutParams
-			Response = *TicketsTicketIdNotesNoteIdReviewsReviewIdPutOK
-		)
-		response, err = middleware.HookMiddleware[
-			Request,
-			Params,
-			Response,
-		](
-			m,
-			mreq,
-			unpackTicketsTicketIdNotesNoteIdReviewsReviewIdPutParams,
-			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				err = s.h.TicketsTicketIdNotesNoteIdReviewsReviewIdPut(ctx, request, params)
-				return response, err
-			},
-		)
-	} else {
-		err = s.h.TicketsTicketIdNotesNoteIdReviewsReviewIdPut(ctx, request, params)
-	}
-	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	if err := encodeTicketsTicketIdNotesNoteIdReviewsReviewIdPutResponse(response, w); err != nil {
-		defer recordError("EncodeResponse", err)
-		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
-			s.cfg.ErrorHandler(ctx, w, r, err)
-		}
-		return
-	}
-}
-
 // handleTicketsTicketIdNotesPostRequest handles POST /tickets/{ticketId}/notes operation.
 //
 // ノート追加.
@@ -1783,6 +1632,157 @@ func (s *Server) handleTicketsTicketIdPatchRequest(args [1]string, argsEscaped b
 	}
 
 	if err := encodeTicketsTicketIdPatchResponse(response, w); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
+// handleUpdateReviewRequest handles updateReview operation.
+//
+// ReviewのAuthorのみ実行可能。.
+//
+// PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
+func (s *Server) handleUpdateReviewRequest(args [3]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	ctx := r.Context()
+
+	var (
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: UpdateReviewOperation,
+			ID:   "updateReview",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityTraQAuth(ctx, UpdateReviewOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "TraQAuth",
+					Err:              err,
+				}
+				defer recordError("Security:TraQAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeUpdateReviewParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+	request, rawBody, close, err := s.decodeUpdateReviewRequest(r)
+	if err != nil {
+		err = &ogenerrors.DecodeRequestError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeRequest", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+	defer func() {
+		if err := close(); err != nil {
+			recordError("CloseRequest", err)
+		}
+	}()
+
+	var response UpdateReviewRes
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    UpdateReviewOperation,
+			OperationSummary: "レビュー修正",
+			OperationID:      "updateReview",
+			Body:             request,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "ticketId",
+					In:   "path",
+				}: params.TicketId,
+				{
+					Name: "noteId",
+					In:   "path",
+				}: params.NoteId,
+				{
+					Name: "reviewId",
+					In:   "path",
+				}: params.ReviewId,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = OptUpdateReviewReq
+			Params   = UpdateReviewParams
+			Response = UpdateReviewRes
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackUpdateReviewParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.UpdateReview(ctx, request, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.UpdateReview(ctx, request, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeUpdateReviewResponse(response, w); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)

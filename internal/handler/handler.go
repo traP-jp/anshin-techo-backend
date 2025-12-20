@@ -15,6 +15,22 @@ type Handler struct {
 	repo *repository.Repository
 }
 
+type ctxKey string
+
+const traqIDCtxKey ctxKey = "traq_id"
+
+func traqIDFromContext(ctx context.Context) (string, bool) {
+	if ctx == nil {
+		return "", false
+	}
+	id, ok := ctx.Value(traqIDCtxKey).(string)
+	if !ok || id == "" {
+		return "", false
+	}
+
+	return id, true
+}
+
 func New(
 	//photo *photo.Service,
 	repo *repository.Repository,
@@ -35,6 +51,6 @@ func (h *Handler) NewError(ctx context.Context, err error) error {
 	return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
 }
 
-func (h *Handler) HandleTraQAuth(ctx context.Context, _ api.OperationName, _ api.TraQAuth) (context.Context, error) {
-	return ctx, nil
+func (h *Handler) HandleTraQAuth(ctx context.Context, _ api.OperationName, t api.TraQAuth) (context.Context, error) {
+	return context.WithValue(ctx, traqIDCtxKey, t.APIKey), nil
 }

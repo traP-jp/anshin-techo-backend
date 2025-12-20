@@ -34,21 +34,21 @@ func findAuthorization(h http.Header, prefix string) (string, bool) {
 }
 
 var operationRolesTraQAuth = map[string][]string{
-	ConfigGetOperation:                                       []string{},
-	ConfigPostOperation:                                      []string{},
-	TicketsGetOperation:                                      []string{},
-	TicketsPostOperation:                                     []string{},
-	TicketsTicketIdDeleteOperation:                           []string{},
-	TicketsTicketIdGetOperation:                              []string{},
-	TicketsTicketIdNotesNoteIdDeleteOperation:                []string{},
-	TicketsTicketIdNotesNoteIdPutOperation:                   []string{},
-	TicketsTicketIdNotesNoteIdReviewsPostOperation:           []string{},
-	TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteOperation: []string{},
-	TicketsTicketIdNotesNoteIdReviewsReviewIdPutOperation:    []string{},
-	TicketsTicketIdNotesPostOperation:                        []string{},
-	TicketsTicketIdPatchOperation:                            []string{},
-	UsersGetOperation:                                        []string{},
-	UsersPutOperation:                                        []string{},
+	ConfigGetOperation:                        []string{},
+	ConfigPostOperation:                       []string{},
+	CreateReviewOperation:                     []string{},
+	DeleteReviewOperation:                     []string{},
+	TicketsGetOperation:                       []string{},
+	TicketsPostOperation:                      []string{},
+	TicketsTicketIdDeleteOperation:            []string{},
+	TicketsTicketIdGetOperation:               []string{},
+	TicketsTicketIdNotesNoteIdDeleteOperation: []string{},
+	TicketsTicketIdNotesNoteIdPutOperation:    []string{},
+	TicketsTicketIdNotesPostOperation:         []string{},
+	TicketsTicketIdPatchOperation:             []string{},
+	UpdateReviewOperation:                     []string{},
+	UsersGetOperation:                         []string{},
+	UsersPutOperation:                         []string{},
 }
 
 func (s *Server) securityTraQAuth(ctx context.Context, operationName OperationName, req *http.Request) (context.Context, bool, error) {
