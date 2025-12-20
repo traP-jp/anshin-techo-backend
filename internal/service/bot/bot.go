@@ -19,7 +19,7 @@ type Service struct {
 }
 
 var (
-	_ BotClient     = (*Service)(nil)
+	_ Client     = (*Service)(nil)
 	_ MessageSender = (*Service)(nil)
 	_ EventHandler  = (*Service)(nil)
 )
@@ -30,8 +30,9 @@ func NewService(cfg Config) (*Service, error) {
 	}
 
 	bot, err := traqwsbot.NewBot(&traqwsbot.Options{
-		Origin:      cfg.Origin,
-		AccessToken: cfg.AccessToken,
+		Origin:               cfg.Origin,
+		AccessToken:          cfg.AccessToken,
+		DisableAutoReconnect: false,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create bot: %w", err)
@@ -60,20 +61,24 @@ func (s *Service) PostMessage(ctx context.Context, channelID string, content str
 	if err != nil {
 		return fmt.Errorf("failed to post message: %w", err)
 	}
+
 	return nil
 }
 
 func (s *Service) PostDirectMessage(ctx context.Context, userID string, content string) error {
+	embedTrue := true
 	dm, _, err := s.bot.API().UserApi.
 		PostDirectMessage(ctx, userID).
 		PostMessageRequest(traq.PostMessageRequest{
 			Content: content,
+			Embed:   &embedTrue,
 		}).
 		Execute()
 	if err != nil {
 		return fmt.Errorf("failed to post direct message: %w", err)
 	}
 	_ = dm
+
 	return nil
 }
 

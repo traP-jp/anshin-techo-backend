@@ -10,7 +10,7 @@ import (
 
 type Dependencies struct {
 	DB  *sqlx.DB
-	Bot bot.BotClient
+	Bot bot.Client
 }
 
 func InjectServer(deps Dependencies) (*api.Server, error) {

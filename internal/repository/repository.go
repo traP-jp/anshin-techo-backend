@@ -7,9 +7,9 @@ import (
 
 type Repository struct {
 	db  *sqlx.DB
-	bot bot.BotClient
+	bot bot.Client
 }
 
-func New(db *sqlx.DB, botClient bot.BotClient) *Repository {
+func New(db *sqlx.DB, botClient bot.Client) *Repository {
 	return &Repository{db: db, bot: botClient}
 }

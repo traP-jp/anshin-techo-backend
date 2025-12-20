@@ -7,9 +7,9 @@ import (
 	"github.com/traPtitech/traq-ws-bot/payload"
 )
 
-// BotClient は traQ Bot の操作を抽象化したインターフェース
+// Client は traQ Bot の操作を抽象化したインターフェース
 // テスト時にはこのインターフェースをモックすることで、実際の traQ との通信を避けられる
-type BotClient interface {
+type Client interface {
 	// Start は Bot の WebSocket 接続を開始する
 	Start() error
 	// API は traQ API クライアントを返す

@@ -16,12 +16,11 @@ type MockService struct {
 
 	// イベントハンドラの記録用
 	MessageCreatedHandler       func(messageID, channelID, userID, content string)
-	ChannelCreatedHandler       func(channelID string)
 	MessageStampsUpdatedHandler func(messageID string, stamps []payload.MessageStamp)
 }
 
 var (
-	_ BotClient     = (*MockService)(nil)
+	_ Client        = (*MockService)(nil)
 	_ MessageSender = (*MockService)(nil)
 	_ EventHandler  = (*MockService)(nil)
 )
@@ -31,12 +30,14 @@ func NewMockService() *MockService {
 	return &MockService{
 		StartFunc: func() error { return nil },
 		APIFunc:   func() *traq.APIClient { return nil },
-		PostMessageFunc: func(ctx context.Context, channelID string, content string) error {
+		PostMessageFunc: func(_ context.Context, _ string, _ string) error {
 			return nil
 		},
-		PostDirectMessageFunc: func(ctx context.Context, userID string, content string) error {
+		PostDirectMessageFunc: func(_ context.Context, _ string, _ string) error {
 			return nil
 		},
+		MessageCreatedHandler:       func(_, _, _, _ string) {},
+		MessageStampsUpdatedHandler: func(_ string, _ []payload.MessageStamp) {},
 	}
 }
 
