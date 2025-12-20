@@ -65,7 +65,7 @@ func (h *Handler) TicketsPost(ctx context.Context, req *api.TicketsPostReq) (api
 		CreatedAt:    ticket.CreatedAt,
 		UpdatedAt:    api.OptDateTime{Value: ticket.UpdatedAt, Set: true},
 	}
-	
+
 	return res, nil
 }
 
@@ -104,7 +104,7 @@ func (h *Handler) TicketsGet(ctx context.Context, params api.TicketsGetParams) (
 	for _, ticket := range tickets {
 
 		res = append(res, api.Ticket{
-			ID: ticket.ID,
+			ID:    ticket.ID,
 			Title: ticket.Title,
 			Description: api.OptString{
 				Value: ticket.Description.String,
@@ -128,11 +128,12 @@ func (h *Handler) TicketsGet(ctx context.Context, params api.TicketsGetParams) (
 		})
 	}
 	result := api.TicketsGetOKApplicationJSON(res)
-	
+
 	return &result, nil
 }
 
 // DELETE /tickets/{ticketId}
+//
 //nolint:revive
 func (h *Handler) TicketsTicketIdDelete(ctx context.Context, params api.TicketsTicketIdDeleteParams) (api.TicketsTicketIdDeleteRes, error) {
 	id := params.TicketId
@@ -140,7 +141,7 @@ func (h *Handler) TicketsTicketIdDelete(ctx context.Context, params api.TicketsT
 		if errors.Is(err, repository.ErrTicketNotFound) {
 			return &api.TicketsTicketIdDeleteNotFound{}, nil
 		}
-		
+
 		return nil, fmt.Errorf("delete ticket in repository: %w", err)
 	}
 	result := api.TicketsTicketIdDeleteNoContent{}
@@ -149,6 +150,7 @@ func (h *Handler) TicketsTicketIdDelete(ctx context.Context, params api.TicketsT
 }
 
 // GET /tickets/{ticketId}
+//
 //nolint:revive
 func (h *Handler) TicketsTicketIdGet(ctx context.Context, params api.TicketsTicketIdGetParams) (api.TicketsTicketIdGetRes, error) {
 	id := params.TicketId
@@ -179,6 +181,7 @@ func (h *Handler) TicketsTicketIdGet(ctx context.Context, params api.TicketsTick
 }
 
 // PATCH /tickets/{ticketId}
+//
 //nolint:revive
 func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTicketIdPatchReq, params api.TicketsTicketIdPatchParams) (api.TicketsTicketIdPatchRes, error) {
 	id := params.TicketId
@@ -191,10 +194,10 @@ func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTi
 		if errors.Is(err, repository.ErrTicketNotFound) {
 			return &api.TicketsTicketIdPatchNotFound{}, nil
 		}
-		
+
 		return nil, fmt.Errorf("get ticket from repository: %w", err)
 	}
-	
+
 	title := ticket.Title
 	if req.Value.Title.Set {
 		title = req.Value.Title.Value
@@ -264,6 +267,6 @@ func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTi
 		
 		return nil, fmt.Errorf("update ticket in repository: %w", err)
 	}
-	
+
 	return &api.TicketsTicketIdPatchOK{}, nil
 }
