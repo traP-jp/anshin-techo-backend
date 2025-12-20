@@ -42,9 +42,6 @@ func (h *Handler) TicketsPost(ctx context.Context, req *api.TicketsPostReq) (api
 		if errors.Is(err, repository.ErrTagContainsComma) {
 			return &api.TicketsPostBadRequest{}, nil
 		}
-		if errors.Is(err, repository.ErrUserNotFound) {
-			return &api.TicketsPostBadRequest{}, nil
-		}
 
 		return nil, fmt.Errorf("create ticket in repository: %w", err)
 	}
@@ -87,9 +84,6 @@ func (h *Handler) TicketsGet(ctx context.Context, params api.TicketsGetParams) (
 	}
 	tickets, err := h.repo.GetTickets(ctx, repoParams)
 	if err != nil {
-		if errors.Is(err, repository.ErrUserNotFound) {
-			return &api.TicketsGetBadRequest{}, nil
-		}
 		if errors.Is(err, repository.ErrInvalidStatus) {
 			return &api.TicketsGetBadRequest{}, nil
 		}
@@ -259,9 +253,6 @@ func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTi
 			return &api.TicketsTicketIdPatchBadRequest{}, nil
 		}
 		if errors.Is(err, repository.ErrTagContainsComma) {
-			return &api.TicketsTicketIdPatchBadRequest{}, nil
-		}
-		if errors.Is(err, repository.ErrUserNotFound) {
 			return &api.TicketsTicketIdPatchBadRequest{}, nil
 		}
 		
