@@ -14,7 +14,10 @@ import (
 	"github.com/traP-jp/anshin-techo-backend/internal/service/bot"
 )
 
-var globalServer http.Handler
+var (
+	globalServer http.Handler
+	globalDB     *sqlx.DB
+)
 
 func TestMain(m *testing.M) {
 	if err := run(m); err != nil {
@@ -63,6 +66,7 @@ func run(m *testing.M) error {
 		}
 
 		db = _db
+		globalDB = db
 
 		return nil
 	}); err != nil {
