@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
+	ht "github.com/ogen-go/ogen/http"
 	"github.com/ogen-go/ogen/validate"
 )
 
@@ -75,25 +76,46 @@ func encodeConfigPostResponse(response ConfigPostRes, w http.ResponseWriter) err
 	}
 }
 
-func encodeCreateReviewResponse(response *Review, w http.ResponseWriter) error {
-	if err := func() error {
-		if err := response.Validate(); err != nil {
-			return err
+func encodeCreateReviewResponse(response CreateReviewRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *Review:
+		if err := func() error {
+			if err := response.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrap(err, "validate")
 		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(201)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
 		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "validate")
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(201)
 
-	e := new(jx.Encoder)
-	response.Encode(e)
-	if _, err := e.WriteTo(w); err != nil {
-		return errors.Wrap(err, "write")
-	}
+	case *CreateReviewBadRequest:
+		w.WriteHeader(400)
 
-	return nil
+		return nil
+
+	case *CreateReviewNotFound:
+		w.WriteHeader(404)
+
+		return nil
+
+	case *CreateReviewConflict:
+		w.WriteHeader(409)
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
 }
 
 func encodeCreateTicketResponse(response CreateTicketRes, w http.ResponseWriter) error {
@@ -400,4 +422,26 @@ func encodeUsersPutResponse(response UsersPutRes, w http.ResponseWriter) error {
 	default:
 		return errors.Errorf("unexpected response type: %T", response)
 	}
+}
+
+func encodeErrorResponse(response *ErrorResponseStatusCode, w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	code := response.StatusCode
+	if code == 0 {
+		// Set default status code.
+		code = http.StatusOK
+	}
+	w.WriteHeader(code)
+
+	e := new(jx.Encoder)
+	response.Response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	if code >= http.StatusInternalServerError {
+		return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
+	}
+	return nil
+
 }

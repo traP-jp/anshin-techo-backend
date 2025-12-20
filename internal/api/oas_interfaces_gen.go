@@ -9,6 +9,10 @@ type ConfigPostRes interface {
 	configPostRes()
 }
 
+type CreateReviewRes interface {
+	createReviewRes()
+}
+
 type CreateTicketRes interface {
 	createTicketRes()
 }
