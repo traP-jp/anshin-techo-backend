@@ -63,6 +63,11 @@ func encodeTicketsGetResponse(response TicketsGetRes, w http.ResponseWriter) err
 
 		return nil
 
+	case *TicketsGetBadRequest:
+		w.WriteHeader(400)
+
+		return nil
+
 	case *TicketsGetUnauthorized:
 		w.WriteHeader(401)
 
@@ -92,6 +97,11 @@ func encodeTicketsPostResponse(response TicketsPostRes, w http.ResponseWriter) e
 		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")
 		}
+
+		return nil
+
+	case *TicketsPostBadRequest:
+		w.WriteHeader(400)
 
 		return nil
 
@@ -240,6 +250,11 @@ func encodeTicketsTicketIdPatchResponse(response TicketsTicketIdPatchRes, w http
 	switch response := response.(type) {
 	case *TicketsTicketIdPatchOK:
 		w.WriteHeader(200)
+
+		return nil
+
+	case *TicketsTicketIdPatchBadRequest:
+		w.WriteHeader(400)
 
 		return nil
 

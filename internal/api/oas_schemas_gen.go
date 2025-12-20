@@ -1254,6 +1254,11 @@ func (s *TicketStatus) UnmarshalText(data []byte) error {
 	}
 }
 
+// TicketsGetBadRequest is response for TicketsGet operation.
+type TicketsGetBadRequest struct{}
+
+func (*TicketsGetBadRequest) ticketsGetRes() {}
+
 type TicketsGetOKApplicationJSON []Ticket
 
 func (*TicketsGetOKApplicationJSON) ticketsGetRes() {}
@@ -1310,6 +1315,11 @@ func (s *TicketsGetSort) UnmarshalText(data []byte) error {
 type TicketsGetUnauthorized struct{}
 
 func (*TicketsGetUnauthorized) ticketsGetRes() {}
+
+// TicketsPostBadRequest is response for TicketsPost operation.
+type TicketsPostBadRequest struct{}
+
+func (*TicketsPostBadRequest) ticketsPostRes() {}
 
 type TicketsPostReq struct {
 	Title       string       `json:"title"`
@@ -1742,6 +1752,11 @@ func (s *TicketsTicketIdNotesPostReq) SetContent(val string) {
 func (s *TicketsTicketIdNotesPostReq) SetMentionNotification(val bool) {
 	s.MentionNotification = val
 }
+
+// TicketsTicketIdPatchBadRequest is response for TicketsTicketIdPatch operation.
+type TicketsTicketIdPatchBadRequest struct{}
+
+func (*TicketsTicketIdPatchBadRequest) ticketsTicketIdPatchRes() {}
 
 // TicketsTicketIdPatchForbidden is response for TicketsTicketIdPatch operation.
 type TicketsTicketIdPatchForbidden struct{}

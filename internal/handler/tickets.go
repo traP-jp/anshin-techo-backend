@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -35,6 +36,16 @@ func (h *Handler) TicketsPost(ctx context.Context, req *api.TicketsPostReq) (api
 
 	ticketID, err := h.repo.CreateTicket(ctx, repoTicket)
 	if err != nil {
+		if errors.Is(err, repository.ErrInvalidStatus) {
+			return &api.TicketsPostBadRequest{}, nil
+		}
+		if errors.Is(err, repository.ErrTagContainsComma) {
+			return &api.TicketsPostBadRequest{}, nil
+		}
+		if errors.Is(err, repository.ErrUserNotFound) {
+			return &api.TicketsPostBadRequest{}, nil
+		}
+
 		return nil, fmt.Errorf("create ticket in repository: %w", err)
 	}
 	ticket, err := h.repo.GetTicketByID(ctx, ticketID)
@@ -59,10 +70,33 @@ func (h *Handler) TicketsPost(ctx context.Context, req *api.TicketsPostReq) (api
 }
 
 // GET /tickets
-func (h *Handler) TicketsGet(ctx context.Context, _ api.TicketsGetParams) (api.TicketsGetRes, error) {
-	// TODO: 絞り込みはまだ実装していない
-	tickets, err := h.repo.GetTickets(ctx)
+func (h *Handler) TicketsGet(ctx context.Context, params api.TicketsGetParams) (api.TicketsGetRes, error) {
+	repoParams := repository.GetTicketsParams{
+		Assignee: "",
+		Status:   "",
+		Sort:     "",
+	}
+	if params.Assignee.Set {
+		repoParams.Assignee = params.Assignee.Value
+	}
+	if params.Status.Set {
+		repoParams.Status = string(params.Status.Value)
+	}
+	if params.Sort.Set {
+		repoParams.Sort = string(params.Sort.Value)
+	}
+	tickets, err := h.repo.GetTickets(ctx, repoParams)
 	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			return &api.TicketsGetBadRequest{}, nil
+		}
+		if errors.Is(err, repository.ErrInvalidStatus) {
+			return &api.TicketsGetBadRequest{}, nil
+		}
+		if errors.Is(err, repository.ErrInvalidSort) {
+			return &api.TicketsGetBadRequest{}, nil
+		}
+
 		return nil, fmt.Errorf("get tickets from repository: %w", err)
 	}
 
@@ -103,7 +137,7 @@ func (h *Handler) TicketsGet(ctx context.Context, _ api.TicketsGetParams) (api.T
 func (h *Handler) TicketsTicketIdDelete(ctx context.Context, params api.TicketsTicketIdDeleteParams) (api.TicketsTicketIdDeleteRes, error) {
 	id := params.TicketId
 	if err := h.repo.DeleteTicket(ctx, id); err != nil {
-		if err == repository.ErrTicketNotFound {
+		if errors.Is(err, repository.ErrTicketNotFound) {
 			return &api.TicketsTicketIdDeleteNotFound{}, nil
 		}
 		
@@ -120,7 +154,7 @@ func (h *Handler) TicketsTicketIdGet(ctx context.Context, params api.TicketsTick
 	id := params.TicketId
 	ticket, err := h.repo.GetTicketByID(ctx, id)
 	if err != nil {
-		if err == repository.ErrTicketNotFound {
+		if errors.Is(err, repository.ErrTicketNotFound) {
 			return &api.TicketsTicketIdGetNotFound{}, nil
 		}
 
@@ -154,7 +188,7 @@ func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTi
 
 	ticket, err := h.repo.GetTicketByID(ctx, id)
 	if err != nil {
-		if err == repository.ErrTicketNotFound {
+		if errors.Is(err, repository.ErrTicketNotFound) {
 			return &api.TicketsTicketIdPatchNotFound{}, nil
 		}
 		
@@ -218,6 +252,16 @@ func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTi
 		Tags:         tags,
 	}
 	if err := h.repo.UpdateTicket(ctx, id, updateParams); err != nil {
+		if errors.Is(err, repository.ErrInvalidStatus) {
+			return &api.TicketsTicketIdPatchBadRequest{}, nil
+		}
+		if errors.Is(err, repository.ErrTagContainsComma) {
+			return &api.TicketsTicketIdPatchBadRequest{}, nil
+		}
+		if errors.Is(err, repository.ErrUserNotFound) {
+			return &api.TicketsTicketIdPatchBadRequest{}, nil
+		}
+		
 		return nil, fmt.Errorf("update ticket in repository: %w", err)
 	}
 	
