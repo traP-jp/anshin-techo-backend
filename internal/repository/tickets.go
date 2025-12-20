@@ -134,7 +134,7 @@ func (r *Repository) GetTickets(ctx context.Context, params GetTicketsParams) ([
 	args := []interface{}{}
 	if params.Assignee != "" {
 		if err := r.ensureUsersExist(ctx, []string{params.Assignee}); err != nil {
-			return nil, ErrUserNotFound
+			return nil, err
 		}
 		query += " AND t.assignee = ?"
 		args = append(args, params.Assignee)
