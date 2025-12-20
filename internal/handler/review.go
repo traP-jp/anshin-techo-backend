@@ -11,7 +11,7 @@ import (
 	"github.com/traP-jp/anshin-techo-backend/internal/repository"
 )
 
-func (h *Handler) TicketsTicketIdNotesNoteIdReviewsPost(ctx context.Context, req *api.CreateReviewReq, params api.CreateReviewParams) (*api.Review, error) {
+func (h *Handler) CreateReview(ctx context.Context, req *api.CreateReviewReq, params api.CreateReviewParams) (*api.Review, error) {
 	reviewer, ok := traqIDFromContext(ctx)
 	if !ok {
 		return nil, echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
