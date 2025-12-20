@@ -38,7 +38,7 @@ type (
 	GetTicketsParams struct {
 		Assignee string
 		Status   string
-		Sort 	   string
+		Sort     string
 	}
 )
 
@@ -61,14 +61,14 @@ func validateStatus(status string) error {
 
 func validateTicketSort(sort string) error {
 	switch sort {
-		case "due_asc", "due_desc", "created_desc":
-			return nil
-		default:
-			return fmt.Errorf("%w: %s", ErrInvalidSort, sort)
+	case "due_asc", "due_desc", "created_desc":
+		return nil
+	default:
+		return fmt.Errorf("%w: %s", ErrInvalidSort, sort)
 	}
 }
 
-func validateTags (tags []string) error {
+func validateTags(tags []string) error {
 	for _, tag := range tags {
 		if strings.Contains(tag, ",") {
 			return fmt.Errorf("%w: %s", ErrTagContainsComma, tag)
@@ -79,7 +79,7 @@ func validateTags (tags []string) error {
 }
 
 func (r *Repository) ensureUsersExist(ctx context.Context, traqIDs []string) error {
-	if len(traqIDs) == 0{
+	if len(traqIDs) == 0 {
 		return nil
 	}
 	uniqueTraqIDs := make(map[string]struct{})
@@ -133,10 +133,16 @@ func (r *Repository) GetTickets(ctx context.Context, params GetTicketsParams) ([
 
 	args := []interface{}{}
 	if params.Assignee != "" {
+		if err := r.ensureUsersExist(ctx, []string{params.Assignee}); err != nil {
+			return nil, ErrUserNotFound
+		}
 		query += " AND t.assignee = ?"
 		args = append(args, params.Assignee)
 	}
 	if params.Status != "" {
+		if err := validateStatus(params.Status); err != nil {
+			return nil, ErrInvalidStatus
+		}
 		query += " AND t.status = ?"
 		args = append(args, params.Status)
 	}
@@ -231,7 +237,12 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 	if len(params.SubAssignees) > 0 {
 		placeholders := make([]string, 0, len(params.SubAssignees))
 		args := make([]interface{}, 0, len(params.SubAssignees)*2)
+		seen := make(map[string]struct{})
 		for _, subAssignee := range params.SubAssignees {
+			if _, ok := seen[subAssignee]; ok {
+				continue
+			}
+			seen[subAssignee] = struct{}{}
 			placeholders = append(placeholders, "(?, ?)")
 			args = append(args, ticketID, subAssignee)
 		}
@@ -245,7 +256,12 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 	if len(params.Stakeholders) > 0 {
 		placeholders := make([]string, 0, len(params.Stakeholders))
 		args := make([]interface{}, 0, len(params.Stakeholders)*2)
+		seen := make(map[string]struct{})
 		for _, stakeholder := range params.Stakeholders {
+			if _, ok := seen[stakeholder]; ok {
+				continue
+			}
+			seen[stakeholder] = struct{}{}
 			placeholders = append(placeholders, "(?, ?)")
 			args = append(args, ticketID, stakeholder)
 		}
@@ -259,7 +275,12 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 	if len(params.Tags) > 0 {
 		placeholders := make([]string, 0, len(params.Tags))
 		args := make([]interface{}, 0, len(params.Tags)*2)
+		seen := make(map[string]struct{})
 		for _, tag := range params.Tags {
+			if _, ok := seen[tag]; ok {
+				continue
+			}
+			seen[tag] = struct{}{}
 			placeholders = append(placeholders, "(?, ?)")
 			args = append(args, ticketID, tag)
 		}
@@ -350,7 +371,12 @@ func (r *Repository) UpdateTicket(ctx context.Context, ticketID int64, params Cr
 	if len(params.SubAssignees) > 0 {
 		placeholders := make([]string, 0, len(params.SubAssignees))
 		args := make([]interface{}, 0, len(params.SubAssignees)*2)
+		seen := make(map[string]struct{})
 		for _, subAssignee := range params.SubAssignees {
+			if _, ok := seen[subAssignee]; ok {
+				continue
+			}
+			seen[subAssignee] = struct{}{}
 			placeholders = append(placeholders, "(?, ?)")
 			args = append(args, ticketID, subAssignee)
 		}
@@ -367,7 +393,12 @@ func (r *Repository) UpdateTicket(ctx context.Context, ticketID int64, params Cr
 	if len(params.Stakeholders) > 0 {
 		placeholders := make([]string, 0, len(params.Stakeholders))
 		args := make([]interface{}, 0, len(params.Stakeholders)*2)
+		seen := make(map[string]struct{})
 		for _, stakeholder := range params.Stakeholders {
+			if _, ok := seen[stakeholder]; ok {
+				continue
+			}
+			seen[stakeholder] = struct{}{}
 			placeholders = append(placeholders, "(?, ?)")
 			args = append(args, ticketID, stakeholder)
 		}
@@ -384,7 +415,12 @@ func (r *Repository) UpdateTicket(ctx context.Context, ticketID int64, params Cr
 	if len(params.Tags) > 0 {
 		placeholders := make([]string, 0, len(params.Tags))
 		args := make([]interface{}, 0, len(params.Tags)*2)
+		seen := make(map[string]struct{})
 		for _, tag := range params.Tags {
+			if _, ok := seen[tag]; ok {
+				continue
+			}
+			seen[tag] = struct{}{}
 			placeholders = append(placeholders, "(?, ?)")
 			args = append(args, ticketID, tag)
 		}

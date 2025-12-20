@@ -87,6 +87,12 @@ func (h *Handler) TicketsGet(ctx context.Context, params api.TicketsGetParams) (
 	}
 	tickets, err := h.repo.GetTickets(ctx, repoParams)
 	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound){
+			return &api.TicketsGetBadRequest{}, nil
+		}
+		if errors.Is(err, repository.ErrInvalidStatus){
+			return &api.TicketsGetBadRequest{}, nil
+		}
 		if errors.Is(err, repository.ErrInvalidSort){
 			return &api.TicketsGetBadRequest{}, nil
 		}
