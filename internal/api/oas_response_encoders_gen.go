@@ -3,75 +3,17 @@
 package api
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
-	"github.com/ogen-go/ogen/validate"
+	ht "github.com/ogen-go/ogen/http"
 )
 
-func encodeConfigGetResponse(response *ConfigGetOK, w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(200)
-
-	e := new(jx.Encoder)
-	response.Encode(e)
-	if _, err := e.WriteTo(w); err != nil {
-		return errors.Wrap(err, "write")
-	}
-
-	return nil
-}
-
-func encodeConfigPostResponse(response ConfigPostRes, w http.ResponseWriter) error {
+func encodeConfigGetResponse(response ConfigGetRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
-	case *ConfigPostOK:
-		w.WriteHeader(200)
-
-		return nil
-
-	case *ConfigPostForbidden:
-		w.WriteHeader(403)
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeCreateReviewResponse(response *Review, w http.ResponseWriter) error {
-	if err := func() error {
-		if err := response.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "validate")
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(201)
-
-	e := new(jx.Encoder)
-	response.Encode(e)
-	if _, err := e.WriteTo(w); err != nil {
-		return errors.Wrap(err, "write")
-	}
-
-	return nil
-}
-
-func encodeDeleteReviewResponse(response *DeleteReviewNoContent, w http.ResponseWriter) error {
-	w.WriteHeader(204)
-
-	return nil
-}
-
-func encodeTicketsGetResponse(response TicketsGetRes, w http.ResponseWriter) error {
-	switch response := response.(type) {
-	case *TicketsGetOKApplicationJSON:
+	case *Config:
 		if err := func() error {
 			if err := response.Validate(); err != nil {
 				return err
@@ -91,14 +33,29 @@ func encodeTicketsGetResponse(response TicketsGetRes, w http.ResponseWriter) err
 
 		return nil
 
-	case *TicketsGetBadRequest:
-		w.WriteHeader(400)
+	case *ConfigGetForbidden:
+		w.WriteHeader(403)
 
 		return nil
 
-	case *TicketsGetUnauthorized:
-		w.WriteHeader(401)
+	case *ErrorResponseStatusCode:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		code := response.StatusCode
+		if code == 0 {
+			// Set default status code.
+			code = http.StatusOK
+		}
+		w.WriteHeader(code)
 
+		e := new(jx.Encoder)
+		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		if code >= http.StatusInternalServerError {
+			return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
+		}
 		return nil
 
 	default:
@@ -106,7 +63,106 @@ func encodeTicketsGetResponse(response TicketsGetRes, w http.ResponseWriter) err
 	}
 }
 
-func encodeTicketsPostResponse(response TicketsPostRes, w http.ResponseWriter) error {
+func encodeConfigPostResponse(response ConfigPostRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *Config:
+		if err := func() error {
+			if err := response.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrap(err, "validate")
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *ConfigPostForbidden:
+		w.WriteHeader(403)
+
+		return nil
+
+	case *ErrorResponseStatusCode:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		code := response.StatusCode
+		if code == 0 {
+			// Set default status code.
+			code = http.StatusOK
+		}
+		w.WriteHeader(code)
+
+		e := new(jx.Encoder)
+		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		if code >= http.StatusInternalServerError {
+			return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
+		}
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeCreateReviewResponse(response CreateReviewRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *Review:
+		if err := func() error {
+			if err := response.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrap(err, "validate")
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(201)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *ErrorResponseStatusCode:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		code := response.StatusCode
+		if code == 0 {
+			// Set default status code.
+			code = http.StatusOK
+		}
+		w.WriteHeader(code)
+
+		e := new(jx.Encoder)
+		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		if code >= http.StatusInternalServerError {
+			return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
+		}
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeCreateTicketResponse(response CreateTicketRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
 	case *Ticket:
 		if err := func() error {
@@ -128,14 +184,191 @@ func encodeTicketsPostResponse(response TicketsPostRes, w http.ResponseWriter) e
 
 		return nil
 
-	case *TicketsPostBadRequest:
+	case *CreateTicketBadRequest:
 		w.WriteHeader(400)
 
 		return nil
 
-	case *TicketsPostUnauthorized:
+	case *CreateTicketUnauthorized:
 		w.WriteHeader(401)
 
+		return nil
+
+	case *ErrorResponseStatusCode:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		code := response.StatusCode
+		if code == 0 {
+			// Set default status code.
+			code = http.StatusOK
+		}
+		w.WriteHeader(code)
+
+		e := new(jx.Encoder)
+		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		if code >= http.StatusInternalServerError {
+			return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
+		}
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeDeleteReviewResponse(response *DeleteReviewNoContent, w http.ResponseWriter) error {
+	w.WriteHeader(204)
+
+	return nil
+}
+
+func encodeDeleteTicketByIDResponse(response DeleteTicketByIDRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *DeleteTicketByIDNoContent:
+		w.WriteHeader(204)
+
+		return nil
+
+	case *DeleteTicketByIDForbidden:
+		w.WriteHeader(403)
+
+		return nil
+
+	case *DeleteTicketByIDNotFound:
+		w.WriteHeader(404)
+
+		return nil
+
+	case *ErrorResponseStatusCode:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		code := response.StatusCode
+		if code == 0 {
+			// Set default status code.
+			code = http.StatusOK
+		}
+		w.WriteHeader(code)
+
+		e := new(jx.Encoder)
+		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		if code >= http.StatusInternalServerError {
+			return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
+		}
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeGetTicketByIDResponse(response GetTicketByIDRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *GetTicketByIDOK:
+		if err := func() error {
+			if err := response.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrap(err, "validate")
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *GetTicketByIDNotFound:
+		w.WriteHeader(404)
+
+		return nil
+
+	case *ErrorResponseStatusCode:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		code := response.StatusCode
+		if code == 0 {
+			// Set default status code.
+			code = http.StatusOK
+		}
+		w.WriteHeader(code)
+
+		e := new(jx.Encoder)
+		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		if code >= http.StatusInternalServerError {
+			return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
+		}
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeGetTicketsResponse(response GetTicketsRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *GetTicketsOKApplicationJSON:
+		if err := func() error {
+			if err := response.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrap(err, "validate")
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *GetTicketsBadRequest:
+		w.WriteHeader(400)
+
+		return nil
+
+	case *GetTicketsUnauthorized:
+		w.WriteHeader(401)
+
+		return nil
+
+	case *ErrorResponseStatusCode:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		code := response.StatusCode
+		if code == 0 {
+			// Set default status code.
+			code = http.StatusOK
+		}
+		w.WriteHeader(code)
+
+		e := new(jx.Encoder)
+		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		if code >= http.StatusInternalServerError {
+			return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
+		}
 		return nil
 
 	default:
@@ -166,60 +399,6 @@ func encodeTicketsTicketIdAiGeneratePostResponse(response TicketsTicketIdAiGener
 
 	case *TicketsTicketIdAiGeneratePostInternalServerError:
 		w.WriteHeader(500)
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeTicketsTicketIdDeleteResponse(response TicketsTicketIdDeleteRes, w http.ResponseWriter) error {
-	switch response := response.(type) {
-	case *TicketsTicketIdDeleteNoContent:
-		w.WriteHeader(204)
-
-		return nil
-
-	case *TicketsTicketIdDeleteForbidden:
-		w.WriteHeader(403)
-
-		return nil
-
-	case *TicketsTicketIdDeleteNotFound:
-		w.WriteHeader(404)
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeTicketsTicketIdGetResponse(response TicketsTicketIdGetRes, w http.ResponseWriter) error {
-	switch response := response.(type) {
-	case *TicketsTicketIdGetOK:
-		if err := func() error {
-			if err := response.Validate(); err != nil {
-				return err
-			}
-			return nil
-		}(); err != nil {
-			return errors.Wrap(err, "validate")
-		}
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *TicketsTicketIdGetNotFound:
-		w.WriteHeader(404)
 
 		return nil
 
@@ -259,10 +438,36 @@ func encodeTicketsTicketIdNotesNoteIdAiReviewPostResponse(response TicketsTicket
 	}
 }
 
-func encodeTicketsTicketIdNotesNoteIdDeleteResponse(response *TicketsTicketIdNotesNoteIdDeleteNoContent, w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func encodeTicketsTicketIdNotesNoteIdDeleteResponse(response TicketsTicketIdNotesNoteIdDeleteRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *TicketsTicketIdNotesNoteIdDeleteNoContent:
+		w.WriteHeader(204)
 
-	return nil
+		return nil
+
+	case *ErrorResponseStatusCode:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		code := response.StatusCode
+		if code == 0 {
+			// Set default status code.
+			code = http.StatusOK
+		}
+		w.WriteHeader(code)
+
+		e := new(jx.Encoder)
+		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		if code >= http.StatusInternalServerError {
+			return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
+		}
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
 }
 
 func encodeTicketsTicketIdNotesNoteIdPutResponse(response TicketsTicketIdNotesNoteIdPutRes, w http.ResponseWriter) error {
@@ -277,52 +482,71 @@ func encodeTicketsTicketIdNotesNoteIdPutResponse(response TicketsTicketIdNotesNo
 
 		return nil
 
+	case *ErrorResponseStatusCode:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		code := response.StatusCode
+		if code == 0 {
+			// Set default status code.
+			code = http.StatusOK
+		}
+		w.WriteHeader(code)
+
+		e := new(jx.Encoder)
+		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		if code >= http.StatusInternalServerError {
+			return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
+		}
+		return nil
+
 	default:
 		return errors.Errorf("unexpected response type: %T", response)
 	}
 }
 
-func encodeTicketsTicketIdNotesPostResponse(response *Note, w http.ResponseWriter) error {
-	if err := func() error {
-		if err := response.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "validate")
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(201)
-
-	e := new(jx.Encoder)
-	response.Encode(e)
-	if _, err := e.WriteTo(w); err != nil {
-		return errors.Wrap(err, "write")
-	}
-
-	return nil
-}
-
-func encodeTicketsTicketIdPatchResponse(response TicketsTicketIdPatchRes, w http.ResponseWriter) error {
+func encodeTicketsTicketIdNotesPostResponse(response TicketsTicketIdNotesPostRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
-	case *TicketsTicketIdPatchOK:
-		w.WriteHeader(200)
+	case *Note:
+		if err := func() error {
+			if err := response.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrap(err, "validate")
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(201)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
 
 		return nil
 
-	case *TicketsTicketIdPatchBadRequest:
-		w.WriteHeader(400)
+	case *ErrorResponseStatusCode:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		code := response.StatusCode
+		if code == 0 {
+			// Set default status code.
+			code = http.StatusOK
+		}
+		w.WriteHeader(code)
 
-		return nil
+		e := new(jx.Encoder)
+		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
 
-	case *TicketsTicketIdPatchForbidden:
-		w.WriteHeader(403)
-
-		return nil
-
-	case *TicketsTicketIdPatchNotFound:
-		w.WriteHeader(404)
-
+		if code >= http.StatusInternalServerError {
+			return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
+		}
 		return nil
 
 	default:
@@ -347,51 +571,123 @@ func encodeUpdateReviewResponse(response UpdateReviewRes, w http.ResponseWriter)
 
 		return nil
 
+	case *ErrorResponseStatusCode:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		code := response.StatusCode
+		if code == 0 {
+			// Set default status code.
+			code = http.StatusOK
+		}
+		w.WriteHeader(code)
+
+		e := new(jx.Encoder)
+		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		if code >= http.StatusInternalServerError {
+			return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
+		}
+		return nil
+
 	default:
 		return errors.Errorf("unexpected response type: %T", response)
 	}
 }
 
-func encodeUsersGetResponse(response []User, w http.ResponseWriter) error {
-	if err := func() error {
-		if response == nil {
-			return errors.New("nil is invalid value")
+func encodeUpdateTicketByIDResponse(response UpdateTicketByIDRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *UpdateTicketByIDOK:
+		w.WriteHeader(200)
+
+		return nil
+
+	case *UpdateTicketByIDBadRequest:
+		w.WriteHeader(400)
+
+		return nil
+
+	case *UpdateTicketByIDForbidden:
+		w.WriteHeader(403)
+
+		return nil
+
+	case *UpdateTicketByIDNotFound:
+		w.WriteHeader(404)
+
+		return nil
+
+	case *ErrorResponseStatusCode:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		code := response.StatusCode
+		if code == 0 {
+			// Set default status code.
+			code = http.StatusOK
 		}
-		var failures []validate.FieldError
-		for i, elem := range response {
-			if err := func() error {
-				if err := elem.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				failures = append(failures, validate.FieldError{
-					Name:  fmt.Sprintf("[%d]", i),
-					Error: err,
-				})
-			}
+		w.WriteHeader(code)
+
+		e := new(jx.Encoder)
+		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
 		}
-		if len(failures) > 0 {
-			return &validate.Error{Fields: failures}
+
+		if code >= http.StatusInternalServerError {
+			return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
 		}
 		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "validate")
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(200)
 
-	e := new(jx.Encoder)
-	e.ArrStart()
-	for _, elem := range response {
-		elem.Encode(e)
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
 	}
-	e.ArrEnd()
-	if _, err := e.WriteTo(w); err != nil {
-		return errors.Wrap(err, "write")
-	}
+}
 
-	return nil
+func encodeUsersGetResponse(response UsersGetRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *UsersGetOKApplicationJSON:
+		if err := func() error {
+			if err := response.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrap(err, "validate")
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *ErrorResponseStatusCode:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		code := response.StatusCode
+		if code == 0 {
+			// Set default status code.
+			code = http.StatusOK
+		}
+		w.WriteHeader(code)
+
+		e := new(jx.Encoder)
+		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		if code >= http.StatusInternalServerError {
+			return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
+		}
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
 }
 
 func encodeUsersPutResponse(response UsersPutRes, w http.ResponseWriter) error {
@@ -404,6 +700,26 @@ func encodeUsersPutResponse(response UsersPutRes, w http.ResponseWriter) error {
 	case *UsersPutForbidden:
 		w.WriteHeader(403)
 
+		return nil
+
+	case *ErrorResponseStatusCode:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		code := response.StatusCode
+		if code == 0 {
+			// Set default status code.
+			code = http.StatusOK
+		}
+		w.WriteHeader(code)
+
+		e := new(jx.Encoder)
+		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		if code >= http.StatusInternalServerError {
+			return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
+		}
 		return nil
 
 	default:

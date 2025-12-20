@@ -92,7 +92,7 @@ func (s *Server) handleConfigGetRequest(args [0]string, argsEscaped bool, w http
 
 	var rawBody []byte
 
-	var response *ConfigGetOK
+	var response ConfigGetRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -108,7 +108,7 @@ func (s *Server) handleConfigGetRequest(args [0]string, argsEscaped bool, w http
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *ConfigGetOK
+			Response = ConfigGetRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -119,12 +119,12 @@ func (s *Server) handleConfigGetRequest(args [0]string, argsEscaped bool, w http
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				err = s.h.ConfigGet(ctx)
+				response, err = s.h.ConfigGet(ctx)
 				return response, err
 			},
 		)
 	} else {
-		err = s.h.ConfigGet(ctx)
+		response, err = s.h.ConfigGet(ctx)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -234,7 +234,7 @@ func (s *Server) handleConfigPostRequest(args [0]string, argsEscaped bool, w htt
 		}
 
 		type (
-			Request  = *ConfigPostReq
+			Request  = *Config
 			Params   = struct{}
 			Response = ConfigPostRes
 		)
@@ -360,7 +360,7 @@ func (s *Server) handleCreateReviewRequest(args [2]string, argsEscaped bool, w h
 		}
 	}()
 
-	var response *Review
+	var response CreateReviewRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -385,7 +385,7 @@ func (s *Server) handleCreateReviewRequest(args [2]string, argsEscaped bool, w h
 		type (
 			Request  = *CreateReviewReq
 			Params   = CreateReviewParams
-			Response = *Review
+			Response = CreateReviewRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -410,6 +410,134 @@ func (s *Server) handleCreateReviewRequest(args [2]string, argsEscaped bool, w h
 	}
 
 	if err := encodeCreateReviewResponse(response, w); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
+// handleCreateTicketRequest handles createTicket operation.
+//
+// 新規チケットを作成する。.
+//
+// POST /tickets
+func (s *Server) handleCreateTicketRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	ctx := r.Context()
+
+	var (
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: CreateTicketOperation,
+			ID:   "createTicket",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityTraQAuth(ctx, CreateTicketOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "TraQAuth",
+					Err:              err,
+				}
+				defer recordError("Security:TraQAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+
+	var rawBody []byte
+	request, rawBody, close, err := s.decodeCreateTicketRequest(r)
+	if err != nil {
+		err = &ogenerrors.DecodeRequestError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeRequest", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+	defer func() {
+		if err := close(); err != nil {
+			recordError("CloseRequest", err)
+		}
+	}()
+
+	var response CreateTicketRes
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    CreateTicketOperation,
+			OperationSummary: "チケット新規作成",
+			OperationID:      "createTicket",
+			Body:             request,
+			RawBody:          rawBody,
+			Params:           middleware.Parameters{},
+			Raw:              r,
+		}
+
+		type (
+			Request  = *CreateTicketReq
+			Params   = struct{}
+			Response = CreateTicketRes
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			nil,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.CreateTicket(ctx, request)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.CreateTicket(ctx, request)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeCreateTicketResponse(response, w); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -554,12 +682,12 @@ func (s *Server) handleDeleteReviewRequest(args [3]string, argsEscaped bool, w h
 	}
 }
 
-// handleTicketsGetRequest handles GET /tickets operation.
+// handleDeleteTicketByIDRequest handles deleteTicketByID operation.
 //
-// チケット一覧取得.
+// 本職のみ実行可能。.
 //
-// GET /tickets
-func (s *Server) handleTicketsGetRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// DELETE /tickets/{ticketId}
+func (s *Server) handleDeleteTicketByIDRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	ctx := r.Context()
@@ -567,15 +695,15 @@ func (s *Server) handleTicketsGetRequest(args [0]string, argsEscaped bool, w htt
 	var (
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: TicketsGetOperation,
-			ID:   "",
+			Name: DeleteTicketByIDOperation,
+			ID:   "deleteTicketByID",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityTraQAuth(ctx, TicketsGetOperation, r)
+			sctx, ok, err := s.securityTraQAuth(ctx, DeleteTicketByIDOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -615,7 +743,7 @@ func (s *Server) handleTicketsGetRequest(args [0]string, argsEscaped bool, w htt
 			return
 		}
 	}
-	params, err := decodeTicketsGetParams(args, argsEscaped, r)
+	params, err := decodeDeleteTicketByIDParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -628,13 +756,269 @@ func (s *Server) handleTicketsGetRequest(args [0]string, argsEscaped bool, w htt
 
 	var rawBody []byte
 
-	var response TicketsGetRes
+	var response DeleteTicketByIDRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    TicketsGetOperation,
+			OperationName:    DeleteTicketByIDOperation,
+			OperationSummary: "チケット削除",
+			OperationID:      "deleteTicketByID",
+			Body:             nil,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "ticketId",
+					In:   "path",
+				}: params.TicketId,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = struct{}
+			Params   = DeleteTicketByIDParams
+			Response = DeleteTicketByIDRes
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackDeleteTicketByIDParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.DeleteTicketByID(ctx, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.DeleteTicketByID(ctx, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeDeleteTicketByIDResponse(response, w); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
+// handleGetTicketByIDRequest handles getTicketByID operation.
+//
+// チケットに紐づくノート一覧(notes)も同時に返却される。.
+//
+// GET /tickets/{ticketId}
+func (s *Server) handleGetTicketByIDRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	ctx := r.Context()
+
+	var (
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: GetTicketByIDOperation,
+			ID:   "getTicketByID",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityTraQAuth(ctx, GetTicketByIDOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "TraQAuth",
+					Err:              err,
+				}
+				defer recordError("Security:TraQAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeGetTicketByIDParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+
+	var response GetTicketByIDRes
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    GetTicketByIDOperation,
+			OperationSummary: "チケット詳細取得",
+			OperationID:      "getTicketByID",
+			Body:             nil,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "ticketId",
+					In:   "path",
+				}: params.TicketId,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = struct{}
+			Params   = GetTicketByIDParams
+			Response = GetTicketByIDRes
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackGetTicketByIDParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.GetTicketByID(ctx, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.GetTicketByID(ctx, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeGetTicketByIDResponse(response, w); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
+// handleGetTicketsRequest handles getTickets operation.
+//
+// チケット一覧取得.
+//
+// GET /tickets
+func (s *Server) handleGetTicketsRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	ctx := r.Context()
+
+	var (
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: GetTicketsOperation,
+			ID:   "getTickets",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityTraQAuth(ctx, GetTicketsOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "TraQAuth",
+					Err:              err,
+				}
+				defer recordError("Security:TraQAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeGetTicketsParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+
+	var response GetTicketsRes
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    GetTicketsOperation,
 			OperationSummary: "チケット一覧取得",
-			OperationID:      "",
+			OperationID:      "getTickets",
 			Body:             nil,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -656,8 +1040,8 @@ func (s *Server) handleTicketsGetRequest(args [0]string, argsEscaped bool, w htt
 
 		type (
 			Request  = struct{}
-			Params   = TicketsGetParams
-			Response = TicketsGetRes
+			Params   = GetTicketsParams
+			Response = GetTicketsRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -666,14 +1050,14 @@ func (s *Server) handleTicketsGetRequest(args [0]string, argsEscaped bool, w htt
 		](
 			m,
 			mreq,
-			unpackTicketsGetParams,
+			unpackGetTicketsParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.TicketsGet(ctx, params)
+				response, err = s.h.GetTickets(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.TicketsGet(ctx, params)
+		response, err = s.h.GetTickets(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -681,135 +1065,7 @@ func (s *Server) handleTicketsGetRequest(args [0]string, argsEscaped bool, w htt
 		return
 	}
 
-	if err := encodeTicketsGetResponse(response, w); err != nil {
-		defer recordError("EncodeResponse", err)
-		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
-			s.cfg.ErrorHandler(ctx, w, r, err)
-		}
-		return
-	}
-}
-
-// handleTicketsPostRequest handles POST /tickets operation.
-//
-// 新規チケットを作成する。.
-//
-// POST /tickets
-func (s *Server) handleTicketsPostRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
-	statusWriter := &codeRecorder{ResponseWriter: w}
-	w = statusWriter
-	ctx := r.Context()
-
-	var (
-		err          error
-		opErrContext = ogenerrors.OperationContext{
-			Name: TicketsPostOperation,
-			ID:   "",
-		}
-	)
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			sctx, ok, err := s.securityTraQAuth(ctx, TicketsPostOperation, r)
-			if err != nil {
-				err = &ogenerrors.SecurityError{
-					OperationContext: opErrContext,
-					Security:         "TraQAuth",
-					Err:              err,
-				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
-				return
-			}
-			if ok {
-				satisfied[0] |= 1 << 0
-				ctx = sctx
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			err = &ogenerrors.SecurityError{
-				OperationContext: opErrContext,
-				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
-			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
-			return
-		}
-	}
-
-	var rawBody []byte
-	request, rawBody, close, err := s.decodeTicketsPostRequest(r)
-	if err != nil {
-		err = &ogenerrors.DecodeRequestError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeRequest", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-	defer func() {
-		if err := close(); err != nil {
-			recordError("CloseRequest", err)
-		}
-	}()
-
-	var response TicketsPostRes
-	if m := s.cfg.Middleware; m != nil {
-		mreq := middleware.Request{
-			Context:          ctx,
-			OperationName:    TicketsPostOperation,
-			OperationSummary: "チケット新規作成",
-			OperationID:      "",
-			Body:             request,
-			RawBody:          rawBody,
-			Params:           middleware.Parameters{},
-			Raw:              r,
-		}
-
-		type (
-			Request  = *TicketsPostReq
-			Params   = struct{}
-			Response = TicketsPostRes
-		)
-		response, err = middleware.HookMiddleware[
-			Request,
-			Params,
-			Response,
-		](
-			m,
-			mreq,
-			nil,
-			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.TicketsPost(ctx, request)
-				return response, err
-			},
-		)
-	} else {
-		response, err = s.h.TicketsPost(ctx, request)
-	}
-	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	if err := encodeTicketsPostResponse(response, w); err != nil {
+	if err := encodeGetTicketsResponse(response, w); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -953,262 +1209,6 @@ func (s *Server) handleTicketsTicketIdAiGeneratePostRequest(args [1]string, args
 	}
 
 	if err := encodeTicketsTicketIdAiGeneratePostResponse(response, w); err != nil {
-		defer recordError("EncodeResponse", err)
-		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
-			s.cfg.ErrorHandler(ctx, w, r, err)
-		}
-		return
-	}
-}
-
-// handleTicketsTicketIdDeleteRequest handles DELETE /tickets/{ticketId} operation.
-//
-// 本職のみ実行可能。.
-//
-// DELETE /tickets/{ticketId}
-func (s *Server) handleTicketsTicketIdDeleteRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
-	statusWriter := &codeRecorder{ResponseWriter: w}
-	w = statusWriter
-	ctx := r.Context()
-
-	var (
-		err          error
-		opErrContext = ogenerrors.OperationContext{
-			Name: TicketsTicketIdDeleteOperation,
-			ID:   "",
-		}
-	)
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			sctx, ok, err := s.securityTraQAuth(ctx, TicketsTicketIdDeleteOperation, r)
-			if err != nil {
-				err = &ogenerrors.SecurityError{
-					OperationContext: opErrContext,
-					Security:         "TraQAuth",
-					Err:              err,
-				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
-				return
-			}
-			if ok {
-				satisfied[0] |= 1 << 0
-				ctx = sctx
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			err = &ogenerrors.SecurityError{
-				OperationContext: opErrContext,
-				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
-			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
-			return
-		}
-	}
-	params, err := decodeTicketsTicketIdDeleteParams(args, argsEscaped, r)
-	if err != nil {
-		err = &ogenerrors.DecodeParamsError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeParams", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	var rawBody []byte
-
-	var response TicketsTicketIdDeleteRes
-	if m := s.cfg.Middleware; m != nil {
-		mreq := middleware.Request{
-			Context:          ctx,
-			OperationName:    TicketsTicketIdDeleteOperation,
-			OperationSummary: "チケット削除",
-			OperationID:      "",
-			Body:             nil,
-			RawBody:          rawBody,
-			Params: middleware.Parameters{
-				{
-					Name: "ticketId",
-					In:   "path",
-				}: params.TicketId,
-			},
-			Raw: r,
-		}
-
-		type (
-			Request  = struct{}
-			Params   = TicketsTicketIdDeleteParams
-			Response = TicketsTicketIdDeleteRes
-		)
-		response, err = middleware.HookMiddleware[
-			Request,
-			Params,
-			Response,
-		](
-			m,
-			mreq,
-			unpackTicketsTicketIdDeleteParams,
-			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.TicketsTicketIdDelete(ctx, params)
-				return response, err
-			},
-		)
-	} else {
-		response, err = s.h.TicketsTicketIdDelete(ctx, params)
-	}
-	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	if err := encodeTicketsTicketIdDeleteResponse(response, w); err != nil {
-		defer recordError("EncodeResponse", err)
-		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
-			s.cfg.ErrorHandler(ctx, w, r, err)
-		}
-		return
-	}
-}
-
-// handleTicketsTicketIdGetRequest handles GET /tickets/{ticketId} operation.
-//
-// チケットに紐づくノート一覧(notes)も同時に返却される。.
-//
-// GET /tickets/{ticketId}
-func (s *Server) handleTicketsTicketIdGetRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
-	statusWriter := &codeRecorder{ResponseWriter: w}
-	w = statusWriter
-	ctx := r.Context()
-
-	var (
-		err          error
-		opErrContext = ogenerrors.OperationContext{
-			Name: TicketsTicketIdGetOperation,
-			ID:   "",
-		}
-	)
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			sctx, ok, err := s.securityTraQAuth(ctx, TicketsTicketIdGetOperation, r)
-			if err != nil {
-				err = &ogenerrors.SecurityError{
-					OperationContext: opErrContext,
-					Security:         "TraQAuth",
-					Err:              err,
-				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
-				return
-			}
-			if ok {
-				satisfied[0] |= 1 << 0
-				ctx = sctx
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			err = &ogenerrors.SecurityError{
-				OperationContext: opErrContext,
-				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
-			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
-			return
-		}
-	}
-	params, err := decodeTicketsTicketIdGetParams(args, argsEscaped, r)
-	if err != nil {
-		err = &ogenerrors.DecodeParamsError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeParams", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	var rawBody []byte
-
-	var response TicketsTicketIdGetRes
-	if m := s.cfg.Middleware; m != nil {
-		mreq := middleware.Request{
-			Context:          ctx,
-			OperationName:    TicketsTicketIdGetOperation,
-			OperationSummary: "チケット詳細取得",
-			OperationID:      "",
-			Body:             nil,
-			RawBody:          rawBody,
-			Params: middleware.Parameters{
-				{
-					Name: "ticketId",
-					In:   "path",
-				}: params.TicketId,
-			},
-			Raw: r,
-		}
-
-		type (
-			Request  = struct{}
-			Params   = TicketsTicketIdGetParams
-			Response = TicketsTicketIdGetRes
-		)
-		response, err = middleware.HookMiddleware[
-			Request,
-			Params,
-			Response,
-		](
-			m,
-			mreq,
-			unpackTicketsTicketIdGetParams,
-			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.TicketsTicketIdGet(ctx, params)
-				return response, err
-			},
-		)
-	} else {
-		response, err = s.h.TicketsTicketIdGet(ctx, params)
-	}
-	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	if err := encodeTicketsTicketIdGetResponse(response, w); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -1423,7 +1423,7 @@ func (s *Server) handleTicketsTicketIdNotesNoteIdDeleteRequest(args [2]string, a
 
 	var rawBody []byte
 
-	var response *TicketsTicketIdNotesNoteIdDeleteNoContent
+	var response TicketsTicketIdNotesNoteIdDeleteRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -1448,7 +1448,7 @@ func (s *Server) handleTicketsTicketIdNotesNoteIdDeleteRequest(args [2]string, a
 		type (
 			Request  = struct{}
 			Params   = TicketsTicketIdNotesNoteIdDeleteParams
-			Response = *TicketsTicketIdNotesNoteIdDeleteNoContent
+			Response = TicketsTicketIdNotesNoteIdDeleteRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -1459,12 +1459,12 @@ func (s *Server) handleTicketsTicketIdNotesNoteIdDeleteRequest(args [2]string, a
 			mreq,
 			unpackTicketsTicketIdNotesNoteIdDeleteParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				err = s.h.TicketsTicketIdNotesNoteIdDelete(ctx, params)
+				response, err = s.h.TicketsTicketIdNotesNoteIdDelete(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		err = s.h.TicketsTicketIdNotesNoteIdDelete(ctx, params)
+		response, err = s.h.TicketsTicketIdNotesNoteIdDelete(ctx, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -1718,7 +1718,7 @@ func (s *Server) handleTicketsTicketIdNotesPostRequest(args [1]string, argsEscap
 		}
 	}()
 
-	var response *Note
+	var response TicketsTicketIdNotesPostRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -1739,7 +1739,7 @@ func (s *Server) handleTicketsTicketIdNotesPostRequest(args [1]string, argsEscap
 		type (
 			Request  = *TicketsTicketIdNotesPostReq
 			Params   = TicketsTicketIdNotesPostParams
-			Response = *Note
+			Response = TicketsTicketIdNotesPostRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -1764,149 +1764,6 @@ func (s *Server) handleTicketsTicketIdNotesPostRequest(args [1]string, argsEscap
 	}
 
 	if err := encodeTicketsTicketIdNotesPostResponse(response, w); err != nil {
-		defer recordError("EncodeResponse", err)
-		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
-			s.cfg.ErrorHandler(ctx, w, r, err)
-		}
-		return
-	}
-}
-
-// handleTicketsTicketIdPatchRequest handles PATCH /tickets/{ticketId} operation.
-//
-// 関係者と渉外のみ実行可能。.
-//
-// PATCH /tickets/{ticketId}
-func (s *Server) handleTicketsTicketIdPatchRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
-	statusWriter := &codeRecorder{ResponseWriter: w}
-	w = statusWriter
-	ctx := r.Context()
-
-	var (
-		err          error
-		opErrContext = ogenerrors.OperationContext{
-			Name: TicketsTicketIdPatchOperation,
-			ID:   "",
-		}
-	)
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			sctx, ok, err := s.securityTraQAuth(ctx, TicketsTicketIdPatchOperation, r)
-			if err != nil {
-				err = &ogenerrors.SecurityError{
-					OperationContext: opErrContext,
-					Security:         "TraQAuth",
-					Err:              err,
-				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
-				return
-			}
-			if ok {
-				satisfied[0] |= 1 << 0
-				ctx = sctx
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			err = &ogenerrors.SecurityError{
-				OperationContext: opErrContext,
-				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
-			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
-			return
-		}
-	}
-	params, err := decodeTicketsTicketIdPatchParams(args, argsEscaped, r)
-	if err != nil {
-		err = &ogenerrors.DecodeParamsError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeParams", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	var rawBody []byte
-	request, rawBody, close, err := s.decodeTicketsTicketIdPatchRequest(r)
-	if err != nil {
-		err = &ogenerrors.DecodeRequestError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeRequest", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-	defer func() {
-		if err := close(); err != nil {
-			recordError("CloseRequest", err)
-		}
-	}()
-
-	var response TicketsTicketIdPatchRes
-	if m := s.cfg.Middleware; m != nil {
-		mreq := middleware.Request{
-			Context:          ctx,
-			OperationName:    TicketsTicketIdPatchOperation,
-			OperationSummary: "チケット情報更新",
-			OperationID:      "",
-			Body:             request,
-			RawBody:          rawBody,
-			Params: middleware.Parameters{
-				{
-					Name: "ticketId",
-					In:   "path",
-				}: params.TicketId,
-			},
-			Raw: r,
-		}
-
-		type (
-			Request  = OptTicketsTicketIdPatchReq
-			Params   = TicketsTicketIdPatchParams
-			Response = TicketsTicketIdPatchRes
-		)
-		response, err = middleware.HookMiddleware[
-			Request,
-			Params,
-			Response,
-		](
-			m,
-			mreq,
-			unpackTicketsTicketIdPatchParams,
-			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.TicketsTicketIdPatch(ctx, request, params)
-				return response, err
-			},
-		)
-	} else {
-		response, err = s.h.TicketsTicketIdPatch(ctx, request, params)
-	}
-	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	if err := encodeTicketsTicketIdPatchResponse(response, w); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -2066,6 +1923,149 @@ func (s *Server) handleUpdateReviewRequest(args [3]string, argsEscaped bool, w h
 	}
 }
 
+// handleUpdateTicketByIDRequest handles updateTicketByID operation.
+//
+// 関係者と渉外のみ実行可能。.
+//
+// PATCH /tickets/{ticketId}
+func (s *Server) handleUpdateTicketByIDRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	ctx := r.Context()
+
+	var (
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: UpdateTicketByIDOperation,
+			ID:   "updateTicketByID",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityTraQAuth(ctx, UpdateTicketByIDOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "TraQAuth",
+					Err:              err,
+				}
+				defer recordError("Security:TraQAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeUpdateTicketByIDParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+	request, rawBody, close, err := s.decodeUpdateTicketByIDRequest(r)
+	if err != nil {
+		err = &ogenerrors.DecodeRequestError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeRequest", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+	defer func() {
+		if err := close(); err != nil {
+			recordError("CloseRequest", err)
+		}
+	}()
+
+	var response UpdateTicketByIDRes
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    UpdateTicketByIDOperation,
+			OperationSummary: "チケット情報更新",
+			OperationID:      "updateTicketByID",
+			Body:             request,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "ticketId",
+					In:   "path",
+				}: params.TicketId,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = OptUpdateTicketByIDReq
+			Params   = UpdateTicketByIDParams
+			Response = UpdateTicketByIDRes
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackUpdateTicketByIDParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.UpdateTicketByID(ctx, request, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.UpdateTicketByID(ctx, request, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeUpdateTicketByIDResponse(response, w); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
 // handleUsersGetRequest handles GET /users operation.
 //
 // ユーザー一覧取得.
@@ -2130,7 +2130,7 @@ func (s *Server) handleUsersGetRequest(args [0]string, argsEscaped bool, w http.
 
 	var rawBody []byte
 
-	var response []User
+	var response UsersGetRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -2146,7 +2146,7 @@ func (s *Server) handleUsersGetRequest(args [0]string, argsEscaped bool, w http.
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = []User
+			Response = UsersGetRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,

@@ -94,9 +94,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if len(elem) == 0 {
 					switch r.Method {
 					case "GET":
-						s.handleTicketsGetRequest([0]string{}, elemIsEscaped, w, r)
+						s.handleGetTicketsRequest([0]string{}, elemIsEscaped, w, r)
 					case "POST":
-						s.handleTicketsPostRequest([0]string{}, elemIsEscaped, w, r)
+						s.handleCreateTicketRequest([0]string{}, elemIsEscaped, w, r)
 					default:
 						s.notAllowed(w, r, "GET,POST")
 					}
@@ -124,15 +124,15 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					if len(elem) == 0 {
 						switch r.Method {
 						case "DELETE":
-							s.handleTicketsTicketIdDeleteRequest([1]string{
+							s.handleDeleteTicketByIDRequest([1]string{
 								args[0],
 							}, elemIsEscaped, w, r)
 						case "GET":
-							s.handleTicketsTicketIdGetRequest([1]string{
+							s.handleGetTicketByIDRequest([1]string{
 								args[0],
 							}, elemIsEscaped, w, r)
 						case "PATCH":
-							s.handleTicketsTicketIdPatchRequest([1]string{
+							s.handleUpdateTicketByIDRequest([1]string{
 								args[0],
 							}, elemIsEscaped, w, r)
 						default:
@@ -510,18 +510,18 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 				if len(elem) == 0 {
 					switch method {
 					case "GET":
-						r.name = TicketsGetOperation
+						r.name = GetTicketsOperation
 						r.summary = "チケット一覧取得"
-						r.operationID = ""
+						r.operationID = "getTickets"
 						r.operationGroup = ""
 						r.pathPattern = "/tickets"
 						r.args = args
 						r.count = 0
 						return r, true
 					case "POST":
-						r.name = TicketsPostOperation
+						r.name = CreateTicketOperation
 						r.summary = "チケット新規作成"
-						r.operationID = ""
+						r.operationID = "createTicket"
 						r.operationGroup = ""
 						r.pathPattern = "/tickets"
 						r.args = args
@@ -552,27 +552,27 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 					if len(elem) == 0 {
 						switch method {
 						case "DELETE":
-							r.name = TicketsTicketIdDeleteOperation
+							r.name = DeleteTicketByIDOperation
 							r.summary = "チケット削除"
-							r.operationID = ""
+							r.operationID = "deleteTicketByID"
 							r.operationGroup = ""
 							r.pathPattern = "/tickets/{ticketId}"
 							r.args = args
 							r.count = 1
 							return r, true
 						case "GET":
-							r.name = TicketsTicketIdGetOperation
+							r.name = GetTicketByIDOperation
 							r.summary = "チケット詳細取得"
-							r.operationID = ""
+							r.operationID = "getTicketByID"
 							r.operationGroup = ""
 							r.pathPattern = "/tickets/{ticketId}"
 							r.args = args
 							r.count = 1
 							return r, true
 						case "PATCH":
-							r.name = TicketsTicketIdPatchOperation
+							r.name = UpdateTicketByIDOperation
 							r.summary = "チケット情報更新"
-							r.operationID = ""
+							r.operationID = "updateTicketByID"
 							r.operationGroup = ""
 							r.pathPattern = "/tickets/{ticketId}"
 							r.args = args

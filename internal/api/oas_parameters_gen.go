@@ -303,17 +303,147 @@ func decodeDeleteReviewParams(args [3]string, argsEscaped bool, r *http.Request)
 	return params, nil
 }
 
-// TicketsGetParams is parameters of GET /tickets operation.
-type TicketsGetParams struct {
+// DeleteTicketByIDParams is parameters of deleteTicketByID operation.
+type DeleteTicketByIDParams struct {
+	TicketId int64
+}
+
+func unpackDeleteTicketByIDParams(packed middleware.Parameters) (params DeleteTicketByIDParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "ticketId",
+			In:   "path",
+		}
+		params.TicketId = packed[key].(int64)
+	}
+	return params
+}
+
+func decodeDeleteTicketByIDParams(args [1]string, argsEscaped bool, r *http.Request) (params DeleteTicketByIDParams, _ error) {
+	// Decode path: ticketId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "ticketId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToInt64(val)
+				if err != nil {
+					return err
+				}
+
+				params.TicketId = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "ticketId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// GetTicketByIDParams is parameters of getTicketByID operation.
+type GetTicketByIDParams struct {
+	TicketId int64
+}
+
+func unpackGetTicketByIDParams(packed middleware.Parameters) (params GetTicketByIDParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "ticketId",
+			In:   "path",
+		}
+		params.TicketId = packed[key].(int64)
+	}
+	return params
+}
+
+func decodeGetTicketByIDParams(args [1]string, argsEscaped bool, r *http.Request) (params GetTicketByIDParams, _ error) {
+	// Decode path: ticketId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "ticketId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToInt64(val)
+				if err != nil {
+					return err
+				}
+
+				params.TicketId = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "ticketId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// GetTicketsParams is parameters of getTickets operation.
+type GetTicketsParams struct {
 	// 担当者IDでフィルタ.
 	Assignee OptString `json:",omitempty,omitzero"`
 	// ステータスでフィルタ.
 	Status OptTicketStatus `json:",omitempty,omitzero"`
 	// ソート順.
-	Sort OptTicketsGetSort `json:",omitempty,omitzero"`
+	Sort OptGetTicketsSort `json:",omitempty,omitzero"`
 }
 
-func unpackTicketsGetParams(packed middleware.Parameters) (params TicketsGetParams) {
+func unpackGetTicketsParams(packed middleware.Parameters) (params GetTicketsParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "assignee",
@@ -338,13 +468,13 @@ func unpackTicketsGetParams(packed middleware.Parameters) (params TicketsGetPara
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.Sort = v.(OptTicketsGetSort)
+			params.Sort = v.(OptGetTicketsSort)
 		}
 	}
 	return params
 }
 
-func decodeTicketsGetParams(args [0]string, argsEscaped bool, r *http.Request) (params TicketsGetParams, _ error) {
+func decodeGetTicketsParams(args [0]string, argsEscaped bool, r *http.Request) (params GetTicketsParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
 	// Decode query: assignee.
 	if err := func() error {
@@ -453,7 +583,7 @@ func decodeTicketsGetParams(args [0]string, argsEscaped bool, r *http.Request) (
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotSortVal TicketsGetSort
+				var paramsDotSortVal GetTicketsSort
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -465,7 +595,7 @@ func decodeTicketsGetParams(args [0]string, argsEscaped bool, r *http.Request) (
 						return err
 					}
 
-					paramsDotSortVal = TicketsGetSort(c)
+					paramsDotSortVal = GetTicketsSort(c)
 					return nil
 				}(); err != nil {
 					return err
@@ -519,136 +649,6 @@ func unpackTicketsTicketIdAiGeneratePostParams(packed middleware.Parameters) (pa
 }
 
 func decodeTicketsTicketIdAiGeneratePostParams(args [1]string, argsEscaped bool, r *http.Request) (params TicketsTicketIdAiGeneratePostParams, _ error) {
-	// Decode path: ticketId.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "ticketId",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
-					return err
-				}
-
-				c, err := conv.ToInt64(val)
-				if err != nil {
-					return err
-				}
-
-				params.TicketId = c
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "ticketId",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
-// TicketsTicketIdDeleteParams is parameters of DELETE /tickets/{ticketId} operation.
-type TicketsTicketIdDeleteParams struct {
-	TicketId int64
-}
-
-func unpackTicketsTicketIdDeleteParams(packed middleware.Parameters) (params TicketsTicketIdDeleteParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "ticketId",
-			In:   "path",
-		}
-		params.TicketId = packed[key].(int64)
-	}
-	return params
-}
-
-func decodeTicketsTicketIdDeleteParams(args [1]string, argsEscaped bool, r *http.Request) (params TicketsTicketIdDeleteParams, _ error) {
-	// Decode path: ticketId.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "ticketId",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
-					return err
-				}
-
-				c, err := conv.ToInt64(val)
-				if err != nil {
-					return err
-				}
-
-				params.TicketId = c
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "ticketId",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
-// TicketsTicketIdGetParams is parameters of GET /tickets/{ticketId} operation.
-type TicketsTicketIdGetParams struct {
-	TicketId int64
-}
-
-func unpackTicketsTicketIdGetParams(packed middleware.Parameters) (params TicketsTicketIdGetParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "ticketId",
-			In:   "path",
-		}
-		params.TicketId = packed[key].(int64)
-	}
-	return params
-}
-
-func decodeTicketsTicketIdGetParams(args [1]string, argsEscaped bool, r *http.Request) (params TicketsTicketIdGetParams, _ error) {
 	// Decode path: ticketId.
 	if err := func() error {
 		param := args[0]
@@ -1116,71 +1116,6 @@ func decodeTicketsTicketIdNotesPostParams(args [1]string, argsEscaped bool, r *h
 	return params, nil
 }
 
-// TicketsTicketIdPatchParams is parameters of PATCH /tickets/{ticketId} operation.
-type TicketsTicketIdPatchParams struct {
-	TicketId int64
-}
-
-func unpackTicketsTicketIdPatchParams(packed middleware.Parameters) (params TicketsTicketIdPatchParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "ticketId",
-			In:   "path",
-		}
-		params.TicketId = packed[key].(int64)
-	}
-	return params
-}
-
-func decodeTicketsTicketIdPatchParams(args [1]string, argsEscaped bool, r *http.Request) (params TicketsTicketIdPatchParams, _ error) {
-	// Decode path: ticketId.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "ticketId",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
-					return err
-				}
-
-				c, err := conv.ToInt64(val)
-				if err != nil {
-					return err
-				}
-
-				params.TicketId = c
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "ticketId",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
 // UpdateReviewParams is parameters of updateReview operation.
 type UpdateReviewParams struct {
 	TicketId int64
@@ -1345,6 +1280,71 @@ func decodeUpdateReviewParams(args [3]string, argsEscaped bool, r *http.Request)
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "reviewId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// UpdateTicketByIDParams is parameters of updateTicketByID operation.
+type UpdateTicketByIDParams struct {
+	TicketId int64
+}
+
+func unpackUpdateTicketByIDParams(packed middleware.Parameters) (params UpdateTicketByIDParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "ticketId",
+			In:   "path",
+		}
+		params.TicketId = packed[key].(int64)
+	}
+	return params
+}
+
+func decodeUpdateTicketByIDParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateTicketByIDParams, _ error) {
+	// Decode path: ticketId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "ticketId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToInt64(val)
+				if err != nil {
+					return err
+				}
+
+				params.TicketId = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "ticketId",
 			In:   "path",
 			Err:  err,
 		}
