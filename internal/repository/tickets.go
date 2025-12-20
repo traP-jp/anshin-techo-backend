@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 )
@@ -43,9 +44,9 @@ type (
 )
 
 var (
-	ErrTicketNotFound = fmt.Errorf("ticket not found")
-	ErrInvalidStatus = fmt.Errorf("invalid status")
-	ErrInvalidSort = fmt.Errorf("invalid sort option")
+	ErrTicketNotFound   = fmt.Errorf("ticket not found")
+	ErrInvalidStatus    = fmt.Errorf("invalid status")
+	ErrInvalidSort      = fmt.Errorf("invalid sort option")
 	ErrTagContainsComma = fmt.Errorf("tag contains comma")
 )
 
@@ -246,6 +247,13 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 	if err := tx.Commit(); err != nil {
 		return 0, fmt.Errorf("failed to commit transaction: %w", err)
 	}
+	botMessage := fmt.Sprintf("## 新しいチケット(ID: %d)が作成されました\nタイトル: %s\n担当者: @%s\n副担当: %v\n関係者: %v\nタグ: %v\n締め切り: %v\n%s", ticketID, params.Title, params.Assignee, params.SubAssignees, params.Stakeholders, params.Tags, params.Due.Time, params.Description.String)
+	if err := r.bot.PostMessage(ctx, os.Getenv("CREATE_TICKET_CHANNEL_ID"), botMessage); err != nil {
+		fmt.Printf("failed to send ticket creation notification: %v\n", err)
+	}
+	if err := r.bot.PostDirectMessage(ctx, "2e0c6679-166f-455a-b8b0-35cdfd257256", botMessage); err != nil {
+		fmt.Printf("failed to send ticket creation notification: %v\n", err)
+	}
 
 	return ticketID, nil
 }
@@ -400,6 +408,6 @@ func (r *Repository) DeleteTicket(ctx context.Context, ticketID int64) error {
 	if rowsAffected == 0 {
 		return ErrTicketNotFound
 	}
-	
+
 	return nil
 }

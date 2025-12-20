@@ -11,6 +11,7 @@ import (
 	"github.com/traP-jp/anshin-techo-backend/infrastructure/config"
 	"github.com/traP-jp/anshin-techo-backend/infrastructure/database"
 	"github.com/traP-jp/anshin-techo-backend/infrastructure/injector"
+	"github.com/traP-jp/anshin-techo-backend/internal/service/bot"
 )
 
 var globalServer http.Handler
@@ -68,7 +69,12 @@ func run(m *testing.M) error {
 		return fmt.Errorf("connect to database container: %w", err)
 	}
 
-	server, err := injector.InjectServer(db)
+	mockBot := bot.NewMockService()
+
+	server, err := injector.InjectServer(injector.Dependencies{
+		DB:  db,
+		Bot: mockBot,
+	})
 	if err != nil {
 		return fmt.Errorf("inject server: %w", err)
 	}

@@ -12,6 +12,9 @@ services:
       NS_MARIADB_HOSTNAME: db
       NS_MARIADB_PORT: "3306"
       NS_MARIADB_DATABASE: app
+      TRAQ_ORIGIN: ${TRAQ_ORIGIN}
+      TRAQ_BOT_TOKEN: ${TRAQ_BOT_TOKEN}
+      CREATE_TICKET_CHANNEL_ID: ${CREATE_TICKET_CHANNEL_ID}
     depends_on:
       db:
         condition: service_healthy

@@ -11,6 +11,8 @@ require (
 	github.com/ogen-go/ogen v1.18.0
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/ras0q/goalie v0.6.0
+	github.com/traPtitech/go-traq v0.0.0-20240725071454-97c7b85dc879
+	github.com/traPtitech/traq-ws-bot v1.2.1
 )
 
 require (
@@ -18,8 +20,10 @@ require (
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-faster/yaml v0.4.6 // indirect
+	github.com/gofrs/uuid/v5 v5.3.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
@@ -30,6 +34,7 @@ require (
 	golang.org/x/crypto v0.46.0 // indirect
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
 	golang.org/x/mod v0.30.0 // indirect
+	golang.org/x/oauth2 v0.22.0 // indirect
 	golang.org/x/tools v0.39.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
