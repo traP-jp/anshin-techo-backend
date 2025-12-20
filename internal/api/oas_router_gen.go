@@ -233,65 +233,102 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 								switch elem[0] {
-								case '/': // Prefix: "/reviews"
+								case '/': // Prefix: "/"
 
-									if l := len("/reviews"); len(elem) >= l && elem[0:l] == "/reviews" {
+									if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 										elem = elem[l:]
 									} else {
 										break
 									}
 
 									if len(elem) == 0 {
-										switch r.Method {
-										case "POST":
-											s.handleCreateReviewRequest([2]string{
-												args[0],
-												args[1],
-											}, elemIsEscaped, w, r)
-										default:
-											s.notAllowed(w, r, "POST")
-										}
-
-										return
+										break
 									}
 									switch elem[0] {
-									case '/': // Prefix: "/"
+									case 'a': // Prefix: "ai/review"
 
-										if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+										if l := len("ai/review"); len(elem) >= l && elem[0:l] == "ai/review" {
 											elem = elem[l:]
 										} else {
 											break
 										}
 
-										// Param: "reviewId"
-										// Leaf parameter, slashes are prohibited
-										idx := strings.IndexByte(elem, '/')
-										if idx >= 0 {
-											break
-										}
-										args[2] = elem
-										elem = ""
-
 										if len(elem) == 0 {
 											// Leaf node.
 											switch r.Method {
-											case "DELETE":
-												s.handleDeleteReviewRequest([3]string{
+											case "POST":
+												s.handleTicketsTicketIdNotesNoteIdAiReviewPostRequest([2]string{
 													args[0],
 													args[1],
-													args[2],
-												}, elemIsEscaped, w, r)
-											case "PUT":
-												s.handleUpdateReviewRequest([3]string{
-													args[0],
-													args[1],
-													args[2],
 												}, elemIsEscaped, w, r)
 											default:
-												s.notAllowed(w, r, "DELETE,PUT")
+												s.notAllowed(w, r, "POST")
 											}
 
 											return
+										}
+
+									case 'r': // Prefix: "reviews"
+
+										if l := len("reviews"); len(elem) >= l && elem[0:l] == "reviews" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											switch r.Method {
+											case "POST":
+												s.handleCreateReviewRequest([2]string{
+													args[0],
+													args[1],
+												}, elemIsEscaped, w, r)
+											default:
+												s.notAllowed(w, r, "POST")
+											}
+
+											return
+										}
+										switch elem[0] {
+										case '/': // Prefix: "/"
+
+											if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+												elem = elem[l:]
+											} else {
+												break
+											}
+
+											// Param: "reviewId"
+											// Leaf parameter, slashes are prohibited
+											idx := strings.IndexByte(elem, '/')
+											if idx >= 0 {
+												break
+											}
+											args[2] = elem
+											elem = ""
+
+											if len(elem) == 0 {
+												// Leaf node.
+												switch r.Method {
+												case "DELETE":
+													s.handleDeleteReviewRequest([3]string{
+														args[0],
+														args[1],
+														args[2],
+													}, elemIsEscaped, w, r)
+												case "PUT":
+													s.handleUpdateReviewRequest([3]string{
+														args[0],
+														args[1],
+														args[2],
+													}, elemIsEscaped, w, r)
+												default:
+													s.notAllowed(w, r, "DELETE,PUT")
+												}
+
+												return
+											}
+
 										}
 
 									}
@@ -571,7 +608,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 								switch method {
 								case "POST":
 									r.name = TicketsTicketIdAiGeneratePostOperation
-									r.summary = "AIによる返信ドラフト生成"
+									r.summary = "AIによる返信ドラフト生成 (SSE)"
 									r.operationID = ""
 									r.operationGroup = ""
 									r.pathPattern = "/tickets/{ticketId}/ai/generate"
@@ -649,71 +686,110 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 									}
 								}
 								switch elem[0] {
-								case '/': // Prefix: "/reviews"
+								case '/': // Prefix: "/"
 
-									if l := len("/reviews"); len(elem) >= l && elem[0:l] == "/reviews" {
+									if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 										elem = elem[l:]
 									} else {
 										break
 									}
 
 									if len(elem) == 0 {
-										switch method {
-										case "POST":
-											r.name = CreateReviewOperation
-											r.summary = "レビュー追加"
-											r.operationID = "createReview"
-											r.operationGroup = ""
-											r.pathPattern = "/tickets/{ticketId}/notes/{noteId}/reviews"
-											r.args = args
-											r.count = 2
-											return r, true
-										default:
-											return
-										}
+										break
 									}
 									switch elem[0] {
-									case '/': // Prefix: "/"
+									case 'a': // Prefix: "ai/review"
 
-										if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+										if l := len("ai/review"); len(elem) >= l && elem[0:l] == "ai/review" {
 											elem = elem[l:]
 										} else {
 											break
 										}
 
-										// Param: "reviewId"
-										// Leaf parameter, slashes are prohibited
-										idx := strings.IndexByte(elem, '/')
-										if idx >= 0 {
-											break
-										}
-										args[2] = elem
-										elem = ""
-
 										if len(elem) == 0 {
 											// Leaf node.
 											switch method {
-											case "DELETE":
-												r.name = DeleteReviewOperation
-												r.summary = "レビュー取り消し"
-												r.operationID = "deleteReview"
+											case "POST":
+												r.name = TicketsTicketIdNotesNoteIdAiReviewPostOperation
+												r.summary = "AIによるノート（下書き）のレビュー (SSE)"
+												r.operationID = ""
 												r.operationGroup = ""
-												r.pathPattern = "/tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}"
+												r.pathPattern = "/tickets/{ticketId}/notes/{noteId}/ai/review"
 												r.args = args
-												r.count = 3
-												return r, true
-											case "PUT":
-												r.name = UpdateReviewOperation
-												r.summary = "レビュー修正"
-												r.operationID = "updateReview"
-												r.operationGroup = ""
-												r.pathPattern = "/tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}"
-												r.args = args
-												r.count = 3
+												r.count = 2
 												return r, true
 											default:
 												return
 											}
+										}
+
+									case 'r': // Prefix: "reviews"
+
+										if l := len("reviews"); len(elem) >= l && elem[0:l] == "reviews" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											switch method {
+											case "POST":
+												r.name = CreateReviewOperation
+												r.summary = "レビュー追加"
+												r.operationID = "createReview"
+												r.operationGroup = ""
+												r.pathPattern = "/tickets/{ticketId}/notes/{noteId}/reviews"
+												r.args = args
+												r.count = 2
+												return r, true
+											default:
+												return
+											}
+										}
+										switch elem[0] {
+										case '/': // Prefix: "/"
+
+											if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+												elem = elem[l:]
+											} else {
+												break
+											}
+
+											// Param: "reviewId"
+											// Leaf parameter, slashes are prohibited
+											idx := strings.IndexByte(elem, '/')
+											if idx >= 0 {
+												break
+											}
+											args[2] = elem
+											elem = ""
+
+											if len(elem) == 0 {
+												// Leaf node.
+												switch method {
+												case "DELETE":
+													r.name = DeleteReviewOperation
+													r.summary = "レビュー取り消し"
+													r.operationID = "deleteReview"
+													r.operationGroup = ""
+													r.pathPattern = "/tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}"
+													r.args = args
+													r.count = 3
+													return r, true
+												case "PUT":
+													r.name = UpdateReviewOperation
+													r.summary = "レビュー修正"
+													r.operationID = "updateReview"
+													r.operationGroup = ""
+													r.pathPattern = "/tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}"
+													r.args = args
+													r.count = 3
+													return r, true
+												default:
+													return
+												}
+											}
+
 										}
 
 									}

@@ -25,6 +25,10 @@ type TicketsTicketIdGetRes interface {
 	ticketsTicketIdGetRes()
 }
 
+type TicketsTicketIdNotesNoteIdAiReviewPostRes interface {
+	ticketsTicketIdNotesNoteIdAiReviewPostRes()
+}
+
 type TicketsTicketIdNotesNoteIdPutRes interface {
 	ticketsTicketIdNotesNoteIdPutRes()
 }

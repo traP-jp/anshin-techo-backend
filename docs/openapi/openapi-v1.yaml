@@ -681,8 +681,7 @@ paths:
     post:
       tags:
         - AI
-      summary: "AIによる返信ドラフト生成"
-      description: "チケットの情報と過去のノート（履歴）を元に、次の返信メールのドラフトを生成する。"
+      summary: "AIによる返信ドラフト生成 (SSE)"
       requestBody:
         required: true
         content:
@@ -692,19 +691,48 @@ paths:
               properties:
                 instruction:
                   type: string
-                  description: "ユーザーからの追加指示 (例: '丁寧に断ってください' '来週の日程を提示して')"
+                  description: "ユーザーからの追加指示"
       responses:
         "200":
-          description: "生成成功"
+          description: "生成中"
           content:
-            application/json:
+            text/event-stream:
               schema:
-                type: object
-                properties:
-                  content:
-                    type: string
-                    description: "生成されたテキスト"
+                type: string
+                format: binary 
         "404":
           description: "チケットが見つからない"
         "500":
-          description: "AI生成エラー"
+          description: "サーバーエラー"
+          
+  /tickets/{ticketId}/notes/{noteId}/ai/review:
+    parameters:
+      - name: ticketId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: noteId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    post:
+      tags:
+        - AI
+      summary: "AIによるノート（下書き）のレビュー (SSE)"
+      description: "指定されたノートの内容をAIが添削・レビューする"
+      responses:
+        "200":
+          description: "レビュー生成中"
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: "チケットまたはノートが見つからない"
+        "500":
+          description: "サーバーエラー"

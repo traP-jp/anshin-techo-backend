@@ -3,6 +3,7 @@
 package api
 
 import (
+	"io"
 	"time"
 
 	"github.com/go-faster/errors"
@@ -1471,25 +1472,23 @@ type TicketsTicketIdAiGeneratePostNotFound struct{}
 func (*TicketsTicketIdAiGeneratePostNotFound) ticketsTicketIdAiGeneratePostRes() {}
 
 type TicketsTicketIdAiGeneratePostOK struct {
-	// 生成されたテキスト.
-	Content OptString `json:"content"`
+	Data io.Reader
 }
 
-// GetContent returns the value of Content.
-func (s *TicketsTicketIdAiGeneratePostOK) GetContent() OptString {
-	return s.Content
-}
-
-// SetContent sets the value of Content.
-func (s *TicketsTicketIdAiGeneratePostOK) SetContent(val OptString) {
-	s.Content = val
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s TicketsTicketIdAiGeneratePostOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
 }
 
 func (*TicketsTicketIdAiGeneratePostOK) ticketsTicketIdAiGeneratePostRes() {}
 
 type TicketsTicketIdAiGeneratePostReq struct {
-	// ユーザーからの追加指示 (例: '丁寧に断ってください'
-	// '来週の日程を提示して').
+	// ユーザーからの追加指示.
 	Instruction OptString `json:"instruction"`
 }
 
@@ -1669,6 +1668,33 @@ func (s *TicketsTicketIdGetOK) SetNotes(val []Note) {
 }
 
 func (*TicketsTicketIdGetOK) ticketsTicketIdGetRes() {}
+
+// TicketsTicketIdNotesNoteIdAiReviewPostInternalServerError is response for TicketsTicketIdNotesNoteIdAiReviewPost operation.
+type TicketsTicketIdNotesNoteIdAiReviewPostInternalServerError struct{}
+
+func (*TicketsTicketIdNotesNoteIdAiReviewPostInternalServerError) ticketsTicketIdNotesNoteIdAiReviewPostRes() {
+}
+
+// TicketsTicketIdNotesNoteIdAiReviewPostNotFound is response for TicketsTicketIdNotesNoteIdAiReviewPost operation.
+type TicketsTicketIdNotesNoteIdAiReviewPostNotFound struct{}
+
+func (*TicketsTicketIdNotesNoteIdAiReviewPostNotFound) ticketsTicketIdNotesNoteIdAiReviewPostRes() {}
+
+type TicketsTicketIdNotesNoteIdAiReviewPostOK struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s TicketsTicketIdNotesNoteIdAiReviewPostOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
+}
+
+func (*TicketsTicketIdNotesNoteIdAiReviewPostOK) ticketsTicketIdNotesNoteIdAiReviewPostRes() {}
 
 // TicketsTicketIdNotesNoteIdDeleteNoContent is response for TicketsTicketIdNotesNoteIdDelete operation.
 type TicketsTicketIdNotesNoteIdDeleteNoContent struct{}

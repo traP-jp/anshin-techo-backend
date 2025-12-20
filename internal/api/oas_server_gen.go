@@ -48,7 +48,7 @@ type Handler interface {
 	TicketsPost(ctx context.Context, req *TicketsPostReq) (TicketsPostRes, error)
 	// TicketsTicketIdAiGeneratePost implements POST /tickets/{ticketId}/ai/generate operation.
 	//
-	// チケットの情報と過去のノート（履歴）を元に、次の返信メールのドラフトを生成する。.
+	// AIによる返信ドラフト生成 (SSE).
 	//
 	// POST /tickets/{ticketId}/ai/generate
 	TicketsTicketIdAiGeneratePost(ctx context.Context, req *TicketsTicketIdAiGeneratePostReq, params TicketsTicketIdAiGeneratePostParams) (TicketsTicketIdAiGeneratePostRes, error)
@@ -64,6 +64,12 @@ type Handler interface {
 	//
 	// GET /tickets/{ticketId}
 	TicketsTicketIdGet(ctx context.Context, params TicketsTicketIdGetParams) (TicketsTicketIdGetRes, error)
+	// TicketsTicketIdNotesNoteIdAiReviewPost implements POST /tickets/{ticketId}/notes/{noteId}/ai/review operation.
+	//
+	// 指定されたノートの内容をAIが添削・レビューする.
+	//
+	// POST /tickets/{ticketId}/notes/{noteId}/ai/review
+	TicketsTicketIdNotesNoteIdAiReviewPost(ctx context.Context, params TicketsTicketIdNotesNoteIdAiReviewPostParams) (TicketsTicketIdNotesNoteIdAiReviewPostRes, error)
 	// TicketsTicketIdNotesNoteIdDelete implements DELETE /tickets/{ticketId}/notes/{noteId} operation.
 	//
 	// ノート削除.

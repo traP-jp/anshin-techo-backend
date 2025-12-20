@@ -15,7 +15,8 @@ type Config struct {
 	DBHost  string `env:"NS_MARIADB_HOSTNAME" default:"localhost"`
 	DBPort  int    `env:"NS_MARIADB_PORT" default:"3306"`
 	DBName  string `env:"NS_MARIADB_DATABASE" default:"app"`
-}
+	LiteLLMAPIKey  string `env:"LITELLM_API_KEY" default:""` 
+    LiteLLMBaseURL string `env:"LITELLM_BASE_URL" default:"https://api.openai.com/v1https://llm-proxy.trap.jp"`}
 
 func (c *Config) Parse() {
 	kong.Parse(c)

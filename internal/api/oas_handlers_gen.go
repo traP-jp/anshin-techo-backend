@@ -820,7 +820,7 @@ func (s *Server) handleTicketsPostRequest(args [0]string, argsEscaped bool, w ht
 
 // handleTicketsTicketIdAiGeneratePostRequest handles POST /tickets/{ticketId}/ai/generate operation.
 //
-// チケットの情報と過去のノート（履歴）を元に、次の返信メールのドラフトを生成する。.
+// AIによる返信ドラフト生成 (SSE).
 //
 // POST /tickets/{ticketId}/ai/generate
 func (s *Server) handleTicketsTicketIdAiGeneratePostRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -912,7 +912,7 @@ func (s *Server) handleTicketsTicketIdAiGeneratePostRequest(args [1]string, args
 		mreq := middleware.Request{
 			Context:          ctx,
 			OperationName:    TicketsTicketIdAiGeneratePostOperation,
-			OperationSummary: "AIによる返信ドラフト生成",
+			OperationSummary: "AIによる返信ドラフト生成 (SSE)",
 			OperationID:      "",
 			Body:             request,
 			RawBody:          rawBody,
@@ -1209,6 +1209,138 @@ func (s *Server) handleTicketsTicketIdGetRequest(args [1]string, argsEscaped boo
 	}
 
 	if err := encodeTicketsTicketIdGetResponse(response, w); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
+// handleTicketsTicketIdNotesNoteIdAiReviewPostRequest handles POST /tickets/{ticketId}/notes/{noteId}/ai/review operation.
+//
+// 指定されたノートの内容をAIが添削・レビューする.
+//
+// POST /tickets/{ticketId}/notes/{noteId}/ai/review
+func (s *Server) handleTicketsTicketIdNotesNoteIdAiReviewPostRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	ctx := r.Context()
+
+	var (
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: TicketsTicketIdNotesNoteIdAiReviewPostOperation,
+			ID:   "",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityTraQAuth(ctx, TicketsTicketIdNotesNoteIdAiReviewPostOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "TraQAuth",
+					Err:              err,
+				}
+				defer recordError("Security:TraQAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeTicketsTicketIdNotesNoteIdAiReviewPostParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+
+	var response TicketsTicketIdNotesNoteIdAiReviewPostRes
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    TicketsTicketIdNotesNoteIdAiReviewPostOperation,
+			OperationSummary: "AIによるノート（下書き）のレビュー (SSE)",
+			OperationID:      "",
+			Body:             nil,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "ticketId",
+					In:   "path",
+				}: params.TicketId,
+				{
+					Name: "noteId",
+					In:   "path",
+				}: params.NoteId,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = struct{}
+			Params   = TicketsTicketIdNotesNoteIdAiReviewPostParams
+			Response = TicketsTicketIdNotesNoteIdAiReviewPostRes
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackTicketsTicketIdNotesNoteIdAiReviewPostParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.TicketsTicketIdNotesNoteIdAiReviewPost(ctx, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.TicketsTicketIdNotesNoteIdAiReviewPost(ctx, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeTicketsTicketIdNotesNoteIdAiReviewPostResponse(response, w); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)

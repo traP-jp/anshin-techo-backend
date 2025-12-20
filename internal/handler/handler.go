@@ -37,7 +37,7 @@ func New(
 ) *Handler {
 	return &Handler{
 		//photo,
-		repo,
+		repo: repo,
 	}
 }
 
