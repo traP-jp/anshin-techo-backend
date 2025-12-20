@@ -19,7 +19,7 @@ type Service struct {
 }
 
 var (
-	_ Client     = (*Service)(nil)
+	_ Client        = (*Service)(nil)
 	_ MessageSender = (*Service)(nil)
 	_ EventHandler  = (*Service)(nil)
 )
@@ -51,11 +51,12 @@ func (s *Service) API() *traq.APIClient {
 
 func (s *Service) PostMessage(ctx context.Context, channelID string, content string) error {
 	embedTrue := true
-	_, _, err := s.bot.API().MessageApi.
+	_, _, err := s.bot.API().MessageAPI.
 		PostMessage(ctx, channelID).
 		PostMessageRequest(traq.PostMessageRequest{
 			Content: content,
 			Embed:   &embedTrue,
+			Nonce:   nil,
 		}).
 		Execute()
 	if err != nil {
@@ -67,11 +68,12 @@ func (s *Service) PostMessage(ctx context.Context, channelID string, content str
 
 func (s *Service) PostDirectMessage(ctx context.Context, userID string, content string) error {
 	embedTrue := true
-	dm, _, err := s.bot.API().UserApi.
+	dm, _, err := s.bot.API().UserAPI.
 		PostDirectMessage(ctx, userID).
 		PostMessageRequest(traq.PostMessageRequest{
 			Content: content,
 			Embed:   &embedTrue,
+			Nonce:   nil,
 		}).
 		Execute()
 	if err != nil {
