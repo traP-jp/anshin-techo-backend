@@ -26,12 +26,12 @@ func escapeSnapshot(t *testing.T, s string) string {
 	return s
 }
 
-func doRequest(t *testing.T, method, path string, bodystr string) *httptest.ResponseRecorder {
+func doRequest(t *testing.T, method, path string, user string, bodystr string) *httptest.ResponseRecorder {
 	t.Helper()
 
 	req := httptest.NewRequest(method, path, strings.NewReader(bodystr))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set("X-Forwarded-User", "ramdos")
+	req.Header.Set("X-Forwarded-User", user)
 	rec := httptest.NewRecorder()
 
 	globalServer.ServeHTTP(rec, req)
