@@ -228,6 +228,7 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 		for _, authorized := range append(append(ticket.Stakeholders, ticket.SubAssignees...), ticket.Assignee) {
 			if authorized == updater {
 				ok = true
+				
 				break
 			}
 		}
