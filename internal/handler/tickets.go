@@ -13,6 +13,19 @@ import (
 
 // POST /tickets
 func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (api.CreateTicketRes, error) {
+	creator, ok := traqIDFromContext(ctx)
+	if !ok {
+		return &api.CreateTicketUnauthorized{}, nil
+	}
+	_ , err := h.repo.GetUserRoleByTraqID(ctx, creator)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			return &api.CreateTicketForbidden{}, nil
+		}
+
+		return nil, fmt.Errorf("get user role from repository: %w", err)
+	}
+
 	description := sql.NullString{String: "", Valid: false}
 	if req.Description.Set {
 		description = sql.NullString{String: req.Description.Value, Valid: true}
@@ -68,6 +81,11 @@ func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (a
 
 // GET /tickets
 func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (api.GetTicketsRes, error) {
+	_, ok := traqIDFromContext(ctx)
+	if !ok {
+		return &api.GetTicketsUnauthorized{}, nil
+	}
+
 	repoParams := repository.GetTicketsParams{
 		Assignee: "",
 		Status:   "",
@@ -128,6 +146,22 @@ func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (
 
 // DELETE /tickets/{ticketId}
 func (h *Handler) DeleteTicketByID(ctx context.Context, params api.DeleteTicketByIDParams) (api.DeleteTicketByIDRes, error) {
+	deleter, ok := traqIDFromContext(ctx)
+	if !ok {
+		return &api.DeleteTicketByIDUnauthorized{}, nil
+	}
+	role, err := h.repo.GetUserRoleByTraqID(ctx, deleter)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			return &api.DeleteTicketByIDForbidden{}, nil
+		}
+
+		return nil, fmt.Errorf("get user role from repository: %w", err)
+	}
+	if role == "member" {
+		return &api.DeleteTicketByIDForbidden{}, nil
+	}
+	
 	id := params.TicketId
 	if err := h.repo.DeleteTicket(ctx, id); err != nil {
 		if errors.Is(err, repository.ErrTicketNotFound) {
@@ -143,6 +177,11 @@ func (h *Handler) DeleteTicketByID(ctx context.Context, params api.DeleteTicketB
 
 // GET /tickets/{ticketId}
 func (h *Handler) GetTicketByID(ctx context.Context, params api.GetTicketByIDParams) (api.GetTicketByIDRes, error) {
+	_, ok := traqIDFromContext(ctx)
+	if !ok {
+		return &api.GetTicketByIDUnauthorized{}, nil
+	}
+
 	id := params.TicketId
 	ticket, err := h.repo.GetTicketByID(ctx, id)
 	if err != nil {
@@ -172,6 +211,19 @@ func (h *Handler) GetTicketByID(ctx context.Context, params api.GetTicketByIDPar
 
 // PATCH /tickets/{ticketId}
 func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketByIDReq, params api.UpdateTicketByIDParams) (api.UpdateTicketByIDRes, error) {
+	updater, ok := traqIDFromContext(ctx)
+	if !ok {
+		return &api.UpdateTicketByIDUnauthorized{}, nil
+	}
+	_, err := h.repo.GetUserRoleByTraqID(ctx, updater)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			return &api.UpdateTicketByIDForbidden{}, nil
+		}
+
+		return nil, fmt.Errorf("get user role from repository: %w", err)
+	}
+
 	id := params.TicketId
 	if !req.Set {
 		return nil, fmt.Errorf("request body is required")

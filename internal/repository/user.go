@@ -14,6 +14,8 @@ type (
 	}
 )
 
+var ErrUserNotFound = fmt.Errorf("user not found")
+
 func (r *Repository) GetUsers(ctx context.Context) ([]*User, error) {
 	users := []*User{}
 	if err := r.db.SelectContext(ctx, &users, "SELECT traq_id, role FROM users"); err != nil {

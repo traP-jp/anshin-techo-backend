@@ -388,6 +388,8 @@ paths:
           description: "不正なリクエストボディ"
         "401":
           description: "認証エラー"
+        "403":
+          description: "権限なし"
 
   /tickets/{ticketId}:
     parameters:
@@ -419,6 +421,8 @@ paths:
                         items:
                           $ref: "#/components/schemas/Note"
                         description: "このチケットに紐づくノート一覧"
+        "401":
+          description: "認証エラー"
         "404":
           description: "チケットが見つからない"
 
@@ -462,6 +466,8 @@ paths:
           description: "更新成功"
         "400":
           description: "不正なリクエストボディ"
+        "401":
+          description: "認証エラー"
         "403":
           description: "権限なし"
         "404":
@@ -476,6 +482,8 @@ paths:
       responses:
         "204":
           description: "削除成功"
+        "401":
+          description: "認証エラー"
         "403":
           description: "権限なし"
         "404":
