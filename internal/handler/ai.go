@@ -61,7 +61,7 @@ func (h *Handler) TicketsTicketIdAiGeneratePost(ctx context.Context, req *api.Ti
 	client := newAIClient()
 
 	streamReq := openai.ChatCompletionRequest{
-		Model: openai.GPT3Dot5Turbo,
+		Model: "gpt-4o-mini",
 		Messages: []openai.ChatCompletionMessage{
 			{Role: openai.ChatMessageRoleSystem, Content: systemPrompt},
 			{Role: openai.ChatMessageRoleUser, Content: userPrompt},
@@ -132,7 +132,7 @@ func (h *Handler) TicketsTicketIdNotesNoteIdAiReviewPost(ctx context.Context, pa
 	client := newAIClient()
 
 	req := openai.ChatCompletionRequest{
-		Model: openai.GPT3Dot5Turbo,
+		Model: "gpt-4o-mini",
 		Messages: []openai.ChatCompletionMessage{
 			{Role: openai.ChatMessageRoleSystem, Content: systemPrompt},
 			{Role: openai.ChatMessageRoleUser, Content: userPrompt},
