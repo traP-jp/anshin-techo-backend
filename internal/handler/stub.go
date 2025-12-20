@@ -20,18 +20,3 @@ func (h *Handler) ConfigPost(_ context.Context, _ *api.ConfigPostReq) (api.Confi
 	return nil, fmt.Errorf("not implemented")
 }
 
-// --- Reviews ---
-
-// TicketsTicketIdNotesNoteIdReviewsPost implements POST /tickets/{ticketId}/notes/{noteId}/reviews operation.
-func (h *Handler) TicketsTicketIdNotesNoteIdReviewsPost(_ context.Context, _ *api.TicketsTicketIdNotesNoteIdReviewsPostReq, _ api.TicketsTicketIdNotesNoteIdReviewsPostParams) (*api.Review, error) {
-	return nil, fmt.Errorf("not implemented")
-}
-
-// TicketsTicketIdNotesNoteIdReviewsReviewIdPut implements PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
-func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdPut(_ context.Context, _ api.OptTicketsTicketIdNotesNoteIdReviewsReviewIdPutReq, _ api.TicketsTicketIdNotesNoteIdReviewsReviewIdPutParams) error {
-	return fmt.Errorf("not implemented")
-}
-
-// TicketsTicketIdNotesNoteIdReviewsReviewIdDelete implements DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
-func (h *Handler) TicketsTicketIdNotesNoteIdReviewsReviewIdDelete(_ context.Context, _ api.TicketsTicketIdNotesNoteIdReviewsReviewIdDeleteParams) error {
-
