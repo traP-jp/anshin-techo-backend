@@ -150,6 +150,11 @@ func encodeCreateTicketResponse(response CreateTicketRes, w http.ResponseWriter)
 
 		return nil
 
+	case *CreateTicketForbidden:
+		w.WriteHeader(403)
+
+		return nil
+
 	default:
 		return errors.Errorf("unexpected response type: %T", response)
 	}
@@ -165,6 +170,11 @@ func encodeDeleteTicketByIDResponse(response DeleteTicketByIDRes, w http.Respons
 	switch response := response.(type) {
 	case *DeleteTicketByIDNoContent:
 		w.WriteHeader(204)
+
+		return nil
+
+	case *DeleteTicketByIDUnauthorized:
+		w.WriteHeader(401)
 
 		return nil
 
@@ -202,6 +212,11 @@ func encodeGetTicketByIDResponse(response GetTicketByIDRes, w http.ResponseWrite
 		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")
 		}
+
+		return nil
+
+	case *GetTicketByIDUnauthorized:
+		w.WriteHeader(401)
 
 		return nil
 
@@ -327,6 +342,11 @@ func encodeUpdateTicketByIDResponse(response UpdateTicketByIDRes, w http.Respons
 
 	case *UpdateTicketByIDBadRequest:
 		w.WriteHeader(400)
+
+		return nil
+
+	case *UpdateTicketByIDUnauthorized:
+		w.WriteHeader(401)
 
 		return nil
 

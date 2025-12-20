@@ -139,6 +139,11 @@ type CreateTicketBadRequest struct{}
 
 func (*CreateTicketBadRequest) createTicketRes() {}
 
+// CreateTicketForbidden is response for CreateTicket operation.
+type CreateTicketForbidden struct{}
+
+func (*CreateTicketForbidden) createTicketRes() {}
+
 type CreateTicketReq struct {
 	Title       string       `json:"title"`
 	Description OptString    `json:"description"`
@@ -255,6 +260,11 @@ func (*DeleteTicketByIDNoContent) deleteTicketByIDRes() {}
 type DeleteTicketByIDNotFound struct{}
 
 func (*DeleteTicketByIDNotFound) deleteTicketByIDRes() {}
+
+// DeleteTicketByIDUnauthorized is response for DeleteTicketByID operation.
+type DeleteTicketByIDUnauthorized struct{}
+
+func (*DeleteTicketByIDUnauthorized) deleteTicketByIDRes() {}
 
 // Ref: #/components/schemas/Error
 type Error struct {
@@ -449,6 +459,11 @@ func (s *GetTicketByIDOK) SetNotes(val []Note) {
 }
 
 func (*GetTicketByIDOK) getTicketByIDRes() {}
+
+// GetTicketByIDUnauthorized is response for GetTicketByID operation.
+type GetTicketByIDUnauthorized struct{}
+
+func (*GetTicketByIDUnauthorized) getTicketByIDRes() {}
 
 // GetTicketsBadRequest is response for GetTickets operation.
 type GetTicketsBadRequest struct{}
@@ -2018,6 +2033,11 @@ func (s *UpdateTicketByIDReq) SetDue(val OptDate) {
 func (s *UpdateTicketByIDReq) SetTags(val []string) {
 	s.Tags = val
 }
+
+// UpdateTicketByIDUnauthorized is response for UpdateTicketByID operation.
+type UpdateTicketByIDUnauthorized struct{}
+
+func (*UpdateTicketByIDUnauthorized) updateTicketByIDRes() {}
 
 // Ref: #/components/schemas/User
 type User struct {
