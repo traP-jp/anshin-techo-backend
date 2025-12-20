@@ -42,7 +42,7 @@ type (
 	}
 )
 
-var(
+var (
 	ErrTicketNotFound = fmt.Errorf("ticket not found")
 	ErrInvalidStatus = fmt.Errorf("invalid status")
 	ErrInvalidSort = fmt.Errorf("invalid sort option")
