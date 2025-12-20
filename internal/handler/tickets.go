@@ -12,7 +12,7 @@ import (
 )
 
 // POST /tickets
-func (h *Handler) TicketsPost(ctx context.Context, req *api.TicketsPostReq) (api.TicketsPostRes, error) {
+func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (api.CreateTicketRes, error) {
 	description := sql.NullString{String: "", Valid: false}
 	if req.Description.Set {
 		description = sql.NullString{String: req.Description.Value, Valid: true}
@@ -37,10 +37,10 @@ func (h *Handler) TicketsPost(ctx context.Context, req *api.TicketsPostReq) (api
 	ticketID, err := h.repo.CreateTicket(ctx, repoTicket)
 	if err != nil {
 		if errors.Is(err, repository.ErrInvalidStatus) {
-			return &api.TicketsPostBadRequest{}, nil
+			return &api.CreateTicketBadRequest{}, nil
 		}
 		if errors.Is(err, repository.ErrTagContainsComma) {
-			return &api.TicketsPostBadRequest{}, nil
+			return &api.CreateTicketBadRequest{}, nil
 		}
 
 		return nil, fmt.Errorf("create ticket in repository: %w", err)
@@ -67,7 +67,7 @@ func (h *Handler) TicketsPost(ctx context.Context, req *api.TicketsPostReq) (api
 }
 
 // GET /tickets
-func (h *Handler) TicketsGet(ctx context.Context, params api.TicketsGetParams) (api.TicketsGetRes, error) {
+func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (api.GetTicketsRes, error) {
 	repoParams := repository.GetTicketsParams{
 		Assignee: "",
 		Status:   "",
@@ -85,10 +85,10 @@ func (h *Handler) TicketsGet(ctx context.Context, params api.TicketsGetParams) (
 	tickets, err := h.repo.GetTickets(ctx, repoParams)
 	if err != nil {
 		if errors.Is(err, repository.ErrInvalidStatus) {
-			return &api.TicketsGetBadRequest{}, nil
+			return &api.GetTicketsBadRequest{}, nil
 		}
 		if errors.Is(err, repository.ErrInvalidSort) {
-			return &api.TicketsGetBadRequest{}, nil
+			return &api.GetTicketsBadRequest{}, nil
 		}
 
 		return nil, fmt.Errorf("get tickets from repository: %w", err)
@@ -121,42 +121,38 @@ func (h *Handler) TicketsGet(ctx context.Context, params api.TicketsGetParams) (
 			},
 		})
 	}
-	result := api.TicketsGetOKApplicationJSON(res)
-
+	result := api.GetTicketsOKApplicationJSON(res)
+	
 	return &result, nil
 }
 
 // DELETE /tickets/{ticketId}
-//
-//nolint:revive
-func (h *Handler) TicketsTicketIdDelete(ctx context.Context, params api.TicketsTicketIdDeleteParams) (api.TicketsTicketIdDeleteRes, error) {
+func (h *Handler) DeleteTicketByID(ctx context.Context, params api.DeleteTicketByIDParams) (api.DeleteTicketByIDRes, error) {
 	id := params.TicketId
 	if err := h.repo.DeleteTicket(ctx, id); err != nil {
 		if errors.Is(err, repository.ErrTicketNotFound) {
-			return &api.TicketsTicketIdDeleteNotFound{}, nil
+			return &api.DeleteTicketByIDNotFound{}, nil
 		}
 
 		return nil, fmt.Errorf("delete ticket in repository: %w", err)
 	}
-	result := api.TicketsTicketIdDeleteNoContent{}
+	result := api.DeleteTicketByIDNoContent{}
 
 	return &result, nil
 }
 
 // GET /tickets/{ticketId}
-//
-//nolint:revive
-func (h *Handler) TicketsTicketIdGet(ctx context.Context, params api.TicketsTicketIdGetParams) (api.TicketsTicketIdGetRes, error) {
+func (h *Handler) GetTicketByID(ctx context.Context, params api.GetTicketByIDParams) (api.GetTicketByIDRes, error) {
 	id := params.TicketId
 	ticket, err := h.repo.GetTicketByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrTicketNotFound) {
-			return &api.TicketsTicketIdGetNotFound{}, nil
+			return &api.GetTicketByIDNotFound{}, nil
 		}
 
 		return nil, fmt.Errorf("get ticket from repository: %w", err)
 	}
-	res := &api.TicketsTicketIdGetOK{
+	res := &api.GetTicketByIDOK{
 		ID:           ticket.ID,
 		Title:        ticket.Title,
 		Description:  api.OptString{Value: ticket.Description.String, Set: ticket.Description.Valid},
@@ -175,9 +171,7 @@ func (h *Handler) TicketsTicketIdGet(ctx context.Context, params api.TicketsTick
 }
 
 // PATCH /tickets/{ticketId}
-//
-//nolint:revive
-func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTicketIdPatchReq, params api.TicketsTicketIdPatchParams) (api.TicketsTicketIdPatchRes, error) {
+func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketByIDReq, params api.UpdateTicketByIDParams) (api.UpdateTicketByIDRes, error) {
 	id := params.TicketId
 	if !req.Set {
 		return nil, fmt.Errorf("request body is required")
@@ -186,7 +180,7 @@ func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTi
 	ticket, err := h.repo.GetTicketByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrTicketNotFound) {
-			return &api.TicketsTicketIdPatchNotFound{}, nil
+			return &api.UpdateTicketByIDNotFound{}, nil
 		}
 
 		return nil, fmt.Errorf("get ticket from repository: %w", err)
@@ -250,14 +244,14 @@ func (h *Handler) TicketsTicketIdPatch(ctx context.Context, req api.OptTicketsTi
 	}
 	if err := h.repo.UpdateTicket(ctx, id, updateParams); err != nil {
 		if errors.Is(err, repository.ErrInvalidStatus) {
-			return &api.TicketsTicketIdPatchBadRequest{}, nil
+			return &api.UpdateTicketByIDBadRequest{}, nil
 		}
 		if errors.Is(err, repository.ErrTagContainsComma) {
-			return &api.TicketsTicketIdPatchBadRequest{}, nil
+			return &api.UpdateTicketByIDBadRequest{}, nil
 		}
 		
 		return nil, fmt.Errorf("update ticket in repository: %w", err)
 	}
-
-	return &api.TicketsTicketIdPatchOK{}, nil
+	
+	return &api.UpdateTicketByIDOK{}, nil
 }

@@ -28,36 +28,36 @@ type Handler interface {
 	//
 	// POST /tickets/{ticketId}/notes/{noteId}/reviews
 	CreateReview(ctx context.Context, req *CreateReviewReq, params CreateReviewParams) (*Review, error)
+	// CreateTicket implements createTicket operation.
+	//
+	// 新規チケットを作成する。.
+	//
+	// POST /tickets
+	CreateTicket(ctx context.Context, req *CreateTicketReq) (CreateTicketRes, error)
 	// DeleteReview implements deleteReview operation.
 	//
 	// レビュー取り消し.
 	//
 	// DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
 	DeleteReview(ctx context.Context, params DeleteReviewParams) error
-	// TicketsGet implements GET /tickets operation.
-	//
-	// チケット一覧取得.
-	//
-	// GET /tickets
-	TicketsGet(ctx context.Context, params TicketsGetParams) (TicketsGetRes, error)
-	// TicketsPost implements POST /tickets operation.
-	//
-	// 新規チケットを作成する。.
-	//
-	// POST /tickets
-	TicketsPost(ctx context.Context, req *TicketsPostReq) (TicketsPostRes, error)
-	// TicketsTicketIdDelete implements DELETE /tickets/{ticketId} operation.
+	// DeleteTicketByID implements deleteTicketByID operation.
 	//
 	// 本職のみ実行可能。.
 	//
 	// DELETE /tickets/{ticketId}
-	TicketsTicketIdDelete(ctx context.Context, params TicketsTicketIdDeleteParams) (TicketsTicketIdDeleteRes, error)
-	// TicketsTicketIdGet implements GET /tickets/{ticketId} operation.
+	DeleteTicketByID(ctx context.Context, params DeleteTicketByIDParams) (DeleteTicketByIDRes, error)
+	// GetTicketByID implements getTicketByID operation.
 	//
 	// チケットに紐づくノート一覧(notes)も同時に返却される。.
 	//
 	// GET /tickets/{ticketId}
-	TicketsTicketIdGet(ctx context.Context, params TicketsTicketIdGetParams) (TicketsTicketIdGetRes, error)
+	GetTicketByID(ctx context.Context, params GetTicketByIDParams) (GetTicketByIDRes, error)
+	// GetTickets implements getTickets operation.
+	//
+	// チケット一覧取得.
+	//
+	// GET /tickets
+	GetTickets(ctx context.Context, params GetTicketsParams) (GetTicketsRes, error)
 	// TicketsTicketIdNotesNoteIdDelete implements DELETE /tickets/{ticketId}/notes/{noteId} operation.
 	//
 	// ノート削除.
@@ -77,18 +77,18 @@ type Handler interface {
 	//
 	// POST /tickets/{ticketId}/notes
 	TicketsTicketIdNotesPost(ctx context.Context, req *TicketsTicketIdNotesPostReq, params TicketsTicketIdNotesPostParams) (*Note, error)
-	// TicketsTicketIdPatch implements PATCH /tickets/{ticketId} operation.
-	//
-	// 関係者と渉外のみ実行可能。.
-	//
-	// PATCH /tickets/{ticketId}
-	TicketsTicketIdPatch(ctx context.Context, req OptTicketsTicketIdPatchReq, params TicketsTicketIdPatchParams) (TicketsTicketIdPatchRes, error)
 	// UpdateReview implements updateReview operation.
 	//
 	// ReviewのAuthorのみ実行可能。.
 	//
 	// PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
 	UpdateReview(ctx context.Context, req OptUpdateReviewReq, params UpdateReviewParams) (UpdateReviewRes, error)
+	// UpdateTicketByID implements updateTicketByID operation.
+	//
+	// 関係者と渉外のみ実行可能。.
+	//
+	// PATCH /tickets/{ticketId}
+	UpdateTicketByID(ctx context.Context, req OptUpdateTicketByIDReq, params UpdateTicketByIDParams) (UpdateTicketByIDRes, error)
 	// UsersGet implements GET /users operation.
 	//
 	// ユーザー一覧取得.

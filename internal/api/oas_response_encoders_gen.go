@@ -62,50 +62,7 @@ func encodeCreateReviewResponse(response *Review, w http.ResponseWriter) error {
 	return nil
 }
 
-func encodeDeleteReviewResponse(response *DeleteReviewNoContent, w http.ResponseWriter) error {
-	w.WriteHeader(204)
-
-	return nil
-}
-
-func encodeTicketsGetResponse(response TicketsGetRes, w http.ResponseWriter) error {
-	switch response := response.(type) {
-	case *TicketsGetOKApplicationJSON:
-		if err := func() error {
-			if err := response.Validate(); err != nil {
-				return err
-			}
-			return nil
-		}(); err != nil {
-			return errors.Wrap(err, "validate")
-		}
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *TicketsGetBadRequest:
-		w.WriteHeader(400)
-
-		return nil
-
-	case *TicketsGetUnauthorized:
-		w.WriteHeader(401)
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeTicketsPostResponse(response TicketsPostRes, w http.ResponseWriter) error {
+func encodeCreateTicketResponse(response CreateTicketRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
 	case *Ticket:
 		if err := func() error {
@@ -127,12 +84,12 @@ func encodeTicketsPostResponse(response TicketsPostRes, w http.ResponseWriter) e
 
 		return nil
 
-	case *TicketsPostBadRequest:
+	case *CreateTicketBadRequest:
 		w.WriteHeader(400)
 
 		return nil
 
-	case *TicketsPostUnauthorized:
+	case *CreateTicketUnauthorized:
 		w.WriteHeader(401)
 
 		return nil
@@ -142,19 +99,25 @@ func encodeTicketsPostResponse(response TicketsPostRes, w http.ResponseWriter) e
 	}
 }
 
-func encodeTicketsTicketIdDeleteResponse(response TicketsTicketIdDeleteRes, w http.ResponseWriter) error {
+func encodeDeleteReviewResponse(response *DeleteReviewNoContent, w http.ResponseWriter) error {
+	w.WriteHeader(204)
+
+	return nil
+}
+
+func encodeDeleteTicketByIDResponse(response DeleteTicketByIDRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
-	case *TicketsTicketIdDeleteNoContent:
+	case *DeleteTicketByIDNoContent:
 		w.WriteHeader(204)
 
 		return nil
 
-	case *TicketsTicketIdDeleteForbidden:
+	case *DeleteTicketByIDForbidden:
 		w.WriteHeader(403)
 
 		return nil
 
-	case *TicketsTicketIdDeleteNotFound:
+	case *DeleteTicketByIDNotFound:
 		w.WriteHeader(404)
 
 		return nil
@@ -164,9 +127,9 @@ func encodeTicketsTicketIdDeleteResponse(response TicketsTicketIdDeleteRes, w ht
 	}
 }
 
-func encodeTicketsTicketIdGetResponse(response TicketsTicketIdGetRes, w http.ResponseWriter) error {
+func encodeGetTicketByIDResponse(response GetTicketByIDRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
-	case *TicketsTicketIdGetOK:
+	case *GetTicketByIDOK:
 		if err := func() error {
 			if err := response.Validate(); err != nil {
 				return err
@@ -186,8 +149,45 @@ func encodeTicketsTicketIdGetResponse(response TicketsTicketIdGetRes, w http.Res
 
 		return nil
 
-	case *TicketsTicketIdGetNotFound:
+	case *GetTicketByIDNotFound:
 		w.WriteHeader(404)
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeGetTicketsResponse(response GetTicketsRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *GetTicketsOKApplicationJSON:
+		if err := func() error {
+			if err := response.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrap(err, "validate")
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *GetTicketsBadRequest:
+		w.WriteHeader(400)
+
+		return nil
+
+	case *GetTicketsUnauthorized:
+		w.WriteHeader(401)
 
 		return nil
 
@@ -240,33 +240,6 @@ func encodeTicketsTicketIdNotesPostResponse(response *Note, w http.ResponseWrite
 	return nil
 }
 
-func encodeTicketsTicketIdPatchResponse(response TicketsTicketIdPatchRes, w http.ResponseWriter) error {
-	switch response := response.(type) {
-	case *TicketsTicketIdPatchOK:
-		w.WriteHeader(200)
-
-		return nil
-
-	case *TicketsTicketIdPatchBadRequest:
-		w.WriteHeader(400)
-
-		return nil
-
-	case *TicketsTicketIdPatchForbidden:
-		w.WriteHeader(403)
-
-		return nil
-
-	case *TicketsTicketIdPatchNotFound:
-		w.WriteHeader(404)
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
 func encodeUpdateReviewResponse(response UpdateReviewRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
 	case *UpdateReviewOK:
@@ -280,6 +253,33 @@ func encodeUpdateReviewResponse(response UpdateReviewRes, w http.ResponseWriter)
 		return nil
 
 	case *UpdateReviewNotFound:
+		w.WriteHeader(404)
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeUpdateTicketByIDResponse(response UpdateTicketByIDRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *UpdateTicketByIDOK:
+		w.WriteHeader(200)
+
+		return nil
+
+	case *UpdateTicketByIDBadRequest:
+		w.WriteHeader(400)
+
+		return nil
+
+	case *UpdateTicketByIDForbidden:
+		w.WriteHeader(403)
+
+		return nil
+
+	case *UpdateTicketByIDNotFound:
 		w.WriteHeader(404)
 
 		return nil
