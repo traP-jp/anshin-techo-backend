@@ -78,10 +78,10 @@ func (r *Repository) CreateReview(ctx context.Context, ticketID, noteID int64, r
 	var role string
 	if err := tx.QueryRowContext(ctx, `SELECT role FROM users WHERE traq_id = ?`, reviewer).Scan(&role); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrReviewerNotFound
+			role = "member"
+		} else {
+			return nil, fmt.Errorf("select reviewer role: %w", err)
 		}
-
-		return nil, fmt.Errorf("select reviewer role: %w", err)
 	}
 
 	weight, err := normalizeReviewWeight(params, role)
@@ -150,7 +150,7 @@ func normalizeReviewWeight(params CreateReviewParams, role string) (int, error) 
 		maxWeight = 0
 	}
 
-	if !params.WeightSet || params.Weight <= 0 || params.Weight > maxWeight {
+	if !params.WeightSet || params.Weight < 0 || params.Weight > maxWeight {
 		return 0, ErrInvalidReviewWeight
 	}
 

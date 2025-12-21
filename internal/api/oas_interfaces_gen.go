@@ -5,6 +5,10 @@ type ConfigGetRes interface {
 	configGetRes()
 }
 
+type ConfigGetRes interface {
+	configGetRes()
+}
+
 type ConfigPostRes interface {
 	configPostRes()
 }

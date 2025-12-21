@@ -13,7 +13,7 @@ import (
 
 var (
 	uuidRegexp = regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
-	timeRegexp = regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z`)
+	timeRegexp = regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z`)
 )
 
 func escapeSnapshot(t *testing.T, s string) string {
@@ -26,12 +26,12 @@ func escapeSnapshot(t *testing.T, s string) string {
 	return s
 }
 
-func doRequest(t *testing.T, method, path string, bodystr string) *httptest.ResponseRecorder {
+func doRequest(t *testing.T, method, path string, user string, bodystr string) *httptest.ResponseRecorder {
 	t.Helper()
 
 	req := httptest.NewRequest(method, path, strings.NewReader(bodystr))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set("X-Forwarded-User", "ramdos")
+	req.Header.Set("X-Forwarded-User", user)
 	rec := httptest.NewRecorder()
 
 	globalServer.ServeHTTP(rec, req)

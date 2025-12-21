@@ -2,8 +2,9 @@ package handler
 
 import (
 	"context"
-	"fmt"
+	"net/http"
 
+	"github.com/labstack/echo/v4"
 	"github.com/traP-jp/anshin-techo-backend/internal/api"
 )
 
@@ -13,7 +14,7 @@ const userKey contextKey = "user"
 
 func (h *Handler) HandleTraQAuth(ctx context.Context, _ string, t api.TraQAuth) (context.Context, error) {
 	if t.APIKey == "" {
-		return nil, fmt.Errorf("unauthorized: missing user header")
+		return nil, echo.NewHTTPError(http.StatusUnauthorized, "unauthorized: missing user header")
 	}
 
 	return context.WithValue(ctx, userKey, t.APIKey), nil

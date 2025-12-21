@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 )
@@ -43,11 +44,10 @@ type (
 )
 
 var (
-	ErrTicketNotFound = fmt.Errorf("ticket not found")
-	ErrInvalidStatus = fmt.Errorf("invalid status")
-	ErrInvalidSort = fmt.Errorf("invalid sort option")
+	ErrTicketNotFound   = fmt.Errorf("ticket not found")
+	ErrInvalidStatus    = fmt.Errorf("invalid status")
+	ErrInvalidSort      = fmt.Errorf("invalid sort option")
 	ErrTagContainsComma = fmt.Errorf("tag contains comma")
-	ErrUserNotFound = fmt.Errorf("user not found")
 )
 
 func validateStatus(status string) error {
@@ -78,46 +78,6 @@ func validateTags(tags []string) error {
 	return nil
 }
 
-func (r *Repository) ensureUsersExist(ctx context.Context, traqIDs []string) error {
-	if len(traqIDs) == 0 {
-		return nil
-	}
-	uniqueTraqIDs := make(map[string]struct{})
-	for _, traqID := range traqIDs {
-		uniqueTraqIDs[traqID] = struct{}{}
-	}
-	placeholders := make([]string, 0, len(uniqueTraqIDs))
-	args := make([]interface{}, 0, len(uniqueTraqIDs))
-	for id := range uniqueTraqIDs {
-		placeholders = append(placeholders, "?")
-		args = append(args, id)
-	}
-	query := fmt.Sprintf("SELECT traq_id FROM users WHERE traq_id IN (%s)", strings.Join(placeholders, ","))
-	rows, err := r.db.QueryContext(ctx, query, args...)
-	if err != nil {
-		return fmt.Errorf("query users: %w", err)
-	}
-	defer rows.Close()
-	found := map[string]struct{}{}
-	for rows.Next() {
-		var traqID string
-		if err := rows.Scan(&traqID); err != nil {
-			return fmt.Errorf("failed to scan user: %w", err)
-		}
-		found[traqID] = struct{}{}
-	}
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("failed to iterate users: %w", err)
-	}
-	for traqID := range uniqueTraqIDs {
-		if _, ok := found[traqID]; !ok {
-			return fmt.Errorf("%w: %s", ErrUserNotFound, traqID)
-		}
-	}
-
-	return nil
-}
-
 func (r *Repository) GetTickets(ctx context.Context, params GetTicketsParams) ([]*Ticket, error) {
 	query := `
 		SELECT
@@ -133,9 +93,6 @@ func (r *Repository) GetTickets(ctx context.Context, params GetTicketsParams) ([
 
 	args := []interface{}{}
 	if params.Assignee != "" {
-		if err := r.ensureUsersExist(ctx, []string{params.Assignee}); err != nil {
-			return nil, err
-		}
 		query += " AND t.assignee = ?"
 		args = append(args, params.Assignee)
 	}
@@ -206,10 +163,6 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 		return 0, err
 	}
 	if err := validateTags(params.Tags); err != nil {
-		return 0, err
-	}
-
-	if err := r.ensureUsersExist(ctx, append(append([]string{params.Assignee}, params.SubAssignees...), params.Stakeholders...)); err != nil {
 		return 0, err
 	}
 
@@ -294,6 +247,13 @@ func (r *Repository) CreateTicket(ctx context.Context, params CreateTicketParams
 	if err := tx.Commit(); err != nil {
 		return 0, fmt.Errorf("failed to commit transaction: %w", err)
 	}
+	botMessage := fmt.Sprintf("## 新しいチケット(ID: %d)が作成されました\nタイトル: %s\n担当者: @%s\n副担当: %v\n関係者: %v\nタグ: %v\n締め切り: %v\n%s", ticketID, params.Title, params.Assignee, params.SubAssignees, params.Stakeholders, params.Tags, params.Due.Time, params.Description.String)
+	if err := r.bot.PostMessage(ctx, os.Getenv("CREATE_TICKET_CHANNEL_ID"), botMessage); err != nil {
+		fmt.Printf("failed to send ticket creation notification: %v\n", err)
+	}
+	if err := r.bot.PostDirectMessage(ctx, "2e0c6679-166f-455a-b8b0-35cdfd257256", botMessage); err != nil {
+		fmt.Printf("failed to send ticket creation notification: %v\n", err)
+	}
 
 	return ticketID, nil
 }
@@ -334,10 +294,6 @@ func (r *Repository) UpdateTicket(ctx context.Context, ticketID int64, params Cr
 	}
 
 	if err := validateTags(params.Tags); err != nil {
-		return err
-	}
-
-	if err := r.ensureUsersExist(ctx, append(append([]string{params.Assignee}, params.SubAssignees...), params.Stakeholders...)); err != nil {
 		return err
 	}
 
@@ -452,6 +408,6 @@ func (r *Repository) DeleteTicket(ctx context.Context, ticketID int64) error {
 	if rowsAffected == 0 {
 		return ErrTicketNotFound
 	}
-	
+
 	return nil
 }

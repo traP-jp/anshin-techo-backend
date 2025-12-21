@@ -56,8 +56,9 @@ func (s *Server) handleConfigGetRequest(args [0]string, argsEscaped bool, w http
 					Security:         "TraQAuth",
 					Err:              err,
 				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+					defer recordError("Security:TraQAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -84,14 +85,16 @@ func (s *Server) handleConfigGetRequest(args [0]string, argsEscaped bool, w http
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
 
 	var rawBody []byte
 
+	var response ConfigGetRes
 	var response ConfigGetRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
@@ -109,6 +112,7 @@ func (s *Server) handleConfigGetRequest(args [0]string, argsEscaped bool, w http
 			Request  = struct{}
 			Params   = struct{}
 			Response = ConfigGetRes
+			Response = ConfigGetRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -120,15 +124,28 @@ func (s *Server) handleConfigGetRequest(args [0]string, argsEscaped bool, w http
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
 				response, err = s.h.ConfigGet(ctx)
+				response, err = s.h.ConfigGet(ctx)
 				return response, err
 			},
 		)
 	} else {
 		response, err = s.h.ConfigGet(ctx)
+		response, err = s.h.ConfigGet(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ErrorResponseStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -169,8 +186,9 @@ func (s *Server) handleConfigPostRequest(args [0]string, argsEscaped bool, w htt
 					Security:         "TraQAuth",
 					Err:              err,
 				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+					defer recordError("Security:TraQAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -197,8 +215,9 @@ func (s *Server) handleConfigPostRequest(args [0]string, argsEscaped bool, w htt
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -235,6 +254,7 @@ func (s *Server) handleConfigPostRequest(args [0]string, argsEscaped bool, w htt
 
 		type (
 			Request  = *Config
+			Request  = *Config
 			Params   = struct{}
 			Response = ConfigPostRes
 		)
@@ -255,8 +275,19 @@ func (s *Server) handleConfigPostRequest(args [0]string, argsEscaped bool, w htt
 		response, err = s.h.ConfigPost(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ErrorResponseStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -299,8 +330,9 @@ func (s *Server) handleCreateReviewRequest(args [2]string, argsEscaped bool, w h
 					Security:         "TraQAuth",
 					Err:              err,
 				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+					defer recordError("Security:TraQAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -327,8 +359,9 @@ func (s *Server) handleCreateReviewRequest(args [2]string, argsEscaped bool, w h
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -361,6 +394,7 @@ func (s *Server) handleCreateReviewRequest(args [2]string, argsEscaped bool, w h
 	}()
 
 	var response CreateReviewRes
+	var response CreateReviewRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -386,6 +420,7 @@ func (s *Server) handleCreateReviewRequest(args [2]string, argsEscaped bool, w h
 			Request  = *CreateReviewReq
 			Params   = CreateReviewParams
 			Response = CreateReviewRes
+			Response = CreateReviewRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -404,8 +439,19 @@ func (s *Server) handleCreateReviewRequest(args [2]string, argsEscaped bool, w h
 		response, err = s.h.CreateReview(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ErrorResponseStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -546,12 +592,12 @@ func (s *Server) handleCreateTicketRequest(args [0]string, argsEscaped bool, w h
 	}
 }
 
-// handleDeleteReviewRequest handles deleteReview operation.
+// handleCreateTicketRequest handles createTicket operation.
 //
-// レビュー取り消し.
+// 新規チケットを作成する。.
 //
-// DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
-func (s *Server) handleDeleteReviewRequest(args [3]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// POST /tickets
+func (s *Server) handleCreateTicketRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	ctx := r.Context()
@@ -559,15 +605,15 @@ func (s *Server) handleDeleteReviewRequest(args [3]string, argsEscaped bool, w h
 	var (
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: DeleteReviewOperation,
-			ID:   "deleteReview",
+			Name: CreateTicketOperation,
+			ID:   "createTicket",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityTraQAuth(ctx, DeleteReviewOperation, r)
+			sctx, ok, err := s.securityTraQAuth(ctx, CreateTicketOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -607,27 +653,32 @@ func (s *Server) handleDeleteReviewRequest(args [3]string, argsEscaped bool, w h
 			return
 		}
 	}
-	params, err := decodeDeleteReviewParams(args, argsEscaped, r)
+
+	var rawBody []byte
+	request, rawBody, close, err := s.decodeCreateTicketRequest(r)
 	if err != nil {
-		err = &ogenerrors.DecodeParamsError{
+		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
 			Err:              err,
 		}
-		defer recordError("DecodeParams", err)
+		defer recordError("DecodeRequest", err)
 		s.cfg.ErrorHandler(ctx, w, r, err)
 		return
 	}
+	defer func() {
+		if err := close(); err != nil {
+			recordError("CloseRequest", err)
+		}
+	}()
 
-	var rawBody []byte
-
-	var response *DeleteReviewNoContent
+	var response CreateTicketRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    DeleteReviewOperation,
-			OperationSummary: "レビュー取り消し",
-			OperationID:      "deleteReview",
-			Body:             nil,
+			OperationName:    CreateTicketOperation,
+			OperationSummary: "チケット新規作成",
+			OperationID:      "createTicket",
+			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
@@ -647,9 +698,9 @@ func (s *Server) handleDeleteReviewRequest(args [3]string, argsEscaped bool, w h
 		}
 
 		type (
-			Request  = struct{}
-			Params   = DeleteReviewParams
-			Response = *DeleteReviewNoContent
+			Request  = *CreateTicketReq
+			Params   = struct{}
+			Response = CreateTicketRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -658,22 +709,33 @@ func (s *Server) handleDeleteReviewRequest(args [3]string, argsEscaped bool, w h
 		](
 			m,
 			mreq,
-			unpackDeleteReviewParams,
+			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				err = s.h.DeleteReview(ctx, params)
+				response, err = s.h.CreateTicket(ctx, request)
 				return response, err
 			},
 		)
 	} else {
-		err = s.h.DeleteReview(ctx, params)
+		response, err = s.h.CreateTicket(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ErrorResponseStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
-	if err := encodeDeleteReviewResponse(response, w); err != nil {
+	if err := encodeCreateTicketResponse(response, w); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)
@@ -710,8 +772,9 @@ func (s *Server) handleDeleteTicketByIDRequest(args [1]string, argsEscaped bool,
 					Security:         "TraQAuth",
 					Err:              err,
 				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+					defer recordError("Security:TraQAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -738,8 +801,9 @@ func (s *Server) handleDeleteTicketByIDRequest(args [1]string, argsEscaped bool,
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -796,8 +860,19 @@ func (s *Server) handleDeleteTicketByIDRequest(args [1]string, argsEscaped bool,
 		response, err = s.h.DeleteTicketByID(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ErrorResponseStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -838,8 +913,9 @@ func (s *Server) handleGetTicketByIDRequest(args [1]string, argsEscaped bool, w 
 					Security:         "TraQAuth",
 					Err:              err,
 				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+					defer recordError("Security:TraQAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -866,8 +942,9 @@ func (s *Server) handleGetTicketByIDRequest(args [1]string, argsEscaped bool, w 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -1060,8 +1137,19 @@ func (s *Server) handleGetTicketsRequest(args [0]string, argsEscaped bool, w htt
 		response, err = s.h.GetTickets(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ErrorResponseStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -1102,8 +1190,9 @@ func (s *Server) handleTicketsTicketIdAiGeneratePostRequest(args [1]string, args
 					Security:         "TraQAuth",
 					Err:              err,
 				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+					defer recordError("Security:TraQAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -1130,8 +1219,9 @@ func (s *Server) handleTicketsTicketIdAiGeneratePostRequest(args [1]string, args
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -1203,8 +1293,19 @@ func (s *Server) handleTicketsTicketIdAiGeneratePostRequest(args [1]string, args
 		response, err = s.h.TicketsTicketIdAiGeneratePost(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ErrorResponseStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -1245,8 +1346,9 @@ func (s *Server) handleTicketsTicketIdNotesNoteIdAiReviewPostRequest(args [2]str
 					Security:         "TraQAuth",
 					Err:              err,
 				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+					defer recordError("Security:TraQAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -1273,8 +1375,9 @@ func (s *Server) handleTicketsTicketIdNotesNoteIdAiReviewPostRequest(args [2]str
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -1335,8 +1438,19 @@ func (s *Server) handleTicketsTicketIdNotesNoteIdAiReviewPostRequest(args [2]str
 		response, err = s.h.TicketsTicketIdNotesNoteIdAiReviewPost(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ErrorResponseStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -1377,8 +1491,9 @@ func (s *Server) handleTicketsTicketIdNotesNoteIdDeleteRequest(args [2]string, a
 					Security:         "TraQAuth",
 					Err:              err,
 				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+					defer recordError("Security:TraQAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -1405,8 +1520,9 @@ func (s *Server) handleTicketsTicketIdNotesNoteIdDeleteRequest(args [2]string, a
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -1467,8 +1583,19 @@ func (s *Server) handleTicketsTicketIdNotesNoteIdDeleteRequest(args [2]string, a
 		response, err = s.h.TicketsTicketIdNotesNoteIdDelete(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ErrorResponseStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -1510,8 +1637,9 @@ func (s *Server) handleTicketsTicketIdNotesNoteIdPutRequest(args [2]string, args
 					Security:         "TraQAuth",
 					Err:              err,
 				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+					defer recordError("Security:TraQAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -1538,8 +1666,9 @@ func (s *Server) handleTicketsTicketIdNotesNoteIdPutRequest(args [2]string, args
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -1615,8 +1744,19 @@ func (s *Server) handleTicketsTicketIdNotesNoteIdPutRequest(args [2]string, args
 		response, err = s.h.TicketsTicketIdNotesNoteIdPut(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ErrorResponseStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -1657,8 +1797,9 @@ func (s *Server) handleTicketsTicketIdNotesPostRequest(args [1]string, argsEscap
 					Security:         "TraQAuth",
 					Err:              err,
 				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+					defer recordError("Security:TraQAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -1685,8 +1826,9 @@ func (s *Server) handleTicketsTicketIdNotesPostRequest(args [1]string, argsEscap
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -1758,8 +1900,19 @@ func (s *Server) handleTicketsTicketIdNotesPostRequest(args [1]string, argsEscap
 		response, err = s.h.TicketsTicketIdNotesPost(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ErrorResponseStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -1773,9 +1926,13 @@ func (s *Server) handleTicketsTicketIdNotesPostRequest(args [1]string, argsEscap
 }
 
 // handleUpdateReviewRequest handles updateReview operation.
+// handleUpdateReviewRequest handles updateReview operation.
 //
 // ReviewのAuthorのみ実行可能。.
+// ReviewのAuthorのみ実行可能。.
 //
+// PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
+func (s *Server) handleUpdateReviewRequest(args [3]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 // PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
 func (s *Server) handleUpdateReviewRequest(args [3]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
@@ -1787,6 +1944,8 @@ func (s *Server) handleUpdateReviewRequest(args [3]string, argsEscaped bool, w h
 		opErrContext = ogenerrors.OperationContext{
 			Name: UpdateReviewOperation,
 			ID:   "updateReview",
+			Name: UpdateReviewOperation,
+			ID:   "updateReview",
 		}
 	)
 	{
@@ -1794,14 +1953,16 @@ func (s *Server) handleUpdateReviewRequest(args [3]string, argsEscaped bool, w h
 		var satisfied bitset
 		{
 			sctx, ok, err := s.securityTraQAuth(ctx, UpdateReviewOperation, r)
+			sctx, ok, err := s.securityTraQAuth(ctx, UpdateReviewOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
 					Security:         "TraQAuth",
 					Err:              err,
 				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+					defer recordError("Security:TraQAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -1828,11 +1989,13 @@ func (s *Server) handleUpdateReviewRequest(args [3]string, argsEscaped bool, w h
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
+	params, err := decodeUpdateReviewParams(args, argsEscaped, r)
 	params, err := decodeUpdateReviewParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
@@ -1845,6 +2008,7 @@ func (s *Server) handleUpdateReviewRequest(args [3]string, argsEscaped bool, w h
 	}
 
 	var rawBody []byte
+	request, rawBody, close, err := s.decodeUpdateReviewRequest(r)
 	request, rawBody, close, err := s.decodeUpdateReviewRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
@@ -1862,9 +2026,13 @@ func (s *Server) handleUpdateReviewRequest(args [3]string, argsEscaped bool, w h
 	}()
 
 	var response UpdateReviewRes
+	var response UpdateReviewRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
+			OperationName:    UpdateReviewOperation,
+			OperationSummary: "レビュー修正",
+			OperationID:      "updateReview",
 			OperationName:    UpdateReviewOperation,
 			OperationSummary: "レビュー修正",
 			OperationID:      "updateReview",
@@ -1883,11 +2051,22 @@ func (s *Server) handleUpdateReviewRequest(args [3]string, argsEscaped bool, w h
 					Name: "reviewId",
 					In:   "path",
 				}: params.ReviewId,
+				{
+					Name: "noteId",
+					In:   "path",
+				}: params.NoteId,
+				{
+					Name: "reviewId",
+					In:   "path",
+				}: params.ReviewId,
 			},
 			Raw: r,
 		}
 
 		type (
+			Request  = OptUpdateReviewReq
+			Params   = UpdateReviewParams
+			Response = UpdateReviewRes
 			Request  = OptUpdateReviewReq
 			Params   = UpdateReviewParams
 			Response = UpdateReviewRes
@@ -1900,20 +2079,35 @@ func (s *Server) handleUpdateReviewRequest(args [3]string, argsEscaped bool, w h
 			m,
 			mreq,
 			unpackUpdateReviewParams,
+			unpackUpdateReviewParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.UpdateReview(ctx, request, params)
 				response, err = s.h.UpdateReview(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
 		response, err = s.h.UpdateReview(ctx, request, params)
+		response, err = s.h.UpdateReview(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ErrorResponseStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
+	if err := encodeUpdateReviewResponse(response, w); err != nil {
 	if err := encodeUpdateReviewResponse(response, w); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
@@ -1924,9 +2118,13 @@ func (s *Server) handleUpdateReviewRequest(args [3]string, argsEscaped bool, w h
 }
 
 // handleUpdateTicketByIDRequest handles updateTicketByID operation.
+// handleUpdateTicketByIDRequest handles updateTicketByID operation.
 //
 // 関係者と渉外のみ実行可能。.
+// 関係者と渉外のみ実行可能。.
 //
+// PATCH /tickets/{ticketId}
+func (s *Server) handleUpdateTicketByIDRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 // PATCH /tickets/{ticketId}
 func (s *Server) handleUpdateTicketByIDRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
@@ -1938,6 +2136,8 @@ func (s *Server) handleUpdateTicketByIDRequest(args [1]string, argsEscaped bool,
 		opErrContext = ogenerrors.OperationContext{
 			Name: UpdateTicketByIDOperation,
 			ID:   "updateTicketByID",
+			Name: UpdateTicketByIDOperation,
+			ID:   "updateTicketByID",
 		}
 	)
 	{
@@ -1945,14 +2145,16 @@ func (s *Server) handleUpdateTicketByIDRequest(args [1]string, argsEscaped bool,
 		var satisfied bitset
 		{
 			sctx, ok, err := s.securityTraQAuth(ctx, UpdateTicketByIDOperation, r)
+			sctx, ok, err := s.securityTraQAuth(ctx, UpdateTicketByIDOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
 					Security:         "TraQAuth",
 					Err:              err,
 				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+					defer recordError("Security:TraQAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -1979,11 +2181,13 @@ func (s *Server) handleUpdateTicketByIDRequest(args [1]string, argsEscaped bool,
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
+	params, err := decodeUpdateTicketByIDParams(args, argsEscaped, r)
 	params, err := decodeUpdateTicketByIDParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
@@ -1996,6 +2200,7 @@ func (s *Server) handleUpdateTicketByIDRequest(args [1]string, argsEscaped bool,
 	}
 
 	var rawBody []byte
+	request, rawBody, close, err := s.decodeUpdateTicketByIDRequest(r)
 	request, rawBody, close, err := s.decodeUpdateTicketByIDRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
@@ -2013,9 +2218,13 @@ func (s *Server) handleUpdateTicketByIDRequest(args [1]string, argsEscaped bool,
 	}()
 
 	var response UpdateTicketByIDRes
+	var response UpdateTicketByIDRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
+			OperationName:    UpdateTicketByIDOperation,
+			OperationSummary: "チケット情報更新",
+			OperationID:      "updateTicketByID",
 			OperationName:    UpdateTicketByIDOperation,
 			OperationSummary: "チケット情報更新",
 			OperationID:      "updateTicketByID",
@@ -2034,6 +2243,9 @@ func (s *Server) handleUpdateTicketByIDRequest(args [1]string, argsEscaped bool,
 			Request  = OptUpdateTicketByIDReq
 			Params   = UpdateTicketByIDParams
 			Response = UpdateTicketByIDRes
+			Request  = OptUpdateTicketByIDReq
+			Params   = UpdateTicketByIDParams
+			Response = UpdateTicketByIDRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -2043,20 +2255,35 @@ func (s *Server) handleUpdateTicketByIDRequest(args [1]string, argsEscaped bool,
 			m,
 			mreq,
 			unpackUpdateTicketByIDParams,
+			unpackUpdateTicketByIDParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.UpdateTicketByID(ctx, request, params)
 				response, err = s.h.UpdateTicketByID(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
 		response, err = s.h.UpdateTicketByID(ctx, request, params)
+		response, err = s.h.UpdateTicketByID(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ErrorResponseStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
+	if err := encodeUpdateTicketByIDResponse(response, w); err != nil {
 	if err := encodeUpdateTicketByIDResponse(response, w); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
@@ -2094,8 +2321,9 @@ func (s *Server) handleUsersGetRequest(args [0]string, argsEscaped bool, w http.
 					Security:         "TraQAuth",
 					Err:              err,
 				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+					defer recordError("Security:TraQAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -2122,8 +2350,9 @@ func (s *Server) handleUsersGetRequest(args [0]string, argsEscaped bool, w http.
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -2165,8 +2394,19 @@ func (s *Server) handleUsersGetRequest(args [0]string, argsEscaped bool, w http.
 		response, err = s.h.UsersGet(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ErrorResponseStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -2207,8 +2447,9 @@ func (s *Server) handleUsersPutRequest(args [0]string, argsEscaped bool, w http.
 					Security:         "TraQAuth",
 					Err:              err,
 				}
-				defer recordError("Security:TraQAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+					defer recordError("Security:TraQAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -2235,8 +2476,9 @@ func (s *Server) handleUsersPutRequest(args [0]string, argsEscaped bool, w http.
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -2293,8 +2535,19 @@ func (s *Server) handleUsersPutRequest(args [0]string, argsEscaped bool, w http.
 		response, err = s.h.UsersPut(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ErrorResponseStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 

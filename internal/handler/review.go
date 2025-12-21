@@ -11,15 +11,12 @@ import (
 	"github.com/traP-jp/anshin-techo-backend/internal/repository"
 )
 
-func (h *Handler) CreateReview(ctx context.Context, req *api.CreateReviewReq, params api.CreateReviewParams) (*api.Review, error) {
-	reviewer, ok := traqIDFromContext(ctx)
-	if !ok {
-		return nil, echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
-	}
+func (h *Handler) CreateReview(ctx context.Context, req *api.CreateReviewReq, params api.CreateReviewParams) (api.CreateReviewRes, error) {
+	reviewer := getUserID(ctx)
 
 	repoType, err := toRepositoryReviewType(req.Type)
 	if err != nil {
-		return nil, err
+		return &api.CreateReviewBadRequest{}, nil
 	}
 
 	comment := sql.NullString{String: "", Valid: false}
@@ -36,13 +33,13 @@ func (h *Handler) CreateReview(ctx context.Context, req *api.CreateReviewReq, pa
 	if err != nil {
 		switch err {
 		case repository.ErrNoteNotFound:
-			return nil, echo.NewHTTPError(http.StatusNotFound, "note not found")
+			return &api.CreateReviewNotFound{}, nil
 		case repository.ErrReviewerNotFound:
-			return nil, echo.NewHTTPError(http.StatusNotFound, "reviewer not found")
+			return &api.CreateReviewNotFound{}, nil
 		case repository.ErrReviewAlreadyExists:
-			return nil, echo.NewHTTPError(http.StatusConflict, "already reviewed")
+			return &api.CreateReviewConflict{}, nil
 		case repository.ErrInvalidReviewType, repository.ErrInvalidReviewWeight:
-			return nil, echo.NewHTTPError(http.StatusBadRequest, err.Error())
+			return &api.CreateReviewBadRequest{}, nil
 		default:
 			return nil, fmt.Errorf("create review in repository: %w", err)
 		}
@@ -58,10 +55,7 @@ func (h *Handler) CreateReview(ctx context.Context, req *api.CreateReviewReq, pa
 
 // DeleteReview implements DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
 func (h *Handler) DeleteReview(ctx context.Context, params api.DeleteReviewParams) error {
-	reviewer, ok := traqIDFromContext(ctx)
-	if !ok {
-		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
-	}
+	reviewer := getUserID(ctx)
 
 	if err := h.repo.DeleteReview(ctx, params.TicketId, params.NoteId, params.ReviewId, reviewer); err != nil {
 		switch err {
@@ -79,10 +73,7 @@ func (h *Handler) DeleteReview(ctx context.Context, params api.DeleteReviewParam
 
 // UpdateReview implements PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
 func (h *Handler) UpdateReview(ctx context.Context, req api.OptUpdateReviewReq, params api.UpdateReviewParams) (api.UpdateReviewRes, error) {
-	reviewer, ok := traqIDFromContext(ctx)
-	if !ok {
-		return nil, echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
-	}
+	reviewer := getUserID(ctx)
 
 	repoParams := repository.UpdateReviewParams{
 		Type:       "",

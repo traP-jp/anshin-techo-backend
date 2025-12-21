@@ -2,6 +2,8 @@ package handler
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -10,7 +12,6 @@ import (
 )
 
 type Handler struct {
-	//photo *photo.Service
 	repo *repository.Repository
 }
 
@@ -31,7 +32,6 @@ func traqIDFromContext(ctx context.Context) (string, bool) {
 }
 
 func New(
-	//photo *photo.Service,
 	repo *repository.Repository,
 ) *Handler {
 	return &Handler{
@@ -40,12 +40,29 @@ func New(
 	}
 }
 
-func (h *Handler) NewError(ctx context.Context, err error) error {
-	if _, ok := err.(*echo.HTTPError); ok {
-		return err
+func (h *Handler) NewError(ctx context.Context, err error) *api.ErrorResponseStatusCode {
+	var httpErr *echo.HTTPError
+	if errors.As(err, &httpErr) {
+		message := httpErr.Message
+		if message == nil {
+			message = http.StatusText(httpErr.Code)
+		}
+
+		if httpErr.Code >= http.StatusInternalServerError {
+			// Log server-side errors to aid debugging while returning a safe message to clients.
+			slog.ErrorContext(ctx, "http error", "error", err)
+		}
+
+		return &api.ErrorResponseStatusCode{
+			StatusCode: httpErr.Code,
+			Response:   api.Error{Message: fmt.Sprint(message)},
+		}
 	}
 
 	slog.ErrorContext(ctx, "internal server error", "error", err)
 
-	return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
+	return &api.ErrorResponseStatusCode{
+		StatusCode: http.StatusInternalServerError,
+		Response:   api.Error{Message: "internal server error"},
+	}
 }

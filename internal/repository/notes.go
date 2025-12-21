@@ -105,7 +105,7 @@ func (r *Repository) DeleteNote(ctx context.Context, ticketID, noteID int64) err
 func (r *Repository) GetNoteByID(ctx context.Context, ticketID, noteID int64) (*Note, error) {
 	note := &Note{}
 	query := `SELECT * FROM notes WHERE id = ? AND ticket_id = ?`
-	
+
 	if err := r.db.GetContext(ctx, note, query, noteID, ticketID); err != nil {
 		return nil, err
 	}

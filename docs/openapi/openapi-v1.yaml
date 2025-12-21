@@ -261,6 +261,40 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
 
+    Config:
+      type: object
+      properties:
+        reminder_interval:
+          type: object
+          description: "リマインドのタイミング設定"
+          properties:
+            overdue_day:
+              type: array
+              items:
+                type: integer
+              description: "期限超過後にリマインドする日数のリスト"
+            notesent_hour:
+              type: integer
+              description: "送信予定からリマインドするまでの時間(時間単位)"
+          required:
+            - overdue_day
+            - notesent_hour
+        revise_prompt:
+          type: string
+          description: "レビュアーに渡すリビジョン指示テキスト"
+      required:
+        - reminder_interval
+        - revise_prompt
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: "エラーメッセージ"
+      required:
+        - message
+
   securitySchemes:
     # 開発用簡易認証
     traQAuth:
@@ -447,6 +481,10 @@ paths:
           description: "不正なリクエストボディ"
         "401":
           description: "認証エラー"
+        "403":
+          description: "権限なし"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
         default:
           $ref: "#/components/responses/ErrorResponse"
 
@@ -480,6 +518,8 @@ paths:
                         items:
                           $ref: "#/components/schemas/Note"
                         description: "このチケットに紐づくノート一覧"
+        "401":
+          description: "認証エラー"
         "404":
           description: "チケットが見つからない"
         default:
@@ -525,6 +565,8 @@ paths:
           description: "更新成功"
         "400":
           description: "不正なリクエストボディ"
+        "401":
+          description: "認証エラー"
         "403":
           description: "権限なし"
         "404":
@@ -541,6 +583,8 @@ paths:
       responses:
         "204":
           description: "削除成功"
+        "401":
+          description: "認証エラー"
         "403":
           description: "権限なし"
         "404":
@@ -689,6 +733,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Review"
+        "400":
+          description: "不正なリクエストボディ"
+        "404":
+          description: "ノートが見つからない"
+        "409":
+          description: "すでにレビュー済み"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
         default:
           $ref: "#/components/responses/ErrorResponse"
 
@@ -749,6 +801,8 @@ paths:
       responses:
         "204":
           description: "削除成功"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
   # --- AI ---
   /tickets/{ticketId}/ai/generate:
     parameters:

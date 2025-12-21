@@ -11,9 +11,13 @@ import (
 	"github.com/traP-jp/anshin-techo-backend/infrastructure/config"
 	"github.com/traP-jp/anshin-techo-backend/infrastructure/database"
 	"github.com/traP-jp/anshin-techo-backend/infrastructure/injector"
+	"github.com/traP-jp/anshin-techo-backend/internal/service/bot"
 )
 
-var globalServer http.Handler
+var (
+	globalServer http.Handler
+	globalDB     *sqlx.DB
+)
 
 func TestMain(m *testing.M) {
 	if err := run(m); err != nil {
@@ -41,13 +45,13 @@ func run(m *testing.M) error {
 
 	mysqlConfig := c.MySQLConfig()
 
-	resource, err := pool.Run("mysql", "latest", []string{
-		"MYSQL_ROOT_PASSWORD=" + mysqlConfig.Passwd,
-		"MYSQL_DATABASE=" + mysqlConfig.DBName,
-		"MYSQL_ROOT_HOST=%",
+	resource, err := pool.Run("mariadb", "12", []string{
+		"MARIADB_ROOT_PASSWORD=" + mysqlConfig.Passwd,
+		"MARIADB_DATABASE=" + mysqlConfig.DBName,
+		"MARIADB_ROOT_HOST=%",
 	})
 	if err != nil {
-		return fmt.Errorf("start mysql docker: %w", err)
+		return fmt.Errorf("start mariadb docker: %w", err)
 	}
 
 	mysqlConfig.Addr = "localhost:" + resource.GetPort("3306/tcp")
@@ -62,13 +66,19 @@ func run(m *testing.M) error {
 		}
 
 		db = _db
+		globalDB = db
 
 		return nil
 	}); err != nil {
 		return fmt.Errorf("connect to database container: %w", err)
 	}
 
-	server, err := injector.InjectServer(db)
+	mockBot := bot.NewMockService()
+
+	server, err := injector.InjectServer(injector.Dependencies{
+		DB:  db,
+		Bot: mockBot,
+	})
 	if err != nil {
 		return fmt.Errorf("inject server: %w", err)
 	}
@@ -78,7 +88,7 @@ func run(m *testing.M) error {
 	m.Run()
 
 	if err := pool.Purge(resource); err != nil {
-		return fmt.Errorf("purge mysql docker: %w", err)
+		return fmt.Errorf("purge mariadb docker: %w", err)
 	}
 
 	return nil
