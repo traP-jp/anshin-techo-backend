@@ -16,22 +16,6 @@ type Handler struct {
 	repo *repository.Repository
 }
 
-type ctxKey string
-
-const traqIDCtxKey ctxKey = "traq_id"
-
-func traqIDFromContext(ctx context.Context) (string, bool) {
-	if ctx == nil {
-		return "", false
-	}
-	id, ok := ctx.Value(traqIDCtxKey).(string)
-	if !ok || id == "" {
-		return "", false
-	}
-
-	return id, true
-}
-
 func New(
 	repo *repository.Repository,
 ) *Handler {
