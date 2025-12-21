@@ -25,7 +25,9 @@ func newAIClient() *openai.Client {
 
 	return openai.NewClientWithConfig(config)
 }
+
 // POST /tickets/{ticketId}/ai/generate
+//nolint:revive
 func (h *Handler) TicketsTicketIdAiGeneratePost(ctx context.Context, req *api.TicketsTicketIdAiGeneratePostReq, params api.TicketsTicketIdAiGeneratePostParams) (api.TicketsTicketIdAiGeneratePostRes, error) {
 	userID := getUserID(ctx)
 
@@ -34,6 +36,7 @@ func (h *Handler) TicketsTicketIdAiGeneratePost(ctx context.Context, req *api.Ti
 		if err == repository.ErrTicketNotFound {
 			return &api.TicketsTicketIdAiGeneratePostNotFound{}, nil
 		}
+
 		return nil, fmt.Errorf("get ticket: %w", err)
 	}
 
@@ -72,8 +75,10 @@ func (h *Handler) TicketsTicketIdAiGeneratePost(ctx context.Context, req *api.Ti
 
 	client := newAIClient()
 
+	//nolint:exhaustruct
 	streamReq := openai.ChatCompletionRequest{
 		Model: "gpt-4o-mini",
+		//nolint:exhaustruct
 		Messages: []openai.ChatCompletionMessage{
 			{Role: openai.ChatMessageRoleSystem, Content: systemPrompt},
 			{Role: openai.ChatMessageRoleUser, Content: userPrompt},
@@ -99,6 +104,7 @@ func (h *Handler) TicketsTicketIdAiGeneratePost(ctx context.Context, req *api.Ti
 			}
 			if err != nil {
 				fmt.Printf("Stream error: %v\n", err)
+
 				return
 			}
 
@@ -118,7 +124,9 @@ func (h *Handler) TicketsTicketIdAiGeneratePost(ctx context.Context, req *api.Ti
 		Data: reader,
 	}, nil
 }
+
 // POST /tickets/{ticketId}/notes/{noteId}/ai/review
+//nolint:revive
 func (h *Handler) TicketsTicketIdNotesNoteIdAiReviewPost(ctx context.Context, params api.TicketsTicketIdNotesNoteIdAiReviewPostParams) (api.TicketsTicketIdNotesNoteIdAiReviewPostRes, error) {
 	note, err := h.repo.GetNoteByID(ctx, params.TicketId, params.NoteId)
 	if err != nil {
@@ -142,8 +150,10 @@ func (h *Handler) TicketsTicketIdNotesNoteIdAiReviewPost(ctx context.Context, pa
 
 	client := newAIClient()
 
+	//nolint:exhaustruct
 	req := openai.ChatCompletionRequest{
 		Model: "gpt-4o-mini",
+		//nolint:exhaustruct
 		Messages: []openai.ChatCompletionMessage{
 			{Role: openai.ChatMessageRoleSystem, Content: systemPrompt},
 			{Role: openai.ChatMessageRoleUser, Content: userPrompt},
@@ -169,6 +179,7 @@ func (h *Handler) TicketsTicketIdNotesNoteIdAiReviewPost(ctx context.Context, pa
 			}
 			if err != nil {
 				fmt.Printf("Stream error: %v\n", err)
+
 				return
 			}
 

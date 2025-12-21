@@ -18,5 +18,6 @@ func ApplyCensorIfNeed(role string, input string) string {
     if role == "manager" {
         return input
     }
+
     return CensorContent(input)
 }
