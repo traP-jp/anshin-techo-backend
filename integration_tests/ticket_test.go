@@ -11,7 +11,7 @@ import (
 
 func TestTicket(t *testing.T) {
 	t.Run("create ticket", func(t *testing.T) {
-		t.Run("prepare create reviews", func(t *testing.T) {
+		t.Run("prepare create tickets", func(t *testing.T) {
 			t.Run("prepare: create users", func(t *testing.T) {
 				rec := doRequest(t, "PUT", "/users", "Pugma", `[{"traq_id":"Pugma","role":"manager"},{"traq_id":"aruze_pino","role":"manager"},{"traq_id":"ramdos","role":"assistant"},{"traq_id":"Hokaze","role":"assistant"},{"traq_id":"gUuUnya","role":"assistant"},{"traq_id":"Akira_256","role":"assistant"},{"traq_id":"Synori","role":"assistant"}]`)
 
@@ -48,6 +48,32 @@ func TestTicket(t *testing.T) {
 
 				expectedStatus := `403 Forbidden`
 				expectedBody := ``
+				assert.Equal(t, rec.Result().Status, expectedStatus)
+				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
+			})
+		})
+		t.Run("get all tickets", func(t *testing.T) {
+			t.Run("get all tickets by manager", func(t *testing.T) {
+				rec := doRequest(t, "GET", "/tickets", "Pugma", ``)
+
+				expectedStatus := `200 OK`
+				expectedBody := `[{"id":1,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"},{"id":2,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"},{"id":3,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"}]`
+				assert.Equal(t, rec.Result().Status, expectedStatus)
+				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
+			})
+			t.Run("get all tickets by assistant", func(t *testing.T) {
+				rec := doRequest(t, "GET", "/tickets", "ramdos", ``)
+
+				expectedStatus := `200 OK`
+				expectedBody := `[{"id":1,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"},{"id":2,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"},{"id":3,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"}]`
+				assert.Equal(t, rec.Result().Status, expectedStatus)
+				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
+			})
+			t.Run("get all tickets by normal user", func(t *testing.T) {
+				rec := doRequest(t, "GET", "/tickets", "cp20", ``)
+
+				expectedStatus := `200 OK`
+				expectedBody := `[{"id":1,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"},{"id":2,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"},{"id":3,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"}]`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
