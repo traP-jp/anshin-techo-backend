@@ -15,9 +15,9 @@ func CensorContent(input string) string {
 }
 
 func ApplyCensorIfNeed(role string, input string) string {
-    if role == "manager" {
-        return input
-    }
+	if role == "manager" {
+		return input
+	}
 
-    return CensorContent(input)
+	return CensorContent(input)
 }

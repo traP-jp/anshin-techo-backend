@@ -27,6 +27,7 @@ func newAIClient() *openai.Client {
 }
 
 // POST /tickets/{ticketId}/ai/generate
+//
 //nolint:revive
 func (h *Handler) TicketsTicketIdAiGeneratePost(ctx context.Context, req *api.TicketsTicketIdAiGeneratePostReq, params api.TicketsTicketIdAiGeneratePostParams) (api.TicketsTicketIdAiGeneratePostRes, error) {
 	userID := getUserID(ctx)
@@ -126,6 +127,7 @@ func (h *Handler) TicketsTicketIdAiGeneratePost(ctx context.Context, req *api.Ti
 }
 
 // POST /tickets/{ticketId}/notes/{noteId}/ai/review
+//
 //nolint:revive
 func (h *Handler) TicketsTicketIdNotesNoteIdAiReviewPost(ctx context.Context, params api.TicketsTicketIdNotesNoteIdAiReviewPostParams) (api.TicketsTicketIdNotesNoteIdAiReviewPostRes, error) {
 	note, err := h.repo.GetNoteByID(ctx, params.TicketId, params.NoteId)
