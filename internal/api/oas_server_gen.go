@@ -39,7 +39,7 @@ type Handler interface {
 	// レビュー取り消し.
 	//
 	// DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
-	DeleteReview(ctx context.Context, params DeleteReviewParams) error
+	DeleteReview(ctx context.Context, params DeleteReviewParams) (DeleteReviewRes, error)
 	// DeleteTicketByID implements deleteTicketByID operation.
 	//
 	// 本職のみ実行可能。.
@@ -58,12 +58,24 @@ type Handler interface {
 	//
 	// GET /tickets
 	GetTickets(ctx context.Context, params GetTicketsParams) (GetTicketsRes, error)
+	// TicketsTicketIdAiGeneratePost implements POST /tickets/{ticketId}/ai/generate operation.
+	//
+	// AIによる返信ドラフト生成 (SSE).
+	//
+	// POST /tickets/{ticketId}/ai/generate
+	TicketsTicketIdAiGeneratePost(ctx context.Context, req *TicketsTicketIdAiGeneratePostReq, params TicketsTicketIdAiGeneratePostParams) (TicketsTicketIdAiGeneratePostRes, error)
+	// TicketsTicketIdNotesNoteIdAiReviewPost implements POST /tickets/{ticketId}/notes/{noteId}/ai/review operation.
+	//
+	// 指定されたノートの内容をAIが添削・レビューする.
+	//
+	// POST /tickets/{ticketId}/notes/{noteId}/ai/review
+	TicketsTicketIdNotesNoteIdAiReviewPost(ctx context.Context, params TicketsTicketIdNotesNoteIdAiReviewPostParams) (TicketsTicketIdNotesNoteIdAiReviewPostRes, error)
 	// TicketsTicketIdNotesNoteIdDelete implements DELETE /tickets/{ticketId}/notes/{noteId} operation.
 	//
 	// ノート削除.
 	//
 	// DELETE /tickets/{ticketId}/notes/{noteId}
-	TicketsTicketIdNotesNoteIdDelete(ctx context.Context, params TicketsTicketIdNotesNoteIdDeleteParams) error
+	TicketsTicketIdNotesNoteIdDelete(ctx context.Context, params TicketsTicketIdNotesNoteIdDeleteParams) (TicketsTicketIdNotesNoteIdDeleteRes, error)
 	// TicketsTicketIdNotesNoteIdPut implements PUT /tickets/{ticketId}/notes/{noteId} operation.
 	//
 	// 送信ノートの編集時、既存のReviewを無効化する(Weightリセット)オプションがある。
@@ -76,7 +88,7 @@ type Handler interface {
 	// ノート追加.
 	//
 	// POST /tickets/{ticketId}/notes
-	TicketsTicketIdNotesPost(ctx context.Context, req *TicketsTicketIdNotesPostReq, params TicketsTicketIdNotesPostParams) (*Note, error)
+	TicketsTicketIdNotesPost(ctx context.Context, req *TicketsTicketIdNotesPostReq, params TicketsTicketIdNotesPostParams) (TicketsTicketIdNotesPostRes, error)
 	// UpdateReview implements updateReview operation.
 	//
 	// ReviewのAuthorのみ実行可能。.
@@ -94,17 +106,13 @@ type Handler interface {
 	// ユーザー一覧取得.
 	//
 	// GET /users
-	UsersGet(ctx context.Context) ([]User, error)
+	UsersGet(ctx context.Context) (UsersGetRes, error)
 	// UsersPut implements PUT /users operation.
 	//
 	// Manager(本職)権限のみ。リクエストボディの内容でユーザー情報を一括更新・同期する。.
 	//
 	// PUT /users
 	UsersPut(ctx context.Context, req []User) (UsersPutRes, error)
-	// NewError creates *ErrorResponseStatusCode from error returned by handler.
-	//
-	// Used for common default response.
-	NewError(ctx context.Context, err error) *ErrorResponseStatusCode
 }
 
 // Server implements http server based on OpenAPI v3 specification and

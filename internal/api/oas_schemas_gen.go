@@ -3,15 +3,11 @@
 package api
 
 import (
-	"fmt"
+	"io"
 	"time"
 
 	"github.com/go-faster/errors"
 )
-
-func (s *ErrorResponseStatusCode) Error() string {
-	return fmt.Sprintf("code %d: %+v", s.StatusCode, s.Response)
-}
 
 // Ref: #/components/schemas/Config
 type Config struct {
@@ -243,8 +239,20 @@ type CreateTicketUnauthorized struct{}
 
 func (*CreateTicketUnauthorized) createTicketRes() {}
 
+// DeleteReviewForbidden is response for DeleteReview operation.
+type DeleteReviewForbidden struct{}
+
+func (*DeleteReviewForbidden) deleteReviewRes() {}
+
 // DeleteReviewNoContent is response for DeleteReview operation.
 type DeleteReviewNoContent struct{}
+
+func (*DeleteReviewNoContent) deleteReviewRes() {}
+
+// DeleteReviewNotFound is response for DeleteReview operation.
+type DeleteReviewNotFound struct{}
+
+func (*DeleteReviewNotFound) deleteReviewRes() {}
 
 // DeleteTicketByIDForbidden is response for DeleteTicketByID operation.
 type DeleteTicketByIDForbidden struct{}
@@ -307,6 +315,22 @@ func (s *ErrorResponseStatusCode) SetStatusCode(val int) {
 func (s *ErrorResponseStatusCode) SetResponse(val Error) {
 	s.Response = val
 }
+
+func (*ErrorResponseStatusCode) configGetRes()                        {}
+func (*ErrorResponseStatusCode) configPostRes()                       {}
+func (*ErrorResponseStatusCode) createReviewRes()                     {}
+func (*ErrorResponseStatusCode) createTicketRes()                     {}
+func (*ErrorResponseStatusCode) deleteReviewRes()                     {}
+func (*ErrorResponseStatusCode) deleteTicketByIDRes()                 {}
+func (*ErrorResponseStatusCode) getTicketByIDRes()                    {}
+func (*ErrorResponseStatusCode) getTicketsRes()                       {}
+func (*ErrorResponseStatusCode) ticketsTicketIdNotesNoteIdDeleteRes() {}
+func (*ErrorResponseStatusCode) ticketsTicketIdNotesNoteIdPutRes()    {}
+func (*ErrorResponseStatusCode) ticketsTicketIdNotesPostRes()         {}
+func (*ErrorResponseStatusCode) updateReviewRes()                     {}
+func (*ErrorResponseStatusCode) updateTicketByIDRes()                 {}
+func (*ErrorResponseStatusCode) usersGetRes()                         {}
+func (*ErrorResponseStatusCode) usersPutRes()                         {}
 
 // GetTicketByIDNotFound is response for GetTicketByID operation.
 type GetTicketByIDNotFound struct{}
@@ -632,6 +656,8 @@ func (s *Note) SetCreatedAt(val OptDateTime) {
 func (s *Note) SetUpdatedAt(val OptDateTime) {
 	s.UpdatedAt = val
 }
+
+func (*Note) ticketsTicketIdNotesPostRes() {}
 
 // Outgoing(発信)ノートの状態管理用
 // - draft: 下書き
@@ -1760,8 +1786,78 @@ func (s *TicketStatus) UnmarshalText(data []byte) error {
 	}
 }
 
+// TicketsTicketIdAiGeneratePostInternalServerError is response for TicketsTicketIdAiGeneratePost operation.
+type TicketsTicketIdAiGeneratePostInternalServerError struct{}
+
+func (*TicketsTicketIdAiGeneratePostInternalServerError) ticketsTicketIdAiGeneratePostRes() {}
+
+// TicketsTicketIdAiGeneratePostNotFound is response for TicketsTicketIdAiGeneratePost operation.
+type TicketsTicketIdAiGeneratePostNotFound struct{}
+
+func (*TicketsTicketIdAiGeneratePostNotFound) ticketsTicketIdAiGeneratePostRes() {}
+
+type TicketsTicketIdAiGeneratePostOK struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s TicketsTicketIdAiGeneratePostOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
+}
+
+func (*TicketsTicketIdAiGeneratePostOK) ticketsTicketIdAiGeneratePostRes() {}
+
+type TicketsTicketIdAiGeneratePostReq struct {
+	// ユーザーからの追加指示.
+	Instruction OptString `json:"instruction"`
+}
+
+// GetInstruction returns the value of Instruction.
+func (s *TicketsTicketIdAiGeneratePostReq) GetInstruction() OptString {
+	return s.Instruction
+}
+
+// SetInstruction sets the value of Instruction.
+func (s *TicketsTicketIdAiGeneratePostReq) SetInstruction(val OptString) {
+	s.Instruction = val
+}
+
+// TicketsTicketIdNotesNoteIdAiReviewPostInternalServerError is response for TicketsTicketIdNotesNoteIdAiReviewPost operation.
+type TicketsTicketIdNotesNoteIdAiReviewPostInternalServerError struct{}
+
+func (*TicketsTicketIdNotesNoteIdAiReviewPostInternalServerError) ticketsTicketIdNotesNoteIdAiReviewPostRes() {
+}
+
+// TicketsTicketIdNotesNoteIdAiReviewPostNotFound is response for TicketsTicketIdNotesNoteIdAiReviewPost operation.
+type TicketsTicketIdNotesNoteIdAiReviewPostNotFound struct{}
+
+func (*TicketsTicketIdNotesNoteIdAiReviewPostNotFound) ticketsTicketIdNotesNoteIdAiReviewPostRes() {}
+
+type TicketsTicketIdNotesNoteIdAiReviewPostOK struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s TicketsTicketIdNotesNoteIdAiReviewPostOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
+}
+
+func (*TicketsTicketIdNotesNoteIdAiReviewPostOK) ticketsTicketIdNotesNoteIdAiReviewPostRes() {}
+
 // TicketsTicketIdNotesNoteIdDeleteNoContent is response for TicketsTicketIdNotesNoteIdDelete operation.
 type TicketsTicketIdNotesNoteIdDeleteNoContent struct{}
+
+func (*TicketsTicketIdNotesNoteIdDeleteNoContent) ticketsTicketIdNotesNoteIdDeleteRes() {}
 
 // TicketsTicketIdNotesNoteIdPutForbidden is response for TicketsTicketIdNotesNoteIdPut operation.
 type TicketsTicketIdNotesNoteIdPutForbidden struct{}
@@ -2115,6 +2211,10 @@ func (s *UserRole) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+type UsersGetOKApplicationJSON []User
+
+func (*UsersGetOKApplicationJSON) usersGetRes() {}
 
 // UsersPutForbidden is response for UsersPut operation.
 type UsersPutForbidden struct{}

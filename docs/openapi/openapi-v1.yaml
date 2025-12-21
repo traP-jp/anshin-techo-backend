@@ -21,6 +21,8 @@ tags:
     description: "ユーザー情報・権限管理"
   - name: Config
     description: "システム設定"
+  - name: AI
+    description: "LLMを用いた生成・支援機能"
 
 components:
   schemas:
@@ -258,6 +260,40 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+
+    Config:
+      type: object
+      properties:
+        reminder_interval:
+          type: object
+          description: "リマインドのタイミング設定"
+          properties:
+            overdue_day:
+              type: array
+              items:
+                type: integer
+              description: "期限超過後にリマインドする日数のリスト"
+            notesent_hour:
+              type: integer
+              description: "送信予定からリマインドするまでの時間(時間単位)"
+          required:
+            - overdue_day
+            - notesent_hour
+        revise_prompt:
+          type: string
+          description: "レビュアーに渡すリビジョン指示テキスト"
+      required:
+        - reminder_interval
+        - revise_prompt
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: "エラーメッセージ"
+      required:
+        - message
 
   securitySchemes:
     # 開発用簡易認証
@@ -761,5 +797,76 @@ paths:
       responses:
         "204":
           description: "削除成功"
+        "403":
+          description: "権限なし"
+        "404":
+          description: "レビューが見つからない"
         default:
           $ref: "#/components/responses/ErrorResponse"
+  # --- AI ---
+  /tickets/{ticketId}/ai/generate:
+    parameters:
+      - name: ticketId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    post:
+      tags:
+        - AI
+      summary: "AIによる返信ドラフト生成 (SSE)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                instruction:
+                  type: string
+                  description: "ユーザーからの追加指示"
+      responses:
+        "200":
+          description: "生成中"
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: "チケットが見つからない"
+        "500":
+          description: "サーバーエラー"
+
+  /tickets/{ticketId}/notes/{noteId}/ai/review:
+    parameters:
+      - name: ticketId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: noteId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    post:
+      tags:
+        - AI
+      summary: "AIによるノート（下書き）のレビュー (SSE)"
+      description: "指定されたノートの内容をAIが添削・レビューする"
+      responses:
+        "200":
+          description: "レビュー生成中"
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: "チケットまたはノートが見つからない"
+        "500":
+          description: "サーバーエラー"

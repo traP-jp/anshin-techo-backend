@@ -54,21 +54,21 @@ func (h *Handler) CreateReview(ctx context.Context, req *api.CreateReviewReq, pa
 }
 
 // DeleteReview implements DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.
-func (h *Handler) DeleteReview(ctx context.Context, params api.DeleteReviewParams) error {
+func (h *Handler) DeleteReview(ctx context.Context, params api.DeleteReviewParams) (api.DeleteReviewRes, error) {
 	reviewer := getUserID(ctx)
 
 	if err := h.repo.DeleteReview(ctx, params.TicketId, params.NoteId, params.ReviewId, reviewer); err != nil {
 		switch err {
 		case repository.ErrReviewNotFound:
-			return echo.NewHTTPError(http.StatusNotFound, "review not found")
+			return &api.DeleteReviewNotFound{}, nil
 		case repository.ErrReviewForbidden:
-			return echo.NewHTTPError(http.StatusForbidden, "forbidden")
+			return &api.DeleteReviewForbidden{}, nil
 		default:
-			return fmt.Errorf("delete review in repository: %w", err)
+			return nil, fmt.Errorf("delete review in repository: %w", err)
 		}
 	}
 
-	return nil
+	return &api.DeleteReviewNoContent{}, nil
 }
 
 // UpdateReview implements PUT /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId} operation.

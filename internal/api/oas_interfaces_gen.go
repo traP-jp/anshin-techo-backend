@@ -17,6 +17,10 @@ type CreateTicketRes interface {
 	createTicketRes()
 }
 
+type DeleteReviewRes interface {
+	deleteReviewRes()
+}
+
 type DeleteTicketByIDRes interface {
 	deleteTicketByIDRes()
 }
@@ -29,8 +33,24 @@ type GetTicketsRes interface {
 	getTicketsRes()
 }
 
+type TicketsTicketIdAiGeneratePostRes interface {
+	ticketsTicketIdAiGeneratePostRes()
+}
+
+type TicketsTicketIdNotesNoteIdAiReviewPostRes interface {
+	ticketsTicketIdNotesNoteIdAiReviewPostRes()
+}
+
+type TicketsTicketIdNotesNoteIdDeleteRes interface {
+	ticketsTicketIdNotesNoteIdDeleteRes()
+}
+
 type TicketsTicketIdNotesNoteIdPutRes interface {
 	ticketsTicketIdNotesNoteIdPutRes()
+}
+
+type TicketsTicketIdNotesPostRes interface {
+	ticketsTicketIdNotesPostRes()
 }
 
 type UpdateReviewRes interface {
@@ -39,6 +59,10 @@ type UpdateReviewRes interface {
 
 type UpdateTicketByIDRes interface {
 	updateTicketByIDRes()
+}
+
+type UsersGetRes interface {
+	usersGetRes()
 }
 
 type UsersPutRes interface {

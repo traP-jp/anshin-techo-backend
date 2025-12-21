@@ -9,7 +9,7 @@ require (
 	github.com/labstack/echo/v4 v4.14.0
 	github.com/ory/dockertest/v3 v3.12.0
 	github.com/traP-jp/anshin-techo-backend v0.0.0
-	gotest.tools/v3 v3.5.1
+	gotest.tools/v3 v3.5.2
 )
 
 require (
@@ -52,6 +52,7 @@ require (
 	github.com/opencontainers/runc v1.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pressly/goose/v3 v3.26.0 // indirect
+	github.com/sashabaranov/go-openai v1.41.2 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect

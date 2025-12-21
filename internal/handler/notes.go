@@ -10,7 +10,7 @@ import (
 // POST /tickets/{ticketId}/notes
 //
 //nolint:revive
-func (h *Handler) TicketsTicketIdNotesPost(ctx context.Context, req *api.TicketsTicketIdNotesPostReq, params api.TicketsTicketIdNotesPostParams) (*api.Note, error) {
+func (h *Handler) TicketsTicketIdNotesPost(ctx context.Context, req *api.TicketsTicketIdNotesPostReq, params api.TicketsTicketIdNotesPostParams) (api.TicketsTicketIdNotesPostRes, error) {
 	userID := getUserID(ctx)
 	if userID == "" {
 		return nil, fmt.Errorf("user not found in context (unauthorized)")
@@ -59,10 +59,10 @@ func (h *Handler) TicketsTicketIdNotesNoteIdPut(ctx context.Context, req *api.Ti
 // DELETE /tickets/{ticketId}/notes/{noteId}
 //
 //nolint:revive
-func (h *Handler) TicketsTicketIdNotesNoteIdDelete(ctx context.Context, params api.TicketsTicketIdNotesNoteIdDeleteParams) error {
+func (h *Handler) TicketsTicketIdNotesNoteIdDelete(ctx context.Context, params api.TicketsTicketIdNotesNoteIdDeleteParams) (api.TicketsTicketIdNotesNoteIdDeleteRes, error) {
 	if err := h.repo.DeleteNote(ctx, params.TicketId, params.NoteId); err != nil {
-		return fmt.Errorf("delete note: %w", err)
+		return nil, fmt.Errorf("delete note: %w", err)
 	}
 
-	return nil
+	return &api.TicketsTicketIdNotesNoteIdDeleteNoContent{}, nil
 }

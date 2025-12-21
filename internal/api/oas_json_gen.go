@@ -2498,6 +2498,69 @@ func (s *TicketStatus) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *TicketsTicketIdAiGeneratePostReq) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *TicketsTicketIdAiGeneratePostReq) encodeFields(e *jx.Encoder) {
+	{
+		if s.Instruction.Set {
+			e.FieldStart("instruction")
+			s.Instruction.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfTicketsTicketIdAiGeneratePostReq = [1]string{
+	0: "instruction",
+}
+
+// Decode decodes TicketsTicketIdAiGeneratePostReq from json.
+func (s *TicketsTicketIdAiGeneratePostReq) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TicketsTicketIdAiGeneratePostReq to nil")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "instruction":
+			if err := func() error {
+				s.Instruction.Reset()
+				if err := s.Instruction.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"instruction\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode TicketsTicketIdAiGeneratePostReq")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *TicketsTicketIdAiGeneratePostReq) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TicketsTicketIdAiGeneratePostReq) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *TicketsTicketIdNotesNoteIdPutReq) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -3190,6 +3253,56 @@ func (s UserRole) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *UserRole) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes UsersGetOKApplicationJSON as json.
+func (s UsersGetOKApplicationJSON) Encode(e *jx.Encoder) {
+	unwrapped := []User(s)
+
+	e.ArrStart()
+	for _, elem := range unwrapped {
+		elem.Encode(e)
+	}
+	e.ArrEnd()
+}
+
+// Decode decodes UsersGetOKApplicationJSON from json.
+func (s *UsersGetOKApplicationJSON) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode UsersGetOKApplicationJSON to nil")
+	}
+	var unwrapped []User
+	if err := func() error {
+		unwrapped = make([]User, 0)
+		if err := d.Arr(func(d *jx.Decoder) error {
+			var elem User
+			if err := elem.Decode(d); err != nil {
+				return err
+			}
+			unwrapped = append(unwrapped, elem)
+			return nil
+		}); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = UsersGetOKApplicationJSON(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s UsersGetOKApplicationJSON) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *UsersGetOKApplicationJSON) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

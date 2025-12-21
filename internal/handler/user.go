@@ -9,13 +9,13 @@ import (
 )
 
 // GET /users
-func (h *Handler) UsersGet(ctx context.Context) ([]api.User, error) {
+func (h *Handler) UsersGet(ctx context.Context) (api.UsersGetRes, error) {
 	users, err := h.repo.GetUsers(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("get users from repository: %w", err)
 	}
 
-	res := make([]api.User, 0, len(users))
+	res := make(api.UsersGetOKApplicationJSON, 0, len(users))
 	for _, user := range users {
 		res = append(res, api.User{
 			TraqID: user.TraqID,
@@ -23,7 +23,7 @@ func (h *Handler) UsersGet(ctx context.Context) ([]api.User, error) {
 		})
 	}
 
-	return res, nil
+	return &res, nil
 }
 
 // PUT /users

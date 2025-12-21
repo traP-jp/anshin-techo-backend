@@ -20,7 +20,8 @@ func New(
 	repo *repository.Repository,
 ) *Handler {
 	return &Handler{
-		repo,
+		//photo,
+		repo: repo,
 	}
 }
 
