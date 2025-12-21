@@ -387,6 +387,29 @@ paths:
         default:
           $ref: "#/components/responses/ErrorResponse"
 
+  /me:
+    get:
+      tags:
+        - Users
+      summary: "現在のユーザー情報取得"
+      description: "認証ヘッダーから自分のtraQ IDを返す。"
+      responses:
+        "200":
+          description: "成功"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    type: string
+                    description: "traQ ID"
+        "401":
+          description: "認証エラー"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
   # --- Tickets ---
   /tickets:
     get:

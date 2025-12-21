@@ -33,6 +33,10 @@ type GetTicketsRes interface {
 	getTicketsRes()
 }
 
+type MeGetRes interface {
+	meGetRes()
+}
+
 type TicketsTicketIdAiGeneratePostRes interface {
 	ticketsTicketIdAiGeneratePostRes()
 }

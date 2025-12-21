@@ -41,7 +41,9 @@ func truncateAllTables(t *testing.T) {
 		"TRUNCATE TABLE ticket_tags",
 		"TRUNCATE TABLE tickets",
 		"TRUNCATE TABLE users",
+		"TRUNCATE TABLE configs",
 		"SET FOREIGN_KEY_CHECKS = 1",
+		"INSERT INTO configs (id, revise_prompt, notesent_hour, overdue_day) VALUES (1, '', 0, JSON_ARRAY()) ON DUPLICATE KEY UPDATE id = VALUES(id)",
 	}
 
 	for _, stmt := range stmts {

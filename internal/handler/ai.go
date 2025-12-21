@@ -33,6 +33,7 @@ func (h *Handler) TicketsTicketIdAiGeneratePost(ctx context.Context, req *api.Ti
 		if err == repository.ErrTicketNotFound {
 			return &api.TicketsTicketIdAiGeneratePostNotFound{}, nil
 		}
+
 		return nil, fmt.Errorf("get ticket: %w", err)
 	}
 
@@ -87,6 +88,7 @@ func (h *Handler) TicketsTicketIdAiGeneratePost(ctx context.Context, req *api.Ti
 			}
 			if err != nil {
 				fmt.Printf("Stream error: %v\n", err)
+
 				return
 			}
 
@@ -158,6 +160,7 @@ func (h *Handler) TicketsTicketIdNotesNoteIdAiReviewPost(ctx context.Context, pa
 			}
 			if err != nil {
 				fmt.Printf("Stream error: %v\n", err)
+
 				return
 			}
 

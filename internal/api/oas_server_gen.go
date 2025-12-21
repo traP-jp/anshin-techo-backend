@@ -58,6 +58,12 @@ type Handler interface {
 	//
 	// GET /tickets
 	GetTickets(ctx context.Context, params GetTicketsParams) (GetTicketsRes, error)
+	// MeGet implements GET /me operation.
+	//
+	// 認証ヘッダーから自分のtraQ IDを返す。.
+	//
+	// GET /me
+	MeGet(ctx context.Context) (MeGetRes, error)
 	// TicketsTicketIdAiGeneratePost implements POST /tickets/{ticketId}/ai/generate operation.
 	//
 	// AIによる返信ドラフト生成 (SSE).

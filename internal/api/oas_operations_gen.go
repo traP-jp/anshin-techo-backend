@@ -14,6 +14,7 @@ const (
 	DeleteTicketByIDOperation                       OperationName = "DeleteTicketByID"
 	GetTicketByIDOperation                          OperationName = "GetTicketByID"
 	GetTicketsOperation                             OperationName = "GetTickets"
+	MeGetOperation                                  OperationName = "MeGet"
 	TicketsTicketIdAiGeneratePostOperation          OperationName = "TicketsTicketIdAiGeneratePost"
 	TicketsTicketIdNotesNoteIdAiReviewPostOperation OperationName = "TicketsTicketIdNotesNoteIdAiReviewPost"
 	TicketsTicketIdNotesNoteIdDeleteOperation       OperationName = "TicketsTicketIdNotesNoteIdDelete"
