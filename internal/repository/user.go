@@ -60,12 +60,12 @@ func (r *Repository) UpdateUsers(ctx context.Context, users []*User) (err error)
 
 func (r *Repository) GetUserRoleByTraqID(ctx context.Context, traqID string) (string, error) {
 	var role string
-	err := r.db.GetContext(ctx, &role, "SELECT role FROM users WHERE traq_id = $1", traqID)
+	err := r.db.GetContext(ctx, &role, "SELECT role FROM users WHERE traq_id = ?", traqID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", fmt.Errorf("%w: %s", ErrUserNotFound, traqID)
 		}
-		
+
 		return "", fmt.Errorf("get user role by traq id: %w", err)
 	}
 
