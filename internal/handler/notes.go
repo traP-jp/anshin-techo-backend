@@ -16,16 +16,23 @@ func (h *Handler) TicketsTicketIdNotesPost(ctx context.Context, req *api.Tickets
 		return nil, fmt.Errorf("user not found in context (unauthorized)")
 	}
 
+	role, err := h.repo.GetUserRoleByTraqID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("get user role: %w", err)
+	}
+
 	note, err := h.repo.CreateNote(ctx, params.TicketId, userID, req.Content, string(req.Type))
 	if err != nil {
 		return nil, fmt.Errorf("create note: %w", err)
 	}
 
+	safeContent := ApplyCensorIfNeed(role, note.Content)
+
 	return &api.Note{
 		ID:       note.ID,
 		TicketID: note.TicketID,
 		Author:   note.UserID,
-		Content:  note.Content,
+		Content:  safeContent,
 		Type:     api.NoteType(note.Type),
 		Status:   api.OptNoteStatus{Value: "", Set: false},
 		Reviews:  []api.Review{},
@@ -42,7 +49,6 @@ func (h *Handler) TicketsTicketIdNotesPost(ctx context.Context, req *api.Tickets
 }
 
 // PUT /tickets/{ticketId}/notes/{noteId}
-//
 //nolint:revive
 func (h *Handler) TicketsTicketIdNotesNoteIdPut(ctx context.Context, req *api.TicketsTicketIdNotesNoteIdPutReq, params api.TicketsTicketIdNotesNoteIdPutParams) (api.TicketsTicketIdNotesNoteIdPutRes, error) {
 	if !req.Content.Set {
@@ -57,7 +63,6 @@ func (h *Handler) TicketsTicketIdNotesNoteIdPut(ctx context.Context, req *api.Ti
 }
 
 // DELETE /tickets/{ticketId}/notes/{noteId}
-//
 //nolint:revive
 func (h *Handler) TicketsTicketIdNotesNoteIdDelete(ctx context.Context, params api.TicketsTicketIdNotesNoteIdDeleteParams) (api.TicketsTicketIdNotesNoteIdDeleteRes, error) {
 	if err := h.repo.DeleteNote(ctx, params.TicketId, params.NoteId); err != nil {

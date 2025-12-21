@@ -63,10 +63,14 @@ func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (a
 	if err != nil {
 		return nil, fmt.Errorf("get created ticket from repository: %w", err)
 	}
+
 	res := &api.Ticket{
-		ID:           ticket.ID,
-		Title:        ticket.Title,
-		Description:  api.OptString{Value: ticket.Description.String, Set: ticket.Description.Valid},
+		ID:    ticket.ID,
+		Title: ApplyCensorIfNeed(role, ticket.Title),
+		Description: api.OptString{
+			Value: ApplyCensorIfNeed(role, ticket.Description.String),
+			Set:   ticket.Description.Valid,
+		},
 		Due:          api.OptNilDate{Value: ticket.Due.Time, Set: ticket.Due.Valid, Null: !ticket.Due.Valid},
 		Status:       api.TicketStatus(ticket.Status),
 		Assignee:     ticket.Assignee,
@@ -83,6 +87,12 @@ func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (a
 // GET /tickets
 // 誰でも
 func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (api.GetTicketsRes, error) {
+	userID := getUserID(ctx)
+	role, err := h.repo.GetUserRoleByTraqID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("get user role: %w", err)
+	}
+
 	repoParams := repository.GetTicketsParams{
 		Assignee: "",
 		Status:   "",
@@ -111,12 +121,11 @@ func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (
 
 	res := make([]api.Ticket, 0, len(tickets))
 	for _, ticket := range tickets {
-
 		res = append(res, api.Ticket{
 			ID:    ticket.ID,
-			Title: ticket.Title,
+			Title: ApplyCensorIfNeed(role, ticket.Title),
 			Description: api.OptString{
-				Value: ticket.Description.String,
+				Value: ApplyCensorIfNeed(role, ticket.Description.String),
 				Set:   ticket.Description.Valid,
 			},
 			Due: api.OptNilDate{
@@ -172,6 +181,12 @@ func (h *Handler) DeleteTicketByID(ctx context.Context, params api.DeleteTicketB
 
 // GET /tickets/{ticketId}
 func (h *Handler) GetTicketByID(ctx context.Context, params api.GetTicketByIDParams) (api.GetTicketByIDRes, error) {
+	userID := getUserID(ctx)
+	role, err := h.repo.GetUserRoleByTraqID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("get user role: %w", err)
+	}
+
 	id := params.TicketId
 	ticket, err := h.repo.GetTicketByID(ctx, id)
 	if err != nil {
@@ -206,7 +221,7 @@ func (h *Handler) GetTicketByID(ctx context.Context, params api.GetTicketByIDPar
 
 	apiNotes := make([]api.Note, 0, len(notes))
 	for _, note := range notes {
-		apiNote, convertErr := convertRepositoryNote(note, reviewsByNoteID[note.ID])
+		apiNote, convertErr := convertRepositoryNote(note, reviewsByNoteID[note.ID], role)
 		if convertErr != nil {
 			return nil, fmt.Errorf("convert note: %w", convertErr)
 		}
@@ -214,9 +229,12 @@ func (h *Handler) GetTicketByID(ctx context.Context, params api.GetTicketByIDPar
 		apiNotes = append(apiNotes, apiNote)
 	}
 	res := &api.GetTicketByIDOK{
-		ID:           ticket.ID,
-		Title:        ticket.Title,
-		Description:  api.OptString{Value: ticket.Description.String, Set: ticket.Description.Valid},
+		ID:    ticket.ID,
+		Title: ApplyCensorIfNeed(role, ticket.Title), 
+		Description: api.OptString{
+			Value: ApplyCensorIfNeed(role, ticket.Description.String), 
+			Set:   ticket.Description.Valid,
+		},
 		Due:          api.OptNilDate{Value: ticket.Due.Time, Set: ticket.Due.Valid, Null: !ticket.Due.Valid},
 		Status:       api.TicketStatus(ticket.Status),
 		Assignee:     ticket.Assignee,
@@ -339,7 +357,7 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 	return &api.UpdateTicketByIDOK{}, nil
 }
 
-func convertRepositoryNote(note *repository.Note, reviews []*repository.Review) (api.Note, error) {
+func convertRepositoryNote(note *repository.Note, reviews []*repository.Review, role string) (api.Note, error) {
 	noteType, err := toAPINoteType(note.Type)
 	if err != nil {
 		return api.Note{}, err
@@ -352,7 +370,7 @@ func convertRepositoryNote(note *repository.Note, reviews []*repository.Review) 
 
 	apiReviews := make([]api.Review, 0, len(reviews))
 	for _, review := range reviews {
-		apiReview, convertErr := convertRepositoryReview(review)
+		apiReview, convertErr := convertRepositoryReview(review, role)
 		if convertErr != nil {
 			return api.Note{}, convertErr
 		}
@@ -366,7 +384,7 @@ func convertRepositoryNote(note *repository.Note, reviews []*repository.Review) 
 		Type:     noteType,
 		Status:   api.OptNoteStatus{Value: noteStatus, Set: true},
 		Author:   note.UserID,
-		Content:  note.Content,
+		Content:  ApplyCensorIfNeed(role, note.Content), 
 		Reviews:  apiReviews,
 		CreatedAt: api.OptDateTime{
 			Value: note.CreatedAt,

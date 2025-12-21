@@ -14,6 +14,11 @@ import (
 func (h *Handler) CreateReview(ctx context.Context, req *api.CreateReviewReq, params api.CreateReviewParams) (api.CreateReviewRes, error) {
 	reviewer := getUserID(ctx)
 
+	role, err := h.repo.GetUserRoleByTraqID(ctx, reviewer)
+	if err != nil {
+		return nil, fmt.Errorf("get user role: %w", err)
+	}
+
 	repoType, err := toRepositoryReviewType(req.Type)
 	if err != nil {
 		return &api.CreateReviewBadRequest{}, nil
@@ -45,7 +50,7 @@ func (h *Handler) CreateReview(ctx context.Context, req *api.CreateReviewReq, pa
 		}
 	}
 
-	apiReview, err := convertRepositoryReview(repoReview)
+	apiReview, err := convertRepositoryReview(repoReview, role)
 	if err != nil {
 		return nil, fmt.Errorf("convert review: %w", err)
 	}
@@ -122,6 +127,7 @@ func (h *Handler) UpdateReview(ctx context.Context, req api.OptUpdateReviewReq, 
 
 	return &api.UpdateReviewOK{}, nil
 }
+
 func toRepositoryReviewType(t api.ReviewType) (string, error) {
 	switch t {
 	case api.ReviewTypeApprove:
@@ -137,7 +143,7 @@ func toRepositoryReviewType(t api.ReviewType) (string, error) {
 	}
 }
 
-func convertRepositoryReview(review *repository.Review) (*api.Review, error) {
+func convertRepositoryReview(review *repository.Review, role string) (*api.Review, error) {
 	reviewType, err := toAPIReviewType(review.Type)
 	if err != nil {
 		return nil, err
@@ -148,6 +154,8 @@ func convertRepositoryReview(review *repository.Review) (*api.Review, error) {
 		return nil, err
 	}
 
+	safeComment := ApplyCensorIfNeed(role, review.Comment.String)
+
 	return &api.Review{
 		ID:       review.ID,
 		NoteID:   review.NoteID,
@@ -156,7 +164,7 @@ func convertRepositoryReview(review *repository.Review) (*api.Review, error) {
 		Weight:   review.Weight,
 		Status:   reviewStatus,
 		Comment: api.OptString{
-			Value: review.Comment.String,
+			Value: safeComment, 
 			Set:   review.Comment.Valid,
 		},
 		CreatedAt: api.OptDateTime{Value: review.CreatedAt, Set: true},

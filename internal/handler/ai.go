@@ -27,7 +27,11 @@ func newAIClient() *openai.Client {
 }
 
 // POST /tickets/{ticketId}/ai/generate
+//
+//nolint:revive
 func (h *Handler) TicketsTicketIdAiGeneratePost(ctx context.Context, req *api.TicketsTicketIdAiGeneratePostReq, params api.TicketsTicketIdAiGeneratePostParams) (api.TicketsTicketIdAiGeneratePostRes, error) {
+	userID := getUserID(ctx)
+
 	ticket, err := h.repo.GetTicketByID(ctx, params.TicketId)
 	if err != nil {
 		if err == repository.ErrTicketNotFound {
@@ -35,6 +39,11 @@ func (h *Handler) TicketsTicketIdAiGeneratePost(ctx context.Context, req *api.Ti
 		}
 
 		return nil, fmt.Errorf("get ticket: %w", err)
+	}
+
+	role, err := h.repo.GetUserRoleByTraqID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("get user role: %w", err)
 	}
 
 	notes, err := h.repo.GetNotes(ctx, params.TicketId)
@@ -45,11 +54,17 @@ func (h *Handler) TicketsTicketIdAiGeneratePost(ctx context.Context, req *api.Ti
 	systemPrompt := `
 あなたはtraPの渉外担当をサポートするAIアシスタントです。
 ユーザーから提供される「案件情報」と「これまでの経緯」を元に、次に送るべき返信メールのドラフトを作成してください。
+なお、情報の一部は「!!■■■!!」のように伏せ字になっています。伏せ字の部分は具体的な内容が不明なものとして扱い、文脈に合わせて自然な文章を作成してください。
 `
-	contextText := fmt.Sprintf("【案件名】: %s\n【詳細】: %s\n\n【これまでの経緯】:\n", ticket.Title, ticket.Description.String)
+
+	safeTitle := ApplyCensorIfNeed(role, ticket.Title)
+	safeDescription := ApplyCensorIfNeed(role, ticket.Description.String)
+
+	contextText := fmt.Sprintf("【案件名】: %s\n【詳細】: %s\n\n【これまでの経緯】:\n", safeTitle, safeDescription)
 	for _, n := range notes {
 		if n.Status == "sent" {
-			contextText += fmt.Sprintf("- %s (%s): %s\n", n.UserID, n.Type, n.Content)
+			safeContent := ApplyCensorIfNeed(role, n.Content)
+			contextText += fmt.Sprintf("- %s (%s): %s\n", n.UserID, n.Type, safeContent)
 		}
 	}
 
@@ -61,8 +76,10 @@ func (h *Handler) TicketsTicketIdAiGeneratePost(ctx context.Context, req *api.Ti
 
 	client := newAIClient()
 
+	//nolint:exhaustruct
 	streamReq := openai.ChatCompletionRequest{
 		Model: "gpt-4o-mini",
+		//nolint:exhaustruct
 		Messages: []openai.ChatCompletionMessage{
 			{Role: openai.ChatMessageRoleSystem, Content: systemPrompt},
 			{Role: openai.ChatMessageRoleUser, Content: userPrompt},
@@ -110,6 +127,8 @@ func (h *Handler) TicketsTicketIdAiGeneratePost(ctx context.Context, req *api.Ti
 }
 
 // POST /tickets/{ticketId}/notes/{noteId}/ai/review
+//
+//nolint:revive
 func (h *Handler) TicketsTicketIdNotesNoteIdAiReviewPost(ctx context.Context, params api.TicketsTicketIdNotesNoteIdAiReviewPostParams) (api.TicketsTicketIdNotesNoteIdAiReviewPostRes, error) {
 	note, err := h.repo.GetNoteByID(ctx, params.TicketId, params.NoteId)
 	if err != nil {
@@ -133,8 +152,10 @@ func (h *Handler) TicketsTicketIdNotesNoteIdAiReviewPost(ctx context.Context, pa
 
 	client := newAIClient()
 
+	//nolint:exhaustruct
 	req := openai.ChatCompletionRequest{
 		Model: "gpt-4o-mini",
+		//nolint:exhaustruct
 		Messages: []openai.ChatCompletionMessage{
 			{Role: openai.ChatMessageRoleSystem, Content: systemPrompt},
 			{Role: openai.ChatMessageRoleUser, Content: userPrompt},
