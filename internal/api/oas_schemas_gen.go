@@ -239,10 +239,20 @@ type CreateTicketUnauthorized struct{}
 
 func (*CreateTicketUnauthorized) createTicketRes() {}
 
+// DeleteReviewForbidden is response for DeleteReview operation.
+type DeleteReviewForbidden struct{}
+
+func (*DeleteReviewForbidden) deleteReviewRes() {}
+
 // DeleteReviewNoContent is response for DeleteReview operation.
 type DeleteReviewNoContent struct{}
 
 func (*DeleteReviewNoContent) deleteReviewRes() {}
+
+// DeleteReviewNotFound is response for DeleteReview operation.
+type DeleteReviewNotFound struct{}
+
+func (*DeleteReviewNotFound) deleteReviewRes() {}
 
 // DeleteTicketByIDForbidden is response for DeleteTicketByID operation.
 type DeleteTicketByIDForbidden struct{}

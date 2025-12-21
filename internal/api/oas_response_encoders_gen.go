@@ -246,6 +246,16 @@ func encodeDeleteReviewResponse(response DeleteReviewRes, w http.ResponseWriter)
 
 		return nil
 
+	case *DeleteReviewForbidden:
+		w.WriteHeader(403)
+
+		return nil
+
+	case *DeleteReviewNotFound:
+		w.WriteHeader(404)
+
+		return nil
+
 	case *ErrorResponseStatusCode:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		code := response.StatusCode

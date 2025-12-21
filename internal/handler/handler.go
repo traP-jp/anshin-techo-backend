@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/traP-jp/anshin-techo-backend/internal/api"
 	"github.com/traP-jp/anshin-techo-backend/internal/repository"
 )
 

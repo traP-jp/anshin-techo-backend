@@ -797,6 +797,10 @@ paths:
       responses:
         "204":
           description: "削除成功"
+        "403":
+          description: "権限なし"
+        "404":
+          description: "レビューが見つからない"
         default:
           $ref: "#/components/responses/ErrorResponse"
   # --- AI ---
