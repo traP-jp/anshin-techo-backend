@@ -10,6 +10,8 @@ import (
 )
 
 func TestTicket(t *testing.T) {
+	truncateAllTables(t)
+	
 	t.Run("create ticket", func(t *testing.T) {
 		t.Run("prepare create tickets", func(t *testing.T) {
 			t.Run("prepare: create users", func(t *testing.T) {

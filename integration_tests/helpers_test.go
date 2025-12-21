@@ -26,6 +26,28 @@ func escapeSnapshot(t *testing.T, s string) string {
 	return s
 }
 
+func truncateAllTables(t *testing.T) {
+	t.Helper()
+
+	stmts := []string{
+		"SET FOREIGN_KEY_CHECKS = 0",
+		"TRUNCATE TABLE note_review_assignees",
+		"TRUNCATE TABLE reviews",
+		"TRUNCATE TABLE notes",
+		"TRUNCATE TABLE ticket_sub_assignees",
+		"TRUNCATE TABLE ticket_stakeholders",
+		"TRUNCATE TABLE ticket_tags",
+		"TRUNCATE TABLE tickets",
+		"TRUNCATE TABLE users",
+		"SET FOREIGN_KEY_CHECKS = 1",
+	}
+
+	for _, stmt := range stmts {
+		_, err := globalDB.Exec(stmt)
+		assert.NilError(t, err)
+	}
+}
+
 func doRequest(t *testing.T, method, path string, user string, bodystr string) *httptest.ResponseRecorder {
 	t.Helper()
 
