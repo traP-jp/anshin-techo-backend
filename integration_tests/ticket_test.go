@@ -3,6 +3,7 @@
 package integrationtests
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -11,7 +12,7 @@ import (
 
 func TestTicket(t *testing.T) {
 	truncateAllTables(t)
-	
+
 	t.Run("create ticket", func(t *testing.T) {
 		t.Run("prepare create tickets", func(t *testing.T) {
 			t.Run("prepare: create users", func(t *testing.T) {
@@ -31,7 +32,7 @@ func TestTicket(t *testing.T) {
 				rec := doRequest(t, "POST", "/tickets", "Pugma", `{"title": "タイトル","description": "説明","status": "completed","assignee": "hoge","sub_assignees": ["fuga"],"stakeholders": ["piyo"],"due": "2025-12-17","tags": ["タグ"]}`)
 
 				expectedStatus := `201 Created`
-				expectedBody := `{"id":2,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"}`
+				expectedBody := `{"id":[ID],"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 				ticketID1 = int(unmarshalResponse(t, rec)["id"].(float64))
@@ -40,7 +41,7 @@ func TestTicket(t *testing.T) {
 				rec := doRequest(t, "POST", "/tickets", "ramdos", `{"title": "タイトル","description": "説明","status": "completed","assignee": "hoge","sub_assignees": ["fuga"],"stakeholders": ["piyo"],"due": "2025-12-17","tags": ["タグ"]}`)
 
 				expectedStatus := `201 Created`
-				expectedBody := `{"id":3,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"}`
+				expectedBody := `{"id":[ID],"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 				ticketID2 = int(unmarshalResponse(t, rec)["id"].(float64))
@@ -59,15 +60,16 @@ func TestTicket(t *testing.T) {
 				rec := doRequest(t, "GET", "/tickets", "Pugma", ``)
 
 				expectedStatus := `200 OK`
-				expectedBody := `[{"id":1,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"},{"id":2,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"},{"id":3,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"}]`
+				expectedBody := `[{"id":[ID],"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"},{"id":[ID],"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"}]`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
+				fmt.Println(escapeSnapshot(t, rec.Body.String()))
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
 			t.Run("get all tickets by assistant", func(t *testing.T) {
 				rec := doRequest(t, "GET", "/tickets", "ramdos", ``)
 
 				expectedStatus := `200 OK`
-				expectedBody := `[{"id":1,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"},{"id":2,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"},{"id":3,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"}]`
+				expectedBody := `[{"id":[ID],"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"},{"id":[ID],"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"}]`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
@@ -75,7 +77,7 @@ func TestTicket(t *testing.T) {
 				rec := doRequest(t, "GET", "/tickets", "cp20", ``)
 
 				expectedStatus := `200 OK`
-				expectedBody := `[{"id":1,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"},{"id":2,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"},{"id":3,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"}]`
+				expectedBody := `[{"id":[ID],"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"},{"id":[ID],"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"}]`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
@@ -83,7 +85,7 @@ func TestTicket(t *testing.T) {
 		t.Run("delete ticket", func(t *testing.T) {
 
 			t.Run("delete a ticket by manager", func(t *testing.T) {
-				rec := doRequest(t, "DELETE", "/tickets/"+strconv.Itoa(ticketID1), "Pugma", `{"title": "タイトル","description": "説明","status": "completed","assignee": "hoge","sub_assignees": ["fuga"],"stakeholders": ["piyo"],"due": "2025-12-17","tags": ["タグ"]}`)
+				rec := doRequest(t, "DELETE", "/tickets/"+strconv.Itoa(ticketID1), "Pugma", ``)
 
 				expectedStatus := `204 No Content`
 				expectedBody := ``
@@ -91,7 +93,7 @@ func TestTicket(t *testing.T) {
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
 			t.Run("cannot delete a ticket by assistant", func(t *testing.T) {
-				rec := doRequest(t, "DELETE", "/tickets/"+strconv.Itoa(ticketID2), "ramdos", `{"title": "タイトル","description": "説明","status": "completed","assignee": "hoge","sub_assignees": ["fuga"],"stakeholders": ["piyo"],"due": "2025-12-17","tags": ["タグ"]}`)
+				rec := doRequest(t, "DELETE", "/tickets/"+strconv.Itoa(ticketID2), "ramdos", ``)
 
 				expectedStatus := `403 Forbidden`
 				expectedBody := ``

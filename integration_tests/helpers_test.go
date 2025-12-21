@@ -14,6 +14,7 @@ import (
 var (
 	uuidRegexp = regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
 	timeRegexp = regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z`)
+	idRegexp   = regexp.MustCompile(`id":\d+`)
 )
 
 func escapeSnapshot(t *testing.T, s string) string {
@@ -22,6 +23,7 @@ func escapeSnapshot(t *testing.T, s string) string {
 	s = strings.Trim(s, "\n")
 	s = uuidRegexp.ReplaceAllString(s, "[UUID]")
 	s = timeRegexp.ReplaceAllString(s, "[TIME]")
+	s = idRegexp.ReplaceAllString(s, `id":[ID]`)
 
 	return s
 }

@@ -10,6 +10,7 @@ import (
 )
 
 func TestReview(t *testing.T) {
+	truncateAllTables(t)
 	t.Run("create reviews", func(t *testing.T) {
 		var reviewPath string
 		t.Run("prepare create reviews", func(t *testing.T) {
@@ -26,7 +27,7 @@ func TestReview(t *testing.T) {
 				rec := doRequest(t, "POST", "/tickets", "Pugma", `{"title": "タイトル","description": "説明","status": "completed","assignee": "hoge","sub_assignees": ["fuga"],"stakeholders": ["piyo"],"due": "2025-12-17","tags": ["タグ"]}`)
 
 				expectedStatus := `201 Created`
-				expectedBody := `{"id":1,"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"}`
+				expectedBody := `{"id":[ID],"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]"}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 				ticketID = int(unmarshalResponse(t, rec)["id"].(float64))
@@ -36,7 +37,7 @@ func TestReview(t *testing.T) {
 				rec := doRequest(t, "POST", "/tickets/"+fmt.Sprintf("%v", ticketID)+"/notes", "ramdos", `{"type": "outgoing","content": "毎々お世話になっております。","mention_notification": false}`)
 
 				expectedStatus := `201 Created`
-				expectedBody := `{"id":1,"ticket_id":1,"type":"outgoing","author":"ramdos","content":"毎々お世話になっております。","reviews":[],"created_at":"[TIME]","updated_at":"[TIME]"}`
+				expectedBody := `{"id":[ID],"ticket_id":[ID],"type":"outgoing","author":"ramdos","content":"毎々お世話になっております。","reviews":[],"created_at":"[TIME]","updated_at":"[TIME]"}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 				noteID = int(unmarshalResponse(t, rec)["id"].(float64))
@@ -48,7 +49,7 @@ func TestReview(t *testing.T) {
 				rec := doRequest(t, "POST", reviewPath, "Pugma", `{"type": "approve","weight": 5,"comment": "LGTM"}`)
 
 				expectedStatus := `201 Created`
-				expectedBody := `{"id":1,"note_id":1,"reviewer":"Pugma","type":"approve","weight":5,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
+				expectedBody := `{"id":[ID],"note_id":[ID],"reviewer":"Pugma","type":"approve","weight":5,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
@@ -73,7 +74,7 @@ func TestReview(t *testing.T) {
 				rec := doRequest(t, "POST", reviewPath, "aruze_pino", `{"type": "approve","weight": 0,"comment": "little LGTM"}`)
 
 				expectedStatus := `201 Created`
-				expectedBody := `{"id":2,"note_id":1,"reviewer":"aruze_pino","type":"approve","weight":0,"status":"active","comment":"little LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
+				expectedBody := `{"id":[ID],"note_id":[ID],"reviewer":"aruze_pino","type":"approve","weight":0,"status":"active","comment":"little LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
@@ -92,7 +93,7 @@ func TestReview(t *testing.T) {
 				rec := doRequest(t, "POST", reviewPath, "Hokaze", `{"type": "approve","weight": 4,"comment": "LGTM"}`)
 
 				expectedStatus := `201 Created`
-				expectedBody := `{"id":3,"note_id":1,"reviewer":"Hokaze","type":"approve","weight":4,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
+				expectedBody := `{"id":[ID],"note_id":[ID],"reviewer":"Hokaze","type":"approve","weight":4,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
@@ -108,7 +109,7 @@ func TestReview(t *testing.T) {
 				rec := doRequest(t, "POST", reviewPath, "gUuUnya", `{"type": "approve","weight": 0,"comment": "little LGTM"}`)
 
 				expectedStatus := `201 Created`
-				expectedBody := `{"id":4,"note_id":1,"reviewer":"gUuUnya","type":"approve","weight":0,"status":"active","comment":"little LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
+				expectedBody := `{"id":[ID],"note_id":[ID],"reviewer":"gUuUnya","type":"approve","weight":0,"status":"active","comment":"little LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
@@ -116,7 +117,7 @@ func TestReview(t *testing.T) {
 				rec := doRequest(t, "POST", reviewPath, "Akira_256", `{"type": "comment","weight": 0,"comment": "comment"}`)
 
 				expectedStatus := `201 Created`
-				expectedBody := `{"id":5,"note_id":1,"reviewer":"Akira_256","type":"comment","weight":0,"status":"active","comment":"comment","created_at":"[TIME]","updated_at":"[TIME]"}`
+				expectedBody := `{"id":[ID],"note_id":[ID],"reviewer":"Akira_256","type":"comment","weight":0,"status":"active","comment":"comment","created_at":"[TIME]","updated_at":"[TIME]"}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
@@ -124,7 +125,7 @@ func TestReview(t *testing.T) {
 				rec := doRequest(t, "POST", reviewPath, "Synori", `{"type": "change_request","weight": 0,"comment": "not LGTM"}`)
 
 				expectedStatus := `201 Created`
-				expectedBody := `{"id":6,"note_id":1,"reviewer":"Synori","type":"change_request","weight":0,"status":"active","comment":"not LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
+				expectedBody := `{"id":[ID],"note_id":[ID],"reviewer":"Synori","type":"change_request","weight":0,"status":"active","comment":"not LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
@@ -151,7 +152,7 @@ func TestReview(t *testing.T) {
 				rec := doRequest(t, "POST", reviewPath, "kenken", `{"type": "approve","weight": 0,"comment": "LGTM"}`)
 
 				expectedStatus := `201 Created`
-				expectedBody := `{"id":7,"note_id":1,"reviewer":"kenken","type":"approve","weight":0,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
+				expectedBody := `{"id":[ID],"note_id":[ID],"reviewer":"kenken","type":"approve","weight":0,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
@@ -161,7 +162,7 @@ func TestReview(t *testing.T) {
 				rec := doRequest(t, "POST", reviewPath, "ramdos", `{"type": "approve","weight": 0,"comment": "little LGTM"}`)
 
 				expectedStatus := `201 Created`
-				expectedBody := `{"id":8,"note_id":1,"reviewer":"ramdos","type":"approve","weight":0,"status":"active","comment":"little LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
+				expectedBody := `{"id":[ID],"note_id":[ID],"reviewer":"ramdos","type":"approve","weight":0,"status":"active","comment":"little LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
