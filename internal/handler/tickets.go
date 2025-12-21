@@ -17,12 +17,9 @@ func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (a
 	creator := getUserID(ctx)
 	role, err := h.repo.GetUserRoleByTraqID(ctx, creator)
 	if err != nil {
-		if errors.Is(err, repository.ErrUserNotFound) {
-			return &api.CreateTicketForbidden{}, nil
-		}
-
 		return nil, fmt.Errorf("get user role from repository: %w", err)
 	}
+
 	if role != "manager" && role != "assistant" {
 		return &api.CreateTicketForbidden{}, nil
 	}
@@ -88,6 +85,7 @@ func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (a
 // 誰でも
 func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (api.GetTicketsRes, error) {
 	userID := getUserID(ctx)
+
 	role, err := h.repo.GetUserRoleByTraqID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get user role: %w", err)
@@ -154,12 +152,9 @@ func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (
 // 本職のみ
 func (h *Handler) DeleteTicketByID(ctx context.Context, params api.DeleteTicketByIDParams) (api.DeleteTicketByIDRes, error) {
 	deleter := getUserID(ctx)
+
 	role, err := h.repo.GetUserRoleByTraqID(ctx, deleter)
 	if err != nil {
-		if errors.Is(err, repository.ErrUserNotFound) {
-			return &api.DeleteTicketByIDForbidden{}, nil
-		}
-
 		return nil, fmt.Errorf("get user role from repository: %w", err)
 	}
 	if role != "manager" {
@@ -182,6 +177,7 @@ func (h *Handler) DeleteTicketByID(ctx context.Context, params api.DeleteTicketB
 // GET /tickets/{ticketId}
 func (h *Handler) GetTicketByID(ctx context.Context, params api.GetTicketByIDParams) (api.GetTicketByIDRes, error) {
 	userID := getUserID(ctx)
+
 	role, err := h.repo.GetUserRoleByTraqID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get user role: %w", err)
@@ -230,9 +226,9 @@ func (h *Handler) GetTicketByID(ctx context.Context, params api.GetTicketByIDPar
 	}
 	res := &api.GetTicketByIDOK{
 		ID:    ticket.ID,
-		Title: ApplyCensorIfNeed(role, ticket.Title), 
+		Title: ApplyCensorIfNeed(role, ticket.Title),
 		Description: api.OptString{
-			Value: ApplyCensorIfNeed(role, ticket.Description.String), 
+			Value: ApplyCensorIfNeed(role, ticket.Description.String),
 			Set:   ticket.Description.Valid,
 		},
 		Due:          api.OptNilDate{Value: ticket.Due.Time, Set: ticket.Due.Valid, Null: !ticket.Due.Valid},
@@ -267,10 +263,12 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 	}
 
 	updater := getUserID(ctx)
+
 	role, err := h.repo.GetUserRoleByTraqID(ctx, updater)
 	if err != nil {
 		return nil, fmt.Errorf("get user role from repository: %w", err)
 	}
+	
 	ok := false
 	if role == "manager" || role == "assistant" {
 		ok = true
@@ -278,7 +276,6 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 		for _, authorized := range append(append(ticket.Stakeholders, ticket.SubAssignees...), ticket.Assignee) {
 			if authorized == updater {
 				ok = true
-
 				break
 			}
 		}
@@ -356,6 +353,7 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 
 	return &api.UpdateTicketByIDOK{}, nil
 }
+
 
 func convertRepositoryNote(note *repository.Note, reviews []*repository.Review, role string) (api.Note, error) {
 	noteType, err := toAPINoteType(note.Type)

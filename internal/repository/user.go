@@ -63,7 +63,7 @@ func (r *Repository) GetUserRoleByTraqID(ctx context.Context, traqID string) (st
 	err := r.db.GetContext(ctx, &role, "SELECT role FROM users WHERE traq_id = ?", traqID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", fmt.Errorf("%w: %s", ErrUserNotFound, traqID)
+			return "", nil
 		}
 
 		return "", fmt.Errorf("get user role by traq id: %w", err)
