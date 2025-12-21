@@ -268,7 +268,7 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 	if err != nil {
 		return nil, fmt.Errorf("get user role from repository: %w", err)
 	}
-	
+
 	ok := false
 	if role == "manager" || role == "assistant" {
 		ok = true
@@ -276,6 +276,7 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 		for _, authorized := range append(append(ticket.Stakeholders, ticket.SubAssignees...), ticket.Assignee) {
 			if authorized == updater {
 				ok = true
+
 				break
 			}
 		}
@@ -354,7 +355,6 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 	return &api.UpdateTicketByIDOK{}, nil
 }
 
-
 func convertRepositoryNote(note *repository.Note, reviews []*repository.Review, role string) (api.Note, error) {
 	noteType, err := toAPINoteType(note.Type)
 	if err != nil {
@@ -382,7 +382,7 @@ func convertRepositoryNote(note *repository.Note, reviews []*repository.Review, 
 		Type:     noteType,
 		Status:   api.OptNoteStatus{Value: noteStatus, Set: true},
 		Author:   note.UserID,
-		Content:  ApplyCensorIfNeed(role, note.Content), 
+		Content:  ApplyCensorIfNeed(role, note.Content),
 		Reviews:  apiReviews,
 		CreatedAt: api.OptDateTime{
 			Value: note.CreatedAt,
