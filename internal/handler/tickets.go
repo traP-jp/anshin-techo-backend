@@ -137,7 +137,7 @@ func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (
 		})
 	}
 	result := api.GetTicketsOKApplicationJSON(res)
-	
+
 	return &result, nil
 }
 
@@ -181,6 +181,38 @@ func (h *Handler) GetTicketByID(ctx context.Context, params api.GetTicketByIDPar
 
 		return nil, fmt.Errorf("get ticket from repository: %w", err)
 	}
+
+	notes, err := h.repo.GetNotes(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("get notes from repository: %w", err)
+	}
+
+	noteIDs := make([]int64, 0, len(notes))
+	for _, note := range notes {
+		noteIDs = append(noteIDs, note.ID)
+	}
+
+	reviewsByNoteID := map[int64][]*repository.Review{}
+	if len(noteIDs) > 0 {
+		reviews, getReviewsErr := h.repo.GetReviewsByNoteIDs(ctx, id, noteIDs)
+		if getReviewsErr != nil {
+			return nil, fmt.Errorf("get note reviews from repository: %w", getReviewsErr)
+		}
+
+		for _, review := range reviews {
+			reviewsByNoteID[review.NoteID] = append(reviewsByNoteID[review.NoteID], review)
+		}
+	}
+
+	apiNotes := make([]api.Note, 0, len(notes))
+	for _, note := range notes {
+		apiNote, convertErr := convertRepositoryNote(note, reviewsByNoteID[note.ID])
+		if convertErr != nil {
+			return nil, fmt.Errorf("convert note: %w", convertErr)
+		}
+
+		apiNotes = append(apiNotes, apiNote)
+	}
 	res := &api.GetTicketByIDOK{
 		ID:           ticket.ID,
 		Title:        ticket.Title,
@@ -193,7 +225,7 @@ func (h *Handler) GetTicketByID(ctx context.Context, params api.GetTicketByIDPar
 		Tags:         ticket.Tags,
 		CreatedAt:    ticket.CreatedAt,
 		UpdatedAt:    api.OptDateTime{Value: ticket.UpdatedAt, Set: true},
-		Notes:        []api.Note{}, // TODO: ノート機能実装時に追加
+		Notes:        apiNotes,
 	}
 
 	return res, nil
@@ -300,9 +332,79 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 		if errors.Is(err, repository.ErrTagContainsComma) {
 			return &api.UpdateTicketByIDBadRequest{}, nil
 		}
-		
+
 		return nil, fmt.Errorf("update ticket in repository: %w", err)
 	}
-	
+
 	return &api.UpdateTicketByIDOK{}, nil
+}
+
+func convertRepositoryNote(note *repository.Note, reviews []*repository.Review) (api.Note, error) {
+	noteType, err := toAPINoteType(note.Type)
+	if err != nil {
+		return api.Note{}, err
+	}
+
+	noteStatus, err := toAPINoteStatus(note.Status)
+	if err != nil {
+		return api.Note{}, err
+	}
+
+	apiReviews := make([]api.Review, 0, len(reviews))
+	for _, review := range reviews {
+		apiReview, convertErr := convertRepositoryReview(review)
+		if convertErr != nil {
+			return api.Note{}, convertErr
+		}
+
+		apiReviews = append(apiReviews, *apiReview)
+	}
+
+	return api.Note{
+		ID:       note.ID,
+		TicketID: note.TicketID,
+		Type:     noteType,
+		Status:   api.OptNoteStatus{Value: noteStatus, Set: true},
+		Author:   note.UserID,
+		Content:  note.Content,
+		Reviews:  apiReviews,
+		CreatedAt: api.OptDateTime{
+			Value: note.CreatedAt,
+			Set:   true,
+		},
+		UpdatedAt: api.OptDateTime{
+			Value: note.UpdatedAt,
+			Set:   true,
+		},
+	}, nil
+}
+
+func toAPINoteType(noteType string) (api.NoteType, error) {
+	switch noteType {
+	case "outgoing":
+		return api.NoteTypeOutgoing, nil
+	case "incoming":
+		return api.NoteTypeIncoming, nil
+	case "other":
+		return api.NoteTypeOther, nil
+	default:
+		return "", fmt.Errorf("unknown note type: %s", noteType)
+	}
+}
+
+func toAPINoteStatus(status string) (api.NoteStatus, error) {
+	switch status {
+	case "draft":
+		return api.NoteStatusDraft, nil
+	case "waiting_review":
+		return api.NoteStatusWaitingReview, nil
+	case "waiting_sent":
+		return api.NoteStatusWaitingSent, nil
+	case "sent":
+		return api.NoteStatusSent, nil
+	case "canceled":
+		return api.NoteStatusCanceled, nil
+	default:
+		return "", fmt.Errorf("unknown note status: %s", status)
+	}
 }
