@@ -485,8 +485,6 @@ paths:
           description: "権限なし"
         default:
           $ref: "#/components/responses/ErrorResponse"
-        default:
-          $ref: "#/components/responses/ErrorResponse"
 
   /tickets/{ticketId}:
     parameters:
@@ -741,8 +739,6 @@ paths:
           description: "すでにレビュー済み"
         default:
           $ref: "#/components/responses/ErrorResponse"
-        default:
-          $ref: "#/components/responses/ErrorResponse"
 
   /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}:
     parameters:
@@ -833,12 +829,12 @@ paths:
             text/event-stream:
               schema:
                 type: string
-                format: binary 
+                format: binary
         "404":
           description: "チケットが見つからない"
         "500":
           description: "サーバーエラー"
-          
+
   /tickets/{ticketId}/notes/{noteId}/ai/review:
     parameters:
       - name: ticketId

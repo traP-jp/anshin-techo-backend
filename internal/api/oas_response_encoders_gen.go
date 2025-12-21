@@ -66,7 +66,6 @@ func encodeConfigGetResponse(response ConfigGetRes, w http.ResponseWriter) error
 func encodeConfigPostResponse(response ConfigPostRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
 	case *Config:
-	case *Config:
 		if err := func() error {
 			if err := response.Validate(); err != nil {
 				return err
@@ -138,6 +137,21 @@ func encodeCreateReviewResponse(response CreateReviewRes, w http.ResponseWriter)
 
 		return nil
 
+	case *CreateReviewBadRequest:
+		w.WriteHeader(400)
+
+		return nil
+
+	case *CreateReviewNotFound:
+		w.WriteHeader(404)
+
+		return nil
+
+	case *CreateReviewConflict:
+		w.WriteHeader(409)
+
+		return nil
+
 	case *ErrorResponseStatusCode:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		code := response.StatusCode
@@ -186,14 +200,17 @@ func encodeCreateTicketResponse(response CreateTicketRes, w http.ResponseWriter)
 		return nil
 
 	case *CreateTicketBadRequest:
-	case *CreateTicketBadRequest:
 		w.WriteHeader(400)
 
 		return nil
 
 	case *CreateTicketUnauthorized:
-	case *CreateTicketUnauthorized:
 		w.WriteHeader(401)
+
+		return nil
+
+	case *CreateTicketForbidden:
+		w.WriteHeader(403)
 
 		return nil
 
@@ -222,24 +239,47 @@ func encodeCreateTicketResponse(response CreateTicketRes, w http.ResponseWriter)
 	}
 }
 
-func encodeDeleteReviewResponse(response *DeleteReviewNoContent, w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func encodeDeleteReviewResponse(response DeleteReviewRes, w http.ResponseWriter) error {
+	switch response := response.(type) {
+	case *DeleteReviewNoContent:
+		w.WriteHeader(204)
 
-	return nil
-}
+		return nil
 
-func encodeDeleteTicketByIDResponse(response DeleteTicketByIDRes, w http.ResponseWriter) error {
-func encodeDeleteReviewResponse(response *DeleteReviewNoContent, w http.ResponseWriter) error {
-	w.WriteHeader(204)
+	case *ErrorResponseStatusCode:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		code := response.StatusCode
+		if code == 0 {
+			// Set default status code.
+			code = http.StatusOK
+		}
+		w.WriteHeader(code)
 
-	return nil
+		e := new(jx.Encoder)
+		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		if code >= http.StatusInternalServerError {
+			return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
+		}
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
 }
 
 func encodeDeleteTicketByIDResponse(response DeleteTicketByIDRes, w http.ResponseWriter) error {
 	switch response := response.(type) {
 	case *DeleteTicketByIDNoContent:
-	case *DeleteTicketByIDNoContent:
 		w.WriteHeader(204)
+
+		return nil
+
+	case *DeleteTicketByIDUnauthorized:
+		w.WriteHeader(401)
 
 		return nil
 
@@ -297,6 +337,11 @@ func encodeGetTicketByIDResponse(response GetTicketByIDRes, w http.ResponseWrite
 		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")
 		}
+
+		return nil
+
+	case *GetTicketByIDUnauthorized:
+		w.WriteHeader(401)
 
 		return nil
 
@@ -619,6 +664,11 @@ func encodeUpdateTicketByIDResponse(response UpdateTicketByIDRes, w http.Respons
 
 		return nil
 
+	case *UpdateTicketByIDUnauthorized:
+		w.WriteHeader(401)
+
+		return nil
+
 	case *UpdateTicketByIDForbidden:
 		w.WriteHeader(403)
 
@@ -736,26 +786,4 @@ func encodeUsersPutResponse(response UsersPutRes, w http.ResponseWriter) error {
 	default:
 		return errors.Errorf("unexpected response type: %T", response)
 	}
-}
-
-func encodeErrorResponse(response *ErrorResponseStatusCode, w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	code := response.StatusCode
-	if code == 0 {
-		// Set default status code.
-		code = http.StatusOK
-	}
-	w.WriteHeader(code)
-
-	e := new(jx.Encoder)
-	response.Response.Encode(e)
-	if _, err := e.WriteTo(w); err != nil {
-		return errors.Wrap(err, "write")
-	}
-
-	if code >= http.StatusInternalServerError {
-		return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
-	}
-	return nil
-
 }

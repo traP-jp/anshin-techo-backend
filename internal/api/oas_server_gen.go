@@ -14,13 +14,11 @@ type Handler interface {
 	//
 	// GET /config
 	ConfigGet(ctx context.Context) (ConfigGetRes, error)
-	ConfigGet(ctx context.Context) (ConfigGetRes, error)
 	// ConfigPost implements POST /config operation.
 	//
 	// 本職権限のみ実行可能.
 	//
 	// POST /config
-	ConfigPost(ctx context.Context, req *Config) (ConfigPostRes, error)
 	ConfigPost(ctx context.Context, req *Config) (ConfigPostRes, error)
 	// CreateReview implements createReview operation.
 	//
@@ -36,27 +34,17 @@ type Handler interface {
 	//
 	// POST /tickets
 	CreateTicket(ctx context.Context, req *CreateTicketReq) (CreateTicketRes, error)
-	CreateReview(ctx context.Context, req *CreateReviewReq, params CreateReviewParams) (CreateReviewRes, error)
-	// CreateTicket implements createTicket operation.
-	//
-	// 新規チケットを作成する。.
-	//
-	// POST /tickets
-	CreateTicket(ctx context.Context, req *CreateTicketReq) (CreateTicketRes, error)
 	// DeleteReview implements deleteReview operation.
 	//
 	// レビュー取り消し.
 	//
 	// DELETE /tickets/{ticketId}/notes/{noteId}/reviews/{reviewId}
-	DeleteReview(ctx context.Context, params DeleteReviewParams) error
-	// DeleteTicketByID implements deleteTicketByID operation.
+	DeleteReview(ctx context.Context, params DeleteReviewParams) (DeleteReviewRes, error)
 	// DeleteTicketByID implements deleteTicketByID operation.
 	//
 	// 本職のみ実行可能。.
 	//
 	// DELETE /tickets/{ticketId}
-	DeleteTicketByID(ctx context.Context, params DeleteTicketByIDParams) (DeleteTicketByIDRes, error)
-	// GetTicketByID implements getTicketByID operation.
 	DeleteTicketByID(ctx context.Context, params DeleteTicketByIDParams) (DeleteTicketByIDRes, error)
 	// GetTicketByID implements getTicketByID operation.
 	//
@@ -113,12 +101,6 @@ type Handler interface {
 	//
 	// PATCH /tickets/{ticketId}
 	UpdateTicketByID(ctx context.Context, req OptUpdateTicketByIDReq, params UpdateTicketByIDParams) (UpdateTicketByIDRes, error)
-	// UpdateTicketByID implements updateTicketByID operation.
-	//
-	// 関係者と渉外のみ実行可能。.
-	//
-	// PATCH /tickets/{ticketId}
-	UpdateTicketByID(ctx context.Context, req OptUpdateTicketByIDReq, params UpdateTicketByIDParams) (UpdateTicketByIDRes, error)
 	// UsersGet implements GET /users operation.
 	//
 	// ユーザー一覧取得.
@@ -131,10 +113,6 @@ type Handler interface {
 	//
 	// PUT /users
 	UsersPut(ctx context.Context, req []User) (UsersPutRes, error)
-	// NewError creates *ErrorResponseStatusCode from error returned by handler.
-	//
-	// Used for common default response.
-	NewError(ctx context.Context, err error) *ErrorResponseStatusCode
 }
 
 // Server implements http server based on OpenAPI v3 specification and

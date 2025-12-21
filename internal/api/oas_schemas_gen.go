@@ -78,6 +78,21 @@ func (s *ConfigReminderInterval) SetNotesentHour(val int) {
 	s.NotesentHour = val
 }
 
+// CreateReviewBadRequest is response for CreateReview operation.
+type CreateReviewBadRequest struct{}
+
+func (*CreateReviewBadRequest) createReviewRes() {}
+
+// CreateReviewConflict is response for CreateReview operation.
+type CreateReviewConflict struct{}
+
+func (*CreateReviewConflict) createReviewRes() {}
+
+// CreateReviewNotFound is response for CreateReview operation.
+type CreateReviewNotFound struct{}
+
+func (*CreateReviewNotFound) createReviewRes() {}
+
 type CreateReviewReq struct {
 	Type ReviewType `json:"type"`
 	// 承認の強さ.
@@ -119,6 +134,11 @@ func (s *CreateReviewReq) SetComment(val OptString) {
 type CreateTicketBadRequest struct{}
 
 func (*CreateTicketBadRequest) createTicketRes() {}
+
+// CreateTicketForbidden is response for CreateTicket operation.
+type CreateTicketForbidden struct{}
+
+func (*CreateTicketForbidden) createTicketRes() {}
 
 type CreateTicketReq struct {
 	Title       string       `json:"title"`
@@ -222,6 +242,8 @@ func (*CreateTicketUnauthorized) createTicketRes() {}
 // DeleteReviewNoContent is response for DeleteReview operation.
 type DeleteReviewNoContent struct{}
 
+func (*DeleteReviewNoContent) deleteReviewRes() {}
+
 // DeleteTicketByIDForbidden is response for DeleteTicketByID operation.
 type DeleteTicketByIDForbidden struct{}
 
@@ -236,6 +258,11 @@ func (*DeleteTicketByIDNoContent) deleteTicketByIDRes() {}
 type DeleteTicketByIDNotFound struct{}
 
 func (*DeleteTicketByIDNotFound) deleteTicketByIDRes() {}
+
+// DeleteTicketByIDUnauthorized is response for DeleteTicketByID operation.
+type DeleteTicketByIDUnauthorized struct{}
+
+func (*DeleteTicketByIDUnauthorized) deleteTicketByIDRes() {}
 
 // Ref: #/components/schemas/Error
 type Error struct {
@@ -283,6 +310,7 @@ func (*ErrorResponseStatusCode) configGetRes()                        {}
 func (*ErrorResponseStatusCode) configPostRes()                       {}
 func (*ErrorResponseStatusCode) createReviewRes()                     {}
 func (*ErrorResponseStatusCode) createTicketRes()                     {}
+func (*ErrorResponseStatusCode) deleteReviewRes()                     {}
 func (*ErrorResponseStatusCode) deleteTicketByIDRes()                 {}
 func (*ErrorResponseStatusCode) getTicketByIDRes()                    {}
 func (*ErrorResponseStatusCode) getTicketsRes()                       {}
@@ -445,6 +473,11 @@ func (s *GetTicketByIDOK) SetNotes(val []Note) {
 }
 
 func (*GetTicketByIDOK) getTicketByIDRes() {}
+
+// GetTicketByIDUnauthorized is response for GetTicketByID operation.
+type GetTicketByIDUnauthorized struct{}
+
+func (*GetTicketByIDUnauthorized) getTicketByIDRes() {}
 
 // GetTicketsBadRequest is response for GetTickets operation.
 type GetTicketsBadRequest struct{}
@@ -919,52 +952,6 @@ func (o OptGetTicketsSort) Or(d GetTicketsSort) GetTicketsSort {
 	return d
 }
 
-// NewOptGetTicketsSort returns new OptGetTicketsSort with value set to v.
-func NewOptGetTicketsSort(v GetTicketsSort) OptGetTicketsSort {
-	return OptGetTicketsSort{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptGetTicketsSort is optional GetTicketsSort.
-type OptGetTicketsSort struct {
-	Value GetTicketsSort
-	Set   bool
-}
-
-// IsSet returns true if OptGetTicketsSort was set.
-func (o OptGetTicketsSort) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptGetTicketsSort) Reset() {
-	var v GetTicketsSort
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptGetTicketsSort) SetTo(v GetTicketsSort) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptGetTicketsSort) Get() (v GetTicketsSort, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptGetTicketsSort) Or(d GetTicketsSort) GetTicketsSort {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptInt returns new OptInt with value set to v.
 func NewOptInt(v int) OptInt {
 	return OptInt{
@@ -1261,9 +1248,6 @@ func (o OptTicketStatus) Or(d TicketStatus) TicketStatus {
 // NewOptUpdateReviewReq returns new OptUpdateReviewReq with value set to v.
 func NewOptUpdateReviewReq(v UpdateReviewReq) OptUpdateReviewReq {
 	return OptUpdateReviewReq{
-// NewOptUpdateReviewReq returns new OptUpdateReviewReq with value set to v.
-func NewOptUpdateReviewReq(v UpdateReviewReq) OptUpdateReviewReq {
-	return OptUpdateReviewReq{
 		Value: v,
 		Set:   true,
 	}
@@ -1272,20 +1256,13 @@ func NewOptUpdateReviewReq(v UpdateReviewReq) OptUpdateReviewReq {
 // OptUpdateReviewReq is optional UpdateReviewReq.
 type OptUpdateReviewReq struct {
 	Value UpdateReviewReq
-// OptUpdateReviewReq is optional UpdateReviewReq.
-type OptUpdateReviewReq struct {
-	Value UpdateReviewReq
 	Set   bool
 }
 
 // IsSet returns true if OptUpdateReviewReq was set.
 func (o OptUpdateReviewReq) IsSet() bool { return o.Set }
-// IsSet returns true if OptUpdateReviewReq was set.
-func (o OptUpdateReviewReq) IsSet() bool { return o.Set }
 
 // Reset unsets value.
-func (o *OptUpdateReviewReq) Reset() {
-	var v UpdateReviewReq
 func (o *OptUpdateReviewReq) Reset() {
 	var v UpdateReviewReq
 	o.Value = v
@@ -1294,13 +1271,11 @@ func (o *OptUpdateReviewReq) Reset() {
 
 // SetTo sets value to v.
 func (o *OptUpdateReviewReq) SetTo(v UpdateReviewReq) {
-func (o *OptUpdateReviewReq) SetTo(v UpdateReviewReq) {
 	o.Set = true
 	o.Value = v
 }
 
 // Get returns value and boolean that denotes whether value was set.
-func (o OptUpdateReviewReq) Get() (v UpdateReviewReq, ok bool) {
 func (o OptUpdateReviewReq) Get() (v UpdateReviewReq, ok bool) {
 	if !o.Set {
 		return v, false
@@ -1309,7 +1284,6 @@ func (o OptUpdateReviewReq) Get() (v UpdateReviewReq, ok bool) {
 }
 
 // Or returns value if set, or given parameter if does not.
-func (o OptUpdateReviewReq) Or(d UpdateReviewReq) UpdateReviewReq {
 func (o OptUpdateReviewReq) Or(d UpdateReviewReq) UpdateReviewReq {
 	if v, ok := o.Get(); ok {
 		return v
@@ -1320,9 +1294,6 @@ func (o OptUpdateReviewReq) Or(d UpdateReviewReq) UpdateReviewReq {
 // NewOptUpdateTicketByIDReq returns new OptUpdateTicketByIDReq with value set to v.
 func NewOptUpdateTicketByIDReq(v UpdateTicketByIDReq) OptUpdateTicketByIDReq {
 	return OptUpdateTicketByIDReq{
-// NewOptUpdateTicketByIDReq returns new OptUpdateTicketByIDReq with value set to v.
-func NewOptUpdateTicketByIDReq(v UpdateTicketByIDReq) OptUpdateTicketByIDReq {
-	return OptUpdateTicketByIDReq{
 		Value: v,
 		Set:   true,
 	}
@@ -1331,20 +1302,13 @@ func NewOptUpdateTicketByIDReq(v UpdateTicketByIDReq) OptUpdateTicketByIDReq {
 // OptUpdateTicketByIDReq is optional UpdateTicketByIDReq.
 type OptUpdateTicketByIDReq struct {
 	Value UpdateTicketByIDReq
-// OptUpdateTicketByIDReq is optional UpdateTicketByIDReq.
-type OptUpdateTicketByIDReq struct {
-	Value UpdateTicketByIDReq
 	Set   bool
 }
 
 // IsSet returns true if OptUpdateTicketByIDReq was set.
 func (o OptUpdateTicketByIDReq) IsSet() bool { return o.Set }
-// IsSet returns true if OptUpdateTicketByIDReq was set.
-func (o OptUpdateTicketByIDReq) IsSet() bool { return o.Set }
 
 // Reset unsets value.
-func (o *OptUpdateTicketByIDReq) Reset() {
-	var v UpdateTicketByIDReq
 func (o *OptUpdateTicketByIDReq) Reset() {
 	var v UpdateTicketByIDReq
 	o.Value = v
@@ -1353,13 +1317,11 @@ func (o *OptUpdateTicketByIDReq) Reset() {
 
 // SetTo sets value to v.
 func (o *OptUpdateTicketByIDReq) SetTo(v UpdateTicketByIDReq) {
-func (o *OptUpdateTicketByIDReq) SetTo(v UpdateTicketByIDReq) {
 	o.Set = true
 	o.Value = v
 }
 
 // Get returns value and boolean that denotes whether value was set.
-func (o OptUpdateTicketByIDReq) Get() (v UpdateTicketByIDReq, ok bool) {
 func (o OptUpdateTicketByIDReq) Get() (v UpdateTicketByIDReq, ok bool) {
 	if !o.Set {
 		return v, false
@@ -1368,7 +1330,6 @@ func (o OptUpdateTicketByIDReq) Get() (v UpdateTicketByIDReq, ok bool) {
 }
 
 // Or returns value if set, or given parameter if does not.
-func (o OptUpdateTicketByIDReq) Or(d UpdateTicketByIDReq) UpdateTicketByIDReq {
 func (o OptUpdateTicketByIDReq) Or(d UpdateTicketByIDReq) UpdateTicketByIDReq {
 	if v, ok := o.Get(); ok {
 		return v
@@ -1485,8 +1446,6 @@ func (s *Review) SetCreatedAt(val OptDateTime) {
 func (s *Review) SetUpdatedAt(val OptDateTime) {
 	s.UpdatedAt = val
 }
-
-func (*Review) createReviewRes() {}
 
 func (*Review) createReviewRes() {}
 
@@ -1722,7 +1681,6 @@ func (s *Ticket) SetUpdatedAt(val OptDateTime) {
 	s.UpdatedAt = val
 }
 
-func (*Ticket) createTicketRes() {}
 func (*Ticket) createTicketRes() {}
 
 // チケットの進行状況
@@ -2058,110 +2016,19 @@ func (*UpdateTicketByIDBadRequest) updateTicketByIDRes() {}
 
 // UpdateTicketByIDForbidden is response for UpdateTicketByID operation.
 type UpdateTicketByIDForbidden struct{}
-type TraQAuth struct {
-	APIKey string
-	Roles  []string
-}
 
-// GetAPIKey returns the value of APIKey.
-func (s *TraQAuth) GetAPIKey() string {
-	return s.APIKey
-}
-
-// GetRoles returns the value of Roles.
-func (s *TraQAuth) GetRoles() []string {
-	return s.Roles
-}
-
-// SetAPIKey sets the value of APIKey.
-func (s *TraQAuth) SetAPIKey(val string) {
-	s.APIKey = val
-}
-
-// SetRoles sets the value of Roles.
-func (s *TraQAuth) SetRoles(val []string) {
-	s.Roles = val
-}
-
-// UpdateReviewForbidden is response for UpdateReview operation.
-type UpdateReviewForbidden struct{}
-
-func (*UpdateReviewForbidden) updateReviewRes() {}
-
-// UpdateReviewNotFound is response for UpdateReview operation.
-type UpdateReviewNotFound struct{}
-
-func (*UpdateReviewNotFound) updateReviewRes() {}
-
-// UpdateReviewOK is response for UpdateReview operation.
-type UpdateReviewOK struct{}
-
-func (*UpdateReviewOK) updateReviewRes() {}
-
-type UpdateReviewReq struct {
-	Type    OptReviewType `json:"type"`
-	Weight  OptInt        `json:"weight"`
-	Comment OptString     `json:"comment"`
-}
-
-// GetType returns the value of Type.
-func (s *UpdateReviewReq) GetType() OptReviewType {
-	return s.Type
-}
-
-// GetWeight returns the value of Weight.
-func (s *UpdateReviewReq) GetWeight() OptInt {
-	return s.Weight
-}
-
-// GetComment returns the value of Comment.
-func (s *UpdateReviewReq) GetComment() OptString {
-	return s.Comment
-}
-
-// SetType sets the value of Type.
-func (s *UpdateReviewReq) SetType(val OptReviewType) {
-	s.Type = val
-}
-
-// SetWeight sets the value of Weight.
-func (s *UpdateReviewReq) SetWeight(val OptInt) {
-	s.Weight = val
-}
-
-// SetComment sets the value of Comment.
-func (s *UpdateReviewReq) SetComment(val OptString) {
-	s.Comment = val
-}
-
-// UpdateTicketByIDBadRequest is response for UpdateTicketByID operation.
-type UpdateTicketByIDBadRequest struct{}
-
-func (*UpdateTicketByIDBadRequest) updateTicketByIDRes() {}
-
-// UpdateTicketByIDForbidden is response for UpdateTicketByID operation.
-type UpdateTicketByIDForbidden struct{}
-
-func (*UpdateTicketByIDForbidden) updateTicketByIDRes() {}
 func (*UpdateTicketByIDForbidden) updateTicketByIDRes() {}
 
 // UpdateTicketByIDNotFound is response for UpdateTicketByID operation.
 type UpdateTicketByIDNotFound struct{}
-// UpdateTicketByIDNotFound is response for UpdateTicketByID operation.
-type UpdateTicketByIDNotFound struct{}
 
-func (*UpdateTicketByIDNotFound) updateTicketByIDRes() {}
 func (*UpdateTicketByIDNotFound) updateTicketByIDRes() {}
 
 // UpdateTicketByIDOK is response for UpdateTicketByID operation.
 type UpdateTicketByIDOK struct{}
-// UpdateTicketByIDOK is response for UpdateTicketByID operation.
-type UpdateTicketByIDOK struct{}
 
 func (*UpdateTicketByIDOK) updateTicketByIDRes() {}
-func (*UpdateTicketByIDOK) updateTicketByIDRes() {}
 
-type UpdateTicketByIDReq struct {
 type UpdateTicketByIDReq struct {
 	Title        OptString       `json:"title"`
 	Description  OptString       `json:"description"`
@@ -2175,99 +2042,88 @@ type UpdateTicketByIDReq struct {
 
 // GetTitle returns the value of Title.
 func (s *UpdateTicketByIDReq) GetTitle() OptString {
-func (s *UpdateTicketByIDReq) GetTitle() OptString {
 	return s.Title
 }
 
 // GetDescription returns the value of Description.
-func (s *UpdateTicketByIDReq) GetDescription() OptString {
 func (s *UpdateTicketByIDReq) GetDescription() OptString {
 	return s.Description
 }
 
 // GetStatus returns the value of Status.
 func (s *UpdateTicketByIDReq) GetStatus() OptTicketStatus {
-func (s *UpdateTicketByIDReq) GetStatus() OptTicketStatus {
 	return s.Status
 }
 
 // GetAssignee returns the value of Assignee.
-func (s *UpdateTicketByIDReq) GetAssignee() OptString {
 func (s *UpdateTicketByIDReq) GetAssignee() OptString {
 	return s.Assignee
 }
 
 // GetSubAssignees returns the value of SubAssignees.
 func (s *UpdateTicketByIDReq) GetSubAssignees() []string {
-func (s *UpdateTicketByIDReq) GetSubAssignees() []string {
 	return s.SubAssignees
 }
 
 // GetStakeholders returns the value of Stakeholders.
-func (s *UpdateTicketByIDReq) GetStakeholders() []string {
 func (s *UpdateTicketByIDReq) GetStakeholders() []string {
 	return s.Stakeholders
 }
 
 // GetDue returns the value of Due.
 func (s *UpdateTicketByIDReq) GetDue() OptDate {
-func (s *UpdateTicketByIDReq) GetDue() OptDate {
 	return s.Due
 }
 
 // GetTags returns the value of Tags.
-func (s *UpdateTicketByIDReq) GetTags() []string {
 func (s *UpdateTicketByIDReq) GetTags() []string {
 	return s.Tags
 }
 
 // SetTitle sets the value of Title.
 func (s *UpdateTicketByIDReq) SetTitle(val OptString) {
-func (s *UpdateTicketByIDReq) SetTitle(val OptString) {
 	s.Title = val
 }
 
 // SetDescription sets the value of Description.
-func (s *UpdateTicketByIDReq) SetDescription(val OptString) {
 func (s *UpdateTicketByIDReq) SetDescription(val OptString) {
 	s.Description = val
 }
 
 // SetStatus sets the value of Status.
 func (s *UpdateTicketByIDReq) SetStatus(val OptTicketStatus) {
-func (s *UpdateTicketByIDReq) SetStatus(val OptTicketStatus) {
 	s.Status = val
 }
 
 // SetAssignee sets the value of Assignee.
-func (s *UpdateTicketByIDReq) SetAssignee(val OptString) {
 func (s *UpdateTicketByIDReq) SetAssignee(val OptString) {
 	s.Assignee = val
 }
 
 // SetSubAssignees sets the value of SubAssignees.
 func (s *UpdateTicketByIDReq) SetSubAssignees(val []string) {
-func (s *UpdateTicketByIDReq) SetSubAssignees(val []string) {
 	s.SubAssignees = val
 }
 
 // SetStakeholders sets the value of Stakeholders.
-func (s *UpdateTicketByIDReq) SetStakeholders(val []string) {
 func (s *UpdateTicketByIDReq) SetStakeholders(val []string) {
 	s.Stakeholders = val
 }
 
 // SetDue sets the value of Due.
 func (s *UpdateTicketByIDReq) SetDue(val OptDate) {
-func (s *UpdateTicketByIDReq) SetDue(val OptDate) {
 	s.Due = val
 }
 
 // SetTags sets the value of Tags.
 func (s *UpdateTicketByIDReq) SetTags(val []string) {
-func (s *UpdateTicketByIDReq) SetTags(val []string) {
 	s.Tags = val
 }
+
+// UpdateTicketByIDUnauthorized is response for UpdateTicketByID operation.
+type UpdateTicketByIDUnauthorized struct{}
+
+func (*UpdateTicketByIDUnauthorized) updateTicketByIDRes() {}
 
 // Ref: #/components/schemas/User
 type User struct {

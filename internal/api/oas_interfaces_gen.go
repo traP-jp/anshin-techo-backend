@@ -5,10 +5,6 @@ type ConfigGetRes interface {
 	configGetRes()
 }
 
-type ConfigGetRes interface {
-	configGetRes()
-}
-
 type ConfigPostRes interface {
 	configPostRes()
 }
@@ -19,6 +15,10 @@ type CreateReviewRes interface {
 
 type CreateTicketRes interface {
 	createTicketRes()
+}
+
+type DeleteReviewRes interface {
+	deleteReviewRes()
 }
 
 type DeleteTicketByIDRes interface {
