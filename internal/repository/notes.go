@@ -137,5 +137,6 @@ func (r *Repository) GetNoteByID(ctx context.Context, ticketID, noteID int64) (*
 	if err := r.db.GetContext(ctx, note, query, noteID, ticketID); err != nil {
 		return nil, err
 	}
+
 	return note, nil
 }

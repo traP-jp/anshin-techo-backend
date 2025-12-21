@@ -324,6 +324,7 @@ func (*ErrorResponseStatusCode) deleteReviewRes()                     {}
 func (*ErrorResponseStatusCode) deleteTicketByIDRes()                 {}
 func (*ErrorResponseStatusCode) getTicketByIDRes()                    {}
 func (*ErrorResponseStatusCode) getTicketsRes()                       {}
+func (*ErrorResponseStatusCode) meGetRes()                            {}
 func (*ErrorResponseStatusCode) ticketsTicketIdNotesNoteIdDeleteRes() {}
 func (*ErrorResponseStatusCode) ticketsTicketIdNotesNoteIdPutRes()    {}
 func (*ErrorResponseStatusCode) ticketsTicketIdNotesPostRes()         {}
@@ -550,6 +551,28 @@ func (s *GetTicketsSort) UnmarshalText(data []byte) error {
 type GetTicketsUnauthorized struct{}
 
 func (*GetTicketsUnauthorized) getTicketsRes() {}
+
+type MeGetOK struct {
+	// TraQ ID.
+	ID string `json:"id"`
+}
+
+// GetID returns the value of ID.
+func (s *MeGetOK) GetID() string {
+	return s.ID
+}
+
+// SetID sets the value of ID.
+func (s *MeGetOK) SetID(val string) {
+	s.ID = val
+}
+
+func (*MeGetOK) meGetRes() {}
+
+// MeGetUnauthorized is response for MeGet operation.
+type MeGetUnauthorized struct{}
+
+func (*MeGetUnauthorized) meGetRes() {}
 
 // Ref: #/components/schemas/Note
 type Note struct {

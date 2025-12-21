@@ -43,3 +43,14 @@ func (h *Handler) UsersPut(ctx context.Context, req []api.User) (api.UsersPutRes
 
 	return &api.UsersPutOK{}, nil
 }
+
+// GET /me
+// 認証済みユーザーのIDを返す
+func (h *Handler) MeGet(ctx context.Context) (api.MeGetRes, error) {
+	userID := getUserID(ctx)
+	if userID == "" {
+		return &api.MeGetUnauthorized{}, nil
+	}
+
+	return &api.MeGetOK{ID: userID}, nil
+}
