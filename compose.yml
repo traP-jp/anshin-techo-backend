@@ -31,8 +31,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: pass
       MYSQL_DATABASE: app
-    expose:
-      - "3306"
+    ports:
+      - "3306:3306"
     healthcheck:
       test: mariadb --user=root --password=pass --execute "SHOW DATABASES;"
       interval: 1s

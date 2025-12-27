@@ -14,7 +14,7 @@ type Dependencies struct {
 }
 
 func InjectServer(deps Dependencies) (*api.Server, error) {
-	repo := repository.New(deps.DB, deps.Bot)
+	repo := repository.New(deps.DB)//, deps.Bot)
 	h := handler.New(repo)
 	s, err := api.NewServer(h, h)
 	if err != nil {
