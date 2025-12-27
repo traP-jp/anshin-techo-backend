@@ -15,12 +15,12 @@ type Config struct {
 	Origin      string
 	AccessToken string
 
-	TicketCreateChannelID   string // チケット作成通知
-	TicketUpdateChannelID   string // チケット編集通知
-	NoteIncomingChannelID   string // 受信ノート通知
-	NoteOutgoingChannelID   string // 発信ノート通知
-	NoteOtherChannelID      string // その他ノート通知
-	ReviewNotifyChannelID   string // レビュー通知
+	TicketCreateChannelID string // チケット作成通知
+	TicketUpdateChannelID string // チケット編集通知
+	NoteIncomingChannelID string // 受信ノート通知
+	NoteOutgoingChannelID string // 発信ノート通知
+	NoteOtherChannelID    string // その他ノート通知
+	ReviewNotifyChannelID string // レビュー通知
 
 	// ユーザー設定
 	ManagerID string // 本職（マネージャー）のTraQ ID
@@ -33,7 +33,6 @@ type Service struct {
 	// 内部キャッシュ
 	yokunasasouStampID string
 }
-
 
 var (
 	_ Client        = (*Service)(nil)
@@ -82,7 +81,6 @@ func (s *Service) API() *traq.APIClient {
 	return s.bot.API()
 }
 
-
 func (s *Service) setupInternalHandlers() {
 	s.bot.OnBotMessageStampsUpdated(func(p *payload.BotMessageStampsUpdated) {
 		for _, stamp := range p.Stamps {
@@ -122,7 +120,6 @@ func (s *Service) generateMention(ctx context.Context, userID string) string {
 
 	return fmt.Sprintf("@%s", user.Name)
 }
-
 
 func (s *Service) PostMessage(ctx context.Context, channelID string, content string) error {
 	embedTrue := true
@@ -200,7 +197,7 @@ func (s *Service) NotifyNoteCreated(ctx context.Context, noteType string, conten
 	case "outgoing":
 		channelID = s.config.NoteOutgoingChannelID
 		typeLabel = "発信"
-	default: 
+	default:
 		channelID = s.config.NoteOtherChannelID
 		typeLabel = "その他"
 	}
@@ -225,7 +222,7 @@ func (s *Service) NotifyNoteCreated(ctx context.Context, noteType string, conten
 // NotifyReviewCreated : レビュー通知
 func (s *Service) NotifyReviewCreated(ctx context.Context, noteTitle string, noteAuthorID string, reviewerID string, comment string) error {
 	reviewerMention := s.generateMention(ctx, reviewerID)
-	
+
 	targetMention := ""
 	if comment != "" {
 		targetMention = s.generateMention(ctx, noteAuthorID)
