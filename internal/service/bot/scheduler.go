@@ -23,6 +23,7 @@ func NewScheduler(repo *repository.Repository, bot *Service) *Scheduler {
 	}
 
 	c := cron.New(cron.WithLocation(jst))
+
 	return &Scheduler{
 		repo: repo,
 		bot:  bot,
@@ -79,6 +80,7 @@ func (s *Scheduler) checkDeadlineOverdue(now time.Time) error {
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -101,5 +103,6 @@ func (s *Scheduler) checkWaitingSent(now time.Time) error {
 			_ = s.bot.SendWaitingSentReminder(ctx, t.Title, managerID, true)
 		}
 	}
+
 	return nil
 }

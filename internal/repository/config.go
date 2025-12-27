@@ -24,7 +24,11 @@ func (r *Repository) GetConfig(ctx context.Context) (*Config, error) {
 		RevisePrompt string `db:"revise_prompt"`
 		NotesentHour int    `db:"notesent_hour"`
 		OverdueDay   []byte `db:"overdue_day"`
-	}{}
+	}{
+		RevisePrompt: "",
+		NotesentHour: 0,
+		OverdueDay:   nil,
+	}
 
 	if err := r.db.GetContext(ctx, &row, `SELECT revise_prompt, notesent_hour, overdue_day FROM configs WHERE id = 1`); err != nil {
 		if err == sql.ErrNoRows {

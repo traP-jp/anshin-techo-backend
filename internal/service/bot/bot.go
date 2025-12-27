@@ -56,8 +56,9 @@ func NewService(cfg Config) (*Service, error) {
 	}
 
 	s := &Service{
-		bot:    bot,
-		config: cfg,
+		bot:                bot,
+		config:             cfg,
+		yokunasasouStampID: "",
 	}
 
 	s.setupInternalHandlers()
@@ -87,6 +88,7 @@ func (s *Service) setupInternalHandlers() {
 		for _, stamp := range p.Stamps {
 			if s.yokunasasouStampID != "" && stamp.StampID == s.yokunasasouStampID {
 				_, _ = s.bot.API().MessageAPI.DeleteMessage(context.Background(), p.MessageID).Execute()
+
 				return
 			}
 		}
@@ -101,9 +103,11 @@ func (s *Service) fetchYokunasasouStampID(ctx context.Context) error {
 	for _, stamp := range stamps {
 		if stamp.Name == "yokunasasou" {
 			s.yokunasasouStampID = stamp.Id
+
 			return nil
 		}
 	}
+
 	return fmt.Errorf("stamp :yokunasasou: not found")
 }
 
@@ -115,6 +119,7 @@ func (s *Service) generateMention(ctx context.Context, userID string) string {
 	if err != nil {
 		return ""
 	}
+
 	return fmt.Sprintf("@%s", user.Name)
 }
 
@@ -126,11 +131,13 @@ func (s *Service) PostMessage(ctx context.Context, channelID string, content str
 		PostMessageRequest(traq.PostMessageRequest{
 			Content: content,
 			Embed:   &embedTrue,
+			Nonce:   nil,
 		}).
 		Execute()
 	if err != nil {
 		return fmt.Errorf("failed to post message: %w", err)
 	}
+
 	return nil
 }
 
@@ -141,23 +148,26 @@ func (s *Service) PostDirectMessage(ctx context.Context, userID string, content 
 		PostMessageRequest(traq.PostMessageRequest{
 			Content: content,
 			Embed:   &embedTrue,
+			Nonce:   nil,
 		}).
 		Execute()
 	if err != nil {
 		return fmt.Errorf("failed to post direct message: %w", err)
 	}
+
 	return nil
 }
 
 // NotifyTicketCreated : チケット作成通知
-func (s *Service) NotifyTicketCreated(ctx context.Context, ticketID string, title string, creatorID string) error {
+func (s *Service) NotifyTicketCreated(ctx context.Context, _ string, title string, creatorID string) error {
 	mention := s.generateMention(ctx, creatorID)
-	content := fmt.Sprintf("### 新規チケット作成\n作成者: %s\nタイトル: %s", mention, title)
+	content := fmt.Sprintf("＃＃＃ 新規チケット作成\n作成者: %s\nタイトル: %s", mention, title)
+
 	return s.PostMessage(ctx, s.config.TicketCreateChannelID, content)
 }
 
 // NotifyTicketUpdated : チケット編集通知
-func (s *Service) NotifyTicketUpdated(ctx context.Context, ticketID string, title string, assigneeID string, subAssigneeIDs []string, stakeholderIDs []string) error {
+func (s *Service) NotifyTicketUpdated(ctx context.Context, _ string, title string, assigneeID string, subAssigneeIDs []string, stakeholderIDs []string) error {
 	targets := []string{assigneeID}
 	targets = append(targets, subAssigneeIDs...)
 	targets = append(targets, stakeholderIDs...)
@@ -173,7 +183,8 @@ func (s *Service) NotifyTicketUpdated(ctx context.Context, ticketID string, titl
 		}
 	}
 
-	content := fmt.Sprintf("### チケット更新\n%s\nタイトル: %s\n変更がありました。", strings.Join(mentions, " "), title)
+	content := fmt.Sprintf("＃＃＃ チケット更新\n%s\nタイトル: %s\n変更がありました。", strings.Join(mentions, " "), title)
+
 	return s.PostMessage(ctx, s.config.TicketUpdateChannelID, content)
 }
 
@@ -206,7 +217,8 @@ func (s *Service) NotifyNoteCreated(ctx context.Context, noteType string, conten
 		}
 	}
 
-	msg := fmt.Sprintf("### ノート作成 (%s)\n作成者: %s\n\n%s", typeLabel, authorName, contentPreview)
+	msg := fmt.Sprintf("＃＃＃ ノート作成 (%s)\n作成者: %s\n\n%s", typeLabel, authorName, contentPreview)
+
 	return s.PostMessage(ctx, channelID, msg)
 }
 
@@ -225,6 +237,7 @@ func (s *Service) NotifyReviewCreated(ctx context.Context, noteTitle string, not
 	}
 
 	msg := fmt.Sprintf("### レビュー通知\n案件: %s\nレビュワー: %s -> %s\n\n%s", noteTitle, reviewerMention, targetMention, comment)
+
 	return s.PostMessage(ctx, s.config.ReviewNotifyChannelID, msg)
 }
 
@@ -241,6 +254,7 @@ func (s *Service) SendDeadlineReminder(ctx context.Context, ticketTitle string, 
 			fmt.Printf("failed to send deadline DM to manager: %v\n", err)
 		}
 	}
+
 	return nil
 }
 
@@ -253,6 +267,7 @@ func (s *Service) SendWaitingSentReminder(ctx context.Context, ticketTitle strin
 	}
 
 	msg := fmt.Sprintf("【送信待ちリマインド (%s)】\n案件「%s」が送信待ちステータスになっています。\n送信作業をお願いします。", roleLabel, ticketTitle)
+
 	return s.PostDirectMessage(ctx, targetUserID, msg)
 }
 
@@ -265,6 +280,7 @@ func AddBusinessHours(start time.Time, duration time.Duration) time.Time {
 		if h >= 0 && h < 8 {
 			nextStart := time.Date(current.Year(), current.Month(), current.Day(), 8, 0, 0, 0, current.Location())
 			current = nextStart
+
 			continue
 		}
 

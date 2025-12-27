@@ -417,6 +417,7 @@ func (r *Repository) GetIncompleteTickets(ctx context.Context) ([]Ticket, error)
 	if err := r.db.SelectContext(ctx, &tickets, query); err != nil {
 		return nil, err
 	}
+
 	return tickets, nil
 }
 
@@ -426,5 +427,6 @@ func (r *Repository) GetTicketsByStatus(ctx context.Context, status string) ([]T
 	if err := r.db.SelectContext(ctx, &tickets, query, status); err != nil {
 		return nil, err
 	}
+
 	return tickets, nil
 }
