@@ -1,10 +1,10 @@
 -- +goose Up
 
 ALTER TABLE notes
-  DROP FOREIGN KEY `fk_notes_author`;
+  DROP FOREIGN KEY `2`;
 
 ALTER TABLE note_review_assignees
-  DROP FOREIGN KEY `fk_note_review_assignees_assignee`;
+  DROP FOREIGN KEY `2`;
 
 ALTER TABLE reviews
-  DROP FOREIGN KEY `fk_reviews_author`;
+  DROP FOREIGN KEY `2`;

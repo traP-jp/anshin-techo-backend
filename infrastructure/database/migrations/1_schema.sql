@@ -33,21 +33,21 @@ CREATE TABLE IF NOT EXISTS ticket_sub_assignees (
     ticket_id INT UNSIGNED,
     sub_assignee VARCHAR(64) NOT NULL,
     PRIMARY KEY(ticket_id, sub_assignee),
-    CONSTRAINT `fk_ticket_sub_assignees_ticket_id` FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
+    CONSTRAINT `1` FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS ticket_stakeholders (
     ticket_id INT UNSIGNED,
     stakeholder VARCHAR(64) NOT NULL,
     PRIMARY KEY(ticket_id, stakeholder),
-    CONSTRAINT `fk_ticket_stakeholders_ticket_id` FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
+    CONSTRAINT `1` FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS ticket_tags (
     ticket_id INT UNSIGNED,
     tag VARCHAR(64) NOT NULL,
     PRIMARY KEY(ticket_id, tag),
-    CONSTRAINT `fk_ticket_tags_ticket_id` FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
+    CONSTRAINT `1` FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS notes (
@@ -60,16 +60,16 @@ CREATE TABLE IF NOT EXISTS notes (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP,
-    CONSTRAINT `fk_notes_ticket_id` FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE,
-    CONSTRAINT `fk_notes_author` FOREIGN KEY (author) REFERENCES users(traq_id)
+    CONSTRAINT `1` FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE,
+    CONSTRAINT `2` FOREIGN KEY (author) REFERENCES users(traq_id)
 );
 
 CREATE TABLE IF NOT EXISTS note_review_assignees (
     note_id INT UNSIGNED,
     assignee VARCHAR(64) NOT NULL,
     PRIMARY KEY(note_id, assignee),
-    CONSTRAINT `fk_note_review_assignees_note_id` FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE,
-    CONSTRAINT `fk_note_review_assignees_assignee` FOREIGN KEY (assignee) REFERENCES users(traq_id)
+    CONSTRAINT `1` FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE,
+    CONSTRAINT `2` FOREIGN KEY (assignee) REFERENCES users(traq_id)
 );
 
 CREATE TABLE IF NOT EXISTS reviews (
@@ -83,6 +83,6 @@ CREATE TABLE IF NOT EXISTS reviews (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP,
-    CONSTRAINT `fk_reviews_note_id` FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE,
-    CONSTRAINT `fk_reviews_author` FOREIGN KEY (author) REFERENCES users(traq_id)
+    CONSTRAINT `1` FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE,
+    CONSTRAINT `2` FOREIGN KEY (author) REFERENCES users(traq_id)
 );
