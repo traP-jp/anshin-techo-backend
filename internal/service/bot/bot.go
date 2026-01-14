@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/traP-jp/anshin-techo-backend/internal/repository"
 	"github.com/traPtitech/go-traq"
 	traqwsbot "github.com/traPtitech/traq-ws-bot"
 	"github.com/traPtitech/traq-ws-bot/payload"
@@ -156,31 +157,71 @@ func (s *Service) PostDirectMessage(ctx context.Context, userID string, content 
 }
 
 // NotifyTicketCreated : チケット作成通知
-func (s *Service) NotifyTicketCreated(ctx context.Context, _ string, title string, creatorID string) error {
-	mention := s.generateMention(ctx, creatorID)
-	content := fmt.Sprintf("＃＃＃ 新規チケット作成\n作成者: %s\nタイトル: %s", mention, title)
+func (s *Service) NotifyTicketCreated(ctx context.Context, ticket *repository.Ticket) error {
+	dueStr := "未設定"
+	if ticket.Due.Valid {
+		dueStr = ticket.Due.Time.Format("2006/01/02")
+	}
 
-	return s.PostMessage(ctx, s.config.TicketCreateChannelID, content)
+	message := fmt.Sprintf(`## 新しいチケット(ID: %d)が作成されました
+タイトル: %s
+担当者: @%s
+副担当: %v
+関係者: %v
+タグ: %v
+締め切り: %s
+
+%s`,
+		ticket.ID,
+		ticket.Title,
+		ticket.Assignee,
+		ticket.SubAssignees,
+		ticket.Stakeholders,
+		ticket.Tags,
+		dueStr,
+		ticket.Description.String,
+	)
+
+	targetID := s.config.TicketCreateChannelID
+	return s.PostMessage(ctx, targetID, message)
 }
 
 // NotifyTicketUpdated : チケット編集通知
-func (s *Service) NotifyTicketUpdated(ctx context.Context, _ string, title string, assigneeID string, subAssigneeIDs []string, stakeholderIDs []string) error {
-	targets := []string{assigneeID}
-	targets = append(targets, subAssigneeIDs...)
-	targets = append(targets, stakeholderIDs...)
+func (s *Service) NotifyTicketUpdated(ctx context.Context, ticket *repository.Ticket) error {
+	targets := []string{ticket.Assignee}
+	targets = append(targets, ticket.SubAssignees...)
+	targets = append(targets, ticket.Stakeholders...)
 
 	uniqueTargets := make(map[string]bool)
 	var mentions []string
-	for _, uid := range targets {
-		if uid != "" && !uniqueTargets[uid] {
-			uniqueTargets[uid] = true
-			if m := s.generateMention(ctx, uid); m != "" {
-				mentions = append(mentions, m)
-			}
+	for _, name := range targets {
+		if name != "" && !uniqueTargets[name] {
+			uniqueTargets[name] = true
+			mentions = append(mentions, "@"+name)
 		}
 	}
+	mentionsStr := strings.Join(mentions, " ")
 
-	content := fmt.Sprintf("＃＃＃ チケット更新\n%s\nタイトル: %s\n変更がありました。", strings.Join(mentions, " "), title)
+	dueStr := "未設定"
+	if ticket.Due.Valid {
+		dueStr = ticket.Due.Time.Format("2006/01/02")
+	}
+
+	content := fmt.Sprintf(`### チケット更新(ID: %d)
+%s
+タイトル: %s
+状態: %s
+期限: %s
+担当: @%s
+
+内容が更新されました。詳細は確認してください。`,
+		ticket.ID,
+		mentionsStr,
+		ticket.Title,
+		ticket.Status,
+		dueStr,
+		ticket.Assignee,
+	)
 
 	return s.PostMessage(ctx, s.config.TicketUpdateChannelID, content)
 }
@@ -239,33 +280,54 @@ func (s *Service) NotifyReviewCreated(ctx context.Context, noteTitle string, not
 }
 
 // SendDeadlineReminder : 期限超過リマインダー (担当者と本職にDM)
-func (s *Service) SendDeadlineReminder(ctx context.Context, ticketTitle string, daysOverdue int, assigneeID string) error {
-	msg := fmt.Sprintf("【期限超過リマインド】\n案件「%s」の期限から %d日 が経過しました。\n対応状況を確認してください。", ticketTitle, daysOverdue)
-
-	if err := s.PostDirectMessage(ctx, assigneeID, msg); err != nil {
-		fmt.Printf("failed to send deadline DM to assignee: %v\n", err)
+func (s *Service) SendDeadlineReminder(ctx context.Context, ticket *repository.Ticket, daysOverdue int) error {
+	dueStr := "未設定"
+	if ticket.Due.Valid {
+		dueStr = ticket.Due.Time.Format("2006/01/02")
 	}
+
+	msg := fmt.Sprintf(` ###【期限超過リマインド】 
+@%s
+案件「**%s**」(ID: %d) の期限(%s)から **%d日** が経過しました。
+至急、対応状況を確認・報告してください。
+
+**状態**: %s`,
+		ticket.Assignee,
+		ticket.Title,
+		ticket.ID,
+		dueStr,
+		daysOverdue,
+		ticket.Status,
+	)
 
 	if s.config.ManagerID != "" {
-		if err := s.PostDirectMessage(ctx, s.config.ManagerID, msg); err != nil {
-			fmt.Printf("failed to send deadline DM to manager: %v\n", err)
-		}
+		msg += fmt.Sprintf(" @%s", s.config.ManagerID)
 	}
 
-	return nil
+	return s.PostMessage(ctx, s.config.TicketCreateChannelID, msg)
 }
 
 // SendWaitingSentReminder : 送信待ちリマインダー
 // targetUserID: 送信相手のユーザーID
-func (s *Service) SendWaitingSentReminder(ctx context.Context, ticketTitle string, targetUserID string, isManager bool) error {
-	roleLabel := "担当者"
-	if isManager {
-		roleLabel = "本職"
-	}
+func (s *Service) SendWaitingSentReminder(ctx context.Context, ticket *repository.Ticket) error {
+	msg := fmt.Sprintf(`##【送信待ちリマインド】
+@%s
+案件「**%s**」(ID: %d) が「送信待ち」ステータスになっています。
+送信作業をお願いします。
 
-	msg := fmt.Sprintf("【送信待ちリマインド (%s)】\n案件「%s」が送信待ちステータスになっています。\n送信作業をお願いします。", roleLabel, ticketTitle)
+**期限**: %s`,
+		ticket.Assignee,
+		ticket.Title,
+		ticket.ID,
+		func() string {
+			if ticket.Due.Valid {
+				return ticket.Due.Time.Format("2006/01/02")
+			}
+			return "未設定"
+		}(),
+	)
 
-	return s.PostDirectMessage(ctx, targetUserID, msg)
+	return s.PostMessage(ctx, s.config.TicketCreateChannelID, msg)
 }
 
 func AddBusinessHours(start time.Time, duration time.Duration) time.Time {
@@ -311,4 +373,21 @@ func (s *Service) OnBotMessageStampsUpdated(handler func(messageID string, stamp
 
 func (s *Service) Config() Config {
 	return s.config
+}
+
+func (s *Service) GetUserIDByName(ctx context.Context, name string) (string, error) {
+	if name == "" {
+		return "", fmt.Errorf("username is empty")
+	}
+
+	users, _, err := s.bot.API().UserAPI.GetUsers(ctx).Name(name).Execute()
+	if err != nil {
+		return "", fmt.Errorf("failed to search user '%s': %w", name, err)
+	}
+
+	if len(users) == 0 {
+		return "", fmt.Errorf("user '%s' not found", name)
+	}
+
+	return users[0].Id, nil
 }

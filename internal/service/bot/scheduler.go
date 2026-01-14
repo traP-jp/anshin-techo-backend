@@ -75,7 +75,14 @@ func (s *Scheduler) checkDeadlineOverdue(now time.Time) error {
 			if targetDays[daysOver] {
 				createdAtJST := t.CreatedAt.In(s.loc)
 				if now.Hour() == createdAtJST.Hour() && now.Minute() == createdAtJST.Minute() {
-					_ = s.bot.SendDeadlineReminder(ctx, t.Title, daysOver, t.Assignee)
+
+					err := s.bot.SendDeadlineReminder(ctx, &t, daysOver)
+
+					if err != nil {
+						fmt.Printf("[Scheduler] Failed to send reminder for ticket '%s' (Assignee: %s): %v\n", t.Title, t.Assignee, err)
+					} else {
+						fmt.Printf("[Scheduler] Sent reminder for ticket '%s' (Assignee: %s)\n", t.Title, t.Assignee)
+					}
 				}
 			}
 		}
@@ -99,8 +106,7 @@ func (s *Scheduler) checkWaitingSent(now time.Time) error {
 
 		diff := now.Sub(targetTime)
 		if diff >= 0 && diff < 1*time.Minute {
-			managerID := s.bot.config.ManagerID
-			_ = s.bot.SendWaitingSentReminder(ctx, t.Title, managerID, true)
+			_ = s.bot.SendWaitingSentReminder(ctx, &t)
 		}
 	}
 

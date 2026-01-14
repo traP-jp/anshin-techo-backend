@@ -64,6 +64,24 @@ func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (a
 		return nil, fmt.Errorf("get created ticket from repository: %w", err)
 	}
 
+	go func() {
+        defer func() {
+            if r := recover(); r != nil {
+                fmt.Printf("[PANIC] Recovered in NotifyTicketCreated: %v\n", r)
+            }
+        }()
+
+        if h.bot == nil {
+            fmt.Printf("[Error] h.bot is nil! Notification skipped.\n")
+            return
+        }
+
+        bgCtx := context.Background()
+        if err := h.bot.NotifyTicketCreated(bgCtx, ticket); err != nil {
+            fmt.Printf("failed to notify ticket creation: %v\n", err)
+        }
+    }()
+
 	res := &api.Ticket{
 		ID:    ticket.ID,
 		Title: ApplyCensorIfNeed(role, ticket.Title),
@@ -230,9 +248,9 @@ func (h *Handler) GetTicketByID(ctx context.Context, params api.GetTicketByIDPar
 	}
 	res := &api.GetTicketByIDOK{
 		ID:    ticket.ID,
-		Title: ApplyCensorIfNeed(role, ticket.Title), 
+		Title: ApplyCensorIfNeed(role, ticket.Title),
 		Description: api.OptString{
-			Value: ApplyCensorIfNeed(role, ticket.Description.String), 
+			Value: ApplyCensorIfNeed(role, ticket.Description.String),
 			Set:   ticket.Description.Valid,
 		},
 		Due:          api.OptNilDate{Value: ticket.Due.Time, Set: ticket.Due.Valid, Null: !ticket.Due.Valid},
@@ -354,6 +372,38 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 		return nil, fmt.Errorf("update ticket in repository: %w", err)
 	}
 
+	updatedTicket, err := h.repo.GetTicketByID(ctx, id)
+	if err != nil {
+
+		fmt.Printf("[ERROR] failed to fetch updated ticket for notification: %v\n", err)
+	} else {
+
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					fmt.Printf("[PANIC] Recovered in NotifyTicketUpdated: %v\n", r)
+				}
+			}()
+
+			fmt.Println("============ BOT DEBUG START ============")
+			if h.bot == nil {
+				fmt.Println("[DEBUG] h.bot is NIL! ")
+				fmt.Println("============ BOT DEBUG END ============")
+				return
+			}
+			fmt.Println("[DEBUG] h.bot is ALIVE! ")
+
+			fmt.Println("[DEBUG] Sending notification to traQ...")
+
+			err := h.bot.NotifyTicketUpdated(context.Background(), updatedTicket)
+			if err != nil {
+				fmt.Printf("[ERROR] Notification FAILED: %v\n", err)
+			} else {
+				fmt.Println("[SUCCESS] Notification SENT successfully! ")
+			}
+			fmt.Println("============ BOT DEBUG END ============")
+		}()
+	}
 	return &api.UpdateTicketByIDOK{}, nil
 }
 
@@ -384,7 +434,7 @@ func convertRepositoryNote(note *repository.Note, reviews []*repository.Review, 
 		Type:     noteType,
 		Status:   api.OptNoteStatus{Value: noteStatus, Set: true},
 		Author:   note.UserID,
-		Content:  ApplyCensorIfNeed(role, note.Content), 
+		Content:  ApplyCensorIfNeed(role, note.Content),
 		Reviews:  apiReviews,
 		CreatedAt: api.OptDateTime{
 			Value: note.CreatedAt,
