@@ -183,6 +183,7 @@ func (s *Service) NotifyTicketCreated(ctx context.Context, ticket *repository.Ti
 	)
 
 	targetID := s.config.TicketCreateChannelID
+
 	return s.PostMessage(ctx, targetID, message)
 }
 
@@ -323,6 +324,7 @@ func (s *Service) SendWaitingSentReminder(ctx context.Context, ticket *repositor
 			if ticket.Due.Valid {
 				return ticket.Due.Time.Format("2006/01/02")
 			}
+
 			return "未設定"
 		}(),
 	)

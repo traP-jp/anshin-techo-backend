@@ -70,6 +70,7 @@ func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (a
 
 		if h.bot == nil {
 			fmt.Printf("[Error] h.bot is nil! Notification skipped.\n")
+
 			return
 		}
 
@@ -392,6 +393,7 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 			}
 		}()
 	}
+
 	return &api.UpdateTicketByIDOK{}, nil
 }
 
