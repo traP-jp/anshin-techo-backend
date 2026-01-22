@@ -61,13 +61,13 @@ func (r *Repository) UpsertConfig(ctx context.Context, cfg Config) error {
 	}
 
 	if _, err := r.db.ExecContext(ctx, `
-        INSERT INTO configs (id, revise_prompt, notesent_hour, overdue_day)
-        VALUES (1, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-            revise_prompt = VALUES(revise_prompt),
-            notesent_hour = VALUES(notesent_hour),
-            overdue_day = VALUES(overdue_day)
-    `, cfg.RevisePrompt, cfg.ReminderInterval.NotesentHour, overdueJSON); err != nil {
+		INSERT INTO configs (id, revise_prompt, notesent_hour, overdue_day)
+		VALUES (1, ?, ?, ?)
+		ON DUPLICATE KEY UPDATE
+			revise_prompt = VALUES(revise_prompt),
+			notesent_hour = VALUES(notesent_hour),
+			overdue_day = VALUES(overdue_day)
+	`, cfg.RevisePrompt, cfg.ReminderInterval.NotesentHour, overdueJSON); err != nil {
 		return fmt.Errorf("upsert config: %w", err)
 	}
 
