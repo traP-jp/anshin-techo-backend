@@ -40,12 +40,10 @@ func (h *Handler) TicketsTicketIdAiGeneratePost(ctx context.Context, req *api.Ti
 
 		return nil, fmt.Errorf("get ticket: %w", err)
 	}
-
 	role, err := h.repo.GetUserRoleByTraqID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get user role: %w", err)
 	}
-
 	notes, err := h.repo.GetNotes(ctx, params.TicketId)
 	if err != nil {
 		return nil, fmt.Errorf("get notes: %w", err)

@@ -17,12 +17,9 @@ func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (a
 	creator := getUserID(ctx)
 	role, err := h.repo.GetUserRoleByTraqID(ctx, creator)
 	if err != nil {
-		if errors.Is(err, repository.ErrUserNotFound) {
-			return &api.CreateTicketForbidden{}, nil
-		}
-
 		return nil, fmt.Errorf("get user role from repository: %w", err)
 	}
+
 	if role != "manager" && role != "assistant" {
 		return &api.CreateTicketForbidden{}, nil
 	}
@@ -65,22 +62,22 @@ func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (a
 	}
 
 	go func() {
-        defer func() {
-            if r := recover(); r != nil {
-                fmt.Printf("[PANIC] Recovered in NotifyTicketCreated: %v\n", r)
-            }
-        }()
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("[PANIC] Recovered in NotifyTicketCreated: %v\n", r)
+			}
+		}()
 
-        if h.bot == nil {
-            fmt.Printf("[Error] h.bot is nil! Notification skipped.\n")
-            return
-        }
+		if h.bot == nil {
+			fmt.Printf("[Error] h.bot is nil! Notification skipped.\n")
+			return
+		}
 
-        bgCtx := context.Background()
-        if err := h.bot.NotifyTicketCreated(bgCtx, ticket); err != nil {
-            fmt.Printf("failed to notify ticket creation: %v\n", err)
-        }
-    }()
+		bgCtx := context.Background()
+		if err := h.bot.NotifyTicketCreated(bgCtx, ticket); err != nil {
+			fmt.Printf("failed to notify ticket creation: %v\n", err)
+		}
+	}()
 
 	res := &api.Ticket{
 		ID:    ticket.ID,
@@ -106,6 +103,7 @@ func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (a
 // 誰でも
 func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (api.GetTicketsRes, error) {
 	userID := getUserID(ctx)
+
 	role, err := h.repo.GetUserRoleByTraqID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get user role: %w", err)
@@ -172,12 +170,9 @@ func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (
 // 本職のみ
 func (h *Handler) DeleteTicketByID(ctx context.Context, params api.DeleteTicketByIDParams) (api.DeleteTicketByIDRes, error) {
 	deleter := getUserID(ctx)
+
 	role, err := h.repo.GetUserRoleByTraqID(ctx, deleter)
 	if err != nil {
-		if errors.Is(err, repository.ErrUserNotFound) {
-			return &api.DeleteTicketByIDForbidden{}, nil
-		}
-
 		return nil, fmt.Errorf("get user role from repository: %w", err)
 	}
 	if role != "manager" {
@@ -200,6 +195,7 @@ func (h *Handler) DeleteTicketByID(ctx context.Context, params api.DeleteTicketB
 // GET /tickets/{ticketId}
 func (h *Handler) GetTicketByID(ctx context.Context, params api.GetTicketByIDParams) (api.GetTicketByIDRes, error) {
 	userID := getUserID(ctx)
+
 	role, err := h.repo.GetUserRoleByTraqID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get user role: %w", err)
@@ -285,10 +281,12 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 	}
 
 	updater := getUserID(ctx)
+
 	role, err := h.repo.GetUserRoleByTraqID(ctx, updater)
 	if err != nil {
 		return nil, fmt.Errorf("get user role from repository: %w", err)
 	}
+
 	ok := false
 	if role == "manager" || role == "assistant" {
 		ok = true
@@ -381,27 +379,17 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
-					fmt.Printf("[PANIC] Recovered in NotifyTicketUpdated: %v\n", r)
+					fmt.Printf("Recovered in NotifyTicketUpdated: %v\n", r)
 				}
 			}()
 
-			fmt.Println("============ BOT DEBUG START ============")
 			if h.bot == nil {
-				fmt.Println("[DEBUG] h.bot is NIL! ")
-				fmt.Println("============ BOT DEBUG END ============")
 				return
 			}
-			fmt.Println("[DEBUG] h.bot is ALIVE! ")
 
-			fmt.Println("[DEBUG] Sending notification to traQ...")
-
-			err := h.bot.NotifyTicketUpdated(context.Background(), updatedTicket)
-			if err != nil {
-				fmt.Printf("[ERROR] Notification FAILED: %v\n", err)
-			} else {
-				fmt.Println("[SUCCESS] Notification SENT successfully! ")
+			if err := h.bot.NotifyTicketUpdated(context.Background(), updatedTicket); err != nil {
+				fmt.Printf("failed to notify ticket update: %v\n", err)
 			}
-			fmt.Println("============ BOT DEBUG END ============")
 		}()
 	}
 	return &api.UpdateTicketByIDOK{}, nil
