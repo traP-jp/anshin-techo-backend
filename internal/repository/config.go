@@ -20,14 +20,10 @@ type Config struct {
 var ErrConfigNotFound = fmt.Errorf("config not found")
 
 func (r *Repository) GetConfig(ctx context.Context) (*Config, error) {
-	row := struct {
+	var row struct {
 		RevisePrompt string `db:"revise_prompt"`
 		NotesentHour int    `db:"notesent_hour"`
 		OverdueDay   []byte `db:"overdue_day"`
-	}{
-		RevisePrompt: "",
-		NotesentHour: 0,
-		OverdueDay:   nil,
 	}
 
 	if err := r.db.GetContext(ctx, &row, `SELECT revise_prompt, notesent_hour, overdue_day FROM configs WHERE id = 1`); err != nil {
@@ -65,13 +61,13 @@ func (r *Repository) UpsertConfig(ctx context.Context, cfg Config) error {
 	}
 
 	if _, err := r.db.ExecContext(ctx, `
-        INSERT INTO configs (id, revise_prompt, notesent_hour, overdue_day)
-        VALUES (1, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-            revise_prompt = VALUES(revise_prompt),
-            notesent_hour = VALUES(notesent_hour),
-            overdue_day = VALUES(overdue_day)
-    `, cfg.RevisePrompt, cfg.ReminderInterval.NotesentHour, overdueJSON); err != nil {
+		INSERT INTO configs (id, revise_prompt, notesent_hour, overdue_day)
+		VALUES (1, ?, ?, ?)
+		ON DUPLICATE KEY UPDATE
+			revise_prompt = VALUES(revise_prompt),
+			notesent_hour = VALUES(notesent_hour),
+			overdue_day = VALUES(overdue_day)
+	`, cfg.RevisePrompt, cfg.ReminderInterval.NotesentHour, overdueJSON); err != nil {
 		return fmt.Errorf("upsert config: %w", err)
 	}
 
