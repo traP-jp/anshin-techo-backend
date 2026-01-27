@@ -24,7 +24,7 @@ func (h *Handler) CreateReview(ctx context.Context, req *api.CreateReviewReq, pa
 		return &api.CreateReviewBadRequest{}, nil
 	}
 
-	comment := sql.NullString{String: "", Valid: false}
+	comment := sql.NullString{String: req.Comment, Valid: true}
 
 	repoReview, err := h.repo.CreateReview(ctx, params.TicketId, params.NoteId, reviewer, repository.CreateReviewParams{
 		Type:    repoType,
@@ -88,10 +88,6 @@ func (h *Handler) UpdateReview(ctx context.Context, req api.OptUpdateReviewReq, 
 		Type:       repoType,
 		Weight:     req.Value.Weight,
 		Comment:    sql.NullString{String: req.Value.Comment, Valid: true},
-	}
-
-	if err != nil {
-		return nil, err
 	}
 
 	_, err = h.repo.UpdateReview(ctx, params.TicketId, params.NoteId, params.ReviewId, reviewer, repoParams)

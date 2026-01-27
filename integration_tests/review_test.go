@@ -37,7 +37,7 @@ func TestReview(t *testing.T) {
 				rec := doRequest(t, "POST", "/tickets/"+fmt.Sprintf("%v", ticketID)+"/notes", "ramdos", `{"type": "outgoing","content": "毎々お世話になっております。","mention_notification": false}`)
 
 				expectedStatus := `201 Created`
-				expectedBody := `{"id":[ID],"ticket_id":[ID],"type":"outgoing","author":"ramdos","content":"毎々お世話になっております。","reviews":[],"created_at":"[TIME]","updated_at":"[TIME]"}`
+				expectedBody := `{"id":[ID],"ticket_id":[ID],"type":"outgoing","status":"draft","author":"ramdos","content":"毎々お世話になっております。","reviews":[],"created_at":"[TIME]","updated_at":"[TIME]"}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 				noteID = int(unmarshalResponse(t, rec)["id"].(float64))
