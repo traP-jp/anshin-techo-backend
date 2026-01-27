@@ -136,7 +136,13 @@ components:
         - title
         - status
         - assignee
+        - description
+        - sub_assignees
+        - stakeholders
+        - tags
+        - due
         - created_at
+        - updated_at
 
     Note:
       type: object
@@ -174,6 +180,10 @@ components:
         - type
         - content
         - author
+        - status
+        - reviews
+        - created_at
+        - updated_at
 
     Review:
       type: object
@@ -218,6 +228,9 @@ components:
         - type
         - weight
         - status
+        - comment
+        - created_at
+        - updated_at
 
     Config:
       type: object
@@ -689,6 +702,10 @@ paths:
                   type: boolean
                   default: true
                   description: "trueの場合、承認状況(Weight)をリセットしてDraftに戻す"
+              required:
+                - content
+                - status
+                - reset_reviews
       responses:
         "200":
           description: "成功"
@@ -738,7 +755,6 @@ paths:
           application/json:
             schema:
               type: object
-              required: [type]
               properties:
                 type:
                   $ref: "#/components/schemas/ReviewType"
@@ -747,6 +763,10 @@ paths:
                   description: "承認の強さ"
                 comment:
                   type: string
+              required:
+                - type
+                - weight
+                - comment
       responses:
         "201":
           description: "作成成功"
@@ -802,6 +822,10 @@ paths:
                   type: integer
                 comment:
                   type: string
+              required:
+                - type
+                - weight
+                - comment
       responses:
         "200":
           description: "成功"
