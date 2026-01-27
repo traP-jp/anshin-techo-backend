@@ -34,28 +34,19 @@ func (h *Handler) TicketsTicketIdNotesPost(ctx context.Context, req *api.Tickets
 		Author:   note.UserID,
 		Content:  safeContent,
 		Type:     api.NoteType(note.Type),
-		Status:   api.OptNoteStatus{Value: "", Set: false},
+		Status:   api.NoteStatus(note.Status),
 		Reviews:  []api.Review{},
 
-		CreatedAt: api.OptDateTime{
-			Value: note.CreatedAt,
-			Set:   true,
-		},
-		UpdatedAt: api.OptDateTime{
-			Value: note.UpdatedAt,
-			Set:   true,
-		},
+		CreatedAt: note.CreatedAt,
+		UpdatedAt: note.UpdatedAt,
 	}, nil
 }
 
 // PUT /tickets/{ticketId}/notes/{noteId}
+//
 //nolint:revive
 func (h *Handler) TicketsTicketIdNotesNoteIdPut(ctx context.Context, req *api.TicketsTicketIdNotesNoteIdPutReq, params api.TicketsTicketIdNotesNoteIdPutParams) (api.TicketsTicketIdNotesNoteIdPutRes, error) {
-	if !req.Content.Set {
-		return nil, fmt.Errorf("content is required for update")
-	}
-
-	if err := h.repo.UpdateNote(ctx, params.TicketId, params.NoteId, req.Content.Value); err != nil {
+	if err := h.repo.UpdateNote(ctx, params.TicketId, params.NoteId, req.Content); err != nil {
 		return nil, fmt.Errorf("update note: %w", err)
 	}
 
@@ -63,6 +54,7 @@ func (h *Handler) TicketsTicketIdNotesNoteIdPut(ctx context.Context, req *api.Ti
 }
 
 // DELETE /tickets/{ticketId}/notes/{noteId}
+//
 //nolint:revive
 func (h *Handler) TicketsTicketIdNotesNoteIdDelete(ctx context.Context, params api.TicketsTicketIdNotesNoteIdDeleteParams) (api.TicketsTicketIdNotesNoteIdDeleteRes, error) {
 	if err := h.repo.DeleteNote(ctx, params.TicketId, params.NoteId); err != nil {

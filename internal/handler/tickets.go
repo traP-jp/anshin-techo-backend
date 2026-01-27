@@ -62,20 +62,17 @@ func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (a
 	}
 
 	res := &api.Ticket{
-		ID:    ticket.ID,
-		Title: ApplyCensorIfNeed(role, ticket.Title),
-		Description: api.OptString{
-			Value: ApplyCensorIfNeed(role, ticket.Description.String),
-			Set:   ticket.Description.Valid,
-		},
-		Due:          api.OptNilDate{Value: ticket.Due.Time, Set: ticket.Due.Valid, Null: !ticket.Due.Valid},
+		ID:           ticket.ID,
+		Title:        ApplyCensorIfNeed(role, ticket.Title),
+		Description:  ApplyCensorIfNeed(role, ticket.Description.String),
+		Due:          api.NilDate{Value: ticket.Due.Time, Null: !ticket.Due.Valid},
 		Status:       api.TicketStatus(ticket.Status),
 		Assignee:     ticket.Assignee,
 		SubAssignees: ticket.SubAssignees,
 		Stakeholders: ticket.Stakeholders,
 		Tags:         ticket.Tags,
 		CreatedAt:    ticket.CreatedAt,
-		UpdatedAt:    api.OptDateTime{Value: ticket.UpdatedAt, Set: true},
+		UpdatedAt:    ticket.UpdatedAt,
 	}
 
 	return res, nil
@@ -120,15 +117,11 @@ func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (
 	res := make([]api.Ticket, 0, len(tickets))
 	for _, ticket := range tickets {
 		res = append(res, api.Ticket{
-			ID:    ticket.ID,
-			Title: ApplyCensorIfNeed(role, ticket.Title),
-			Description: api.OptString{
-				Value: ApplyCensorIfNeed(role, ticket.Description.String),
-				Set:   ticket.Description.Valid,
-			},
-			Due: api.OptNilDate{
+			ID:          ticket.ID,
+			Title:       ApplyCensorIfNeed(role, ticket.Title),
+			Description: ApplyCensorIfNeed(role, ticket.Description.String),
+			Due: api.NilDate{
 				Value: ticket.Due.Time,
-				Set:   ticket.Due.Valid,
 				Null:  !ticket.Due.Valid,
 			},
 			Status:       api.TicketStatus(ticket.Status),
@@ -137,10 +130,7 @@ func (h *Handler) GetTickets(ctx context.Context, params api.GetTicketsParams) (
 			Stakeholders: ticket.Stakeholders,
 			Tags:         ticket.Tags,
 			CreatedAt:    ticket.CreatedAt,
-			UpdatedAt: api.OptDateTime{
-				Value: ticket.UpdatedAt,
-				Set:   true,
-			},
+			UpdatedAt:    ticket.UpdatedAt,
 		})
 	}
 	result := api.GetTicketsOKApplicationJSON(res)
@@ -225,20 +215,17 @@ func (h *Handler) GetTicketByID(ctx context.Context, params api.GetTicketByIDPar
 		apiNotes = append(apiNotes, apiNote)
 	}
 	res := &api.GetTicketByIDOK{
-		ID:    ticket.ID,
-		Title: ApplyCensorIfNeed(role, ticket.Title),
-		Description: api.OptString{
-			Value: ApplyCensorIfNeed(role, ticket.Description.String),
-			Set:   ticket.Description.Valid,
-		},
-		Due:          api.OptNilDate{Value: ticket.Due.Time, Set: ticket.Due.Valid, Null: !ticket.Due.Valid},
+		ID:           ticket.ID,
+		Title:        ApplyCensorIfNeed(role, ticket.Title),
+		Description:  ApplyCensorIfNeed(role, ticket.Description.String),
+		Due:          api.NilDate{Value: ticket.Due.Time, Null: !ticket.Due.Valid},
 		Status:       api.TicketStatus(ticket.Status),
 		Assignee:     ticket.Assignee,
 		SubAssignees: ticket.SubAssignees,
 		Stakeholders: ticket.Stakeholders,
 		Tags:         ticket.Tags,
 		CreatedAt:    ticket.CreatedAt,
-		UpdatedAt:    api.OptDateTime{Value: ticket.UpdatedAt, Set: true},
+		UpdatedAt:    ticket.UpdatedAt,
 		Notes:        apiNotes,
 	}
 
@@ -377,21 +364,15 @@ func convertRepositoryNote(note *repository.Note, reviews []*repository.Review, 
 	}
 
 	return api.Note{
-		ID:       note.ID,
-		TicketID: note.TicketID,
-		Type:     noteType,
-		Status:   api.OptNoteStatus{Value: noteStatus, Set: true},
-		Author:   note.UserID,
-		Content:  ApplyCensorIfNeed(role, note.Content),
-		Reviews:  apiReviews,
-		CreatedAt: api.OptDateTime{
-			Value: note.CreatedAt,
-			Set:   true,
-		},
-		UpdatedAt: api.OptDateTime{
-			Value: note.UpdatedAt,
-			Set:   true,
-		},
+		ID:        note.ID,
+		TicketID:  note.TicketID,
+		Type:      noteType,
+		Status:    noteStatus,
+		Author:    note.UserID,
+		Content:   ApplyCensorIfNeed(role, note.Content),
+		Reviews:   apiReviews,
+		CreatedAt: note.CreatedAt,
+		UpdatedAt: note.UpdatedAt,
 	}, nil
 }
 
