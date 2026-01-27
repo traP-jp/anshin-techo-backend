@@ -76,16 +76,25 @@ func (h *Handler) DeleteReview(ctx context.Context, params api.DeleteReviewParam
 func (h *Handler) UpdateReview(ctx context.Context, req api.OptUpdateReviewReq, params api.UpdateReviewParams) (api.UpdateReviewRes, error) {
 	reviewer := getUserID(ctx)
 
-	repoParams := repository.UpdateReviewParams{
-		Type:       "",
-		TypeSet:    false,
-		Weight:     0,
-		WeightSet:  false,
-		Comment:    sql.NullString{String: "", Valid: false},
-		CommentSet: false,
+	repoType, err := toRepositoryReviewType(req.Value.Type)
+	if err != nil {
+		return nil, echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	_, err := h.repo.UpdateReview(ctx, params.TicketId, params.NoteId, params.ReviewId, reviewer, repoParams)
+	repoParams := repository.UpdateReviewParams{
+		TypeSet:    true,
+		WeightSet:  true,
+		CommentSet: true,
+		Type:       repoType,
+		Weight:     req.Value.Weight,
+		Comment:    sql.NullString{String: req.Value.Comment, Valid: true},
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = h.repo.UpdateReview(ctx, params.TicketId, params.NoteId, params.ReviewId, reviewer, repoParams)
 	if err != nil {
 		switch err {
 		case repository.ErrReviewNotFound:

@@ -34,10 +34,9 @@ type Review struct {
 }
 
 type CreateReviewParams struct {
-	Type      string
-	Weight    int
-	WeightSet bool
-	Comment   sql.NullString
+	Type    string
+	Weight  int
+	Comment sql.NullString
 }
 
 type UpdateReviewParams struct {
@@ -150,7 +149,7 @@ func normalizeReviewWeight(params CreateReviewParams, role string) (int, error) 
 		maxWeight = 0
 	}
 
-	if !params.WeightSet || params.Weight < 0 || params.Weight > maxWeight {
+	if params.Weight < 0 || params.Weight > maxWeight {
 		return 0, ErrInvalidReviewWeight
 	}
 
