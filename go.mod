@@ -11,6 +11,7 @@ require (
 	github.com/ogen-go/ogen v1.18.0
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/ras0q/goalie v0.6.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/sashabaranov/go-openai v1.41.2
 	github.com/traPtitech/go-traq v0.0.0-20251201015624-285ca186fc5e
 	github.com/traPtitech/traq-ws-bot v1.2.1
