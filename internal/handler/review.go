@@ -24,16 +24,12 @@ func (h *Handler) CreateReview(ctx context.Context, req *api.CreateReviewReq, pa
 		return &api.CreateReviewBadRequest{}, nil
 	}
 
-	comment := sql.NullString{String: "", Valid: false}
-	if req.Comment.Set {
-		comment = sql.NullString{String: req.Comment.Value, Valid: true}
-	}
+	comment := sql.NullString{String: req.Comment, Valid: true}
 
 	repoReview, err := h.repo.CreateReview(ctx, params.TicketId, params.NoteId, reviewer, repository.CreateReviewParams{
-		Type:      repoType,
-		Weight:    req.Weight.Value,
-		WeightSet: req.Weight.Set,
-		Comment:   comment,
+		Type:    repoType,
+		Weight:  req.Weight,
+		Comment: comment,
 	})
 	if err != nil {
 		switch err {
@@ -80,36 +76,21 @@ func (h *Handler) DeleteReview(ctx context.Context, params api.DeleteReviewParam
 func (h *Handler) UpdateReview(ctx context.Context, req api.OptUpdateReviewReq, params api.UpdateReviewParams) (api.UpdateReviewRes, error) {
 	reviewer := getUserID(ctx)
 
+	repoType, err := toRepositoryReviewType(req.Value.Type)
+	if err != nil {
+		return nil, echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
 	repoParams := repository.UpdateReviewParams{
-		Type:       "",
-		TypeSet:    false,
-		Weight:     0,
-		WeightSet:  false,
-		Comment:    sql.NullString{String: "", Valid: false},
-		CommentSet: false,
-	}
-	if req.Set {
-		if req.Value.Type.Set {
-			repoType, err := toRepositoryReviewType(req.Value.Type.Value)
-			if err != nil {
-				return nil, err
-			}
-			repoParams.Type = repoType
-			repoParams.TypeSet = true
-		}
-
-		if req.Value.Weight.Set {
-			repoParams.Weight = req.Value.Weight.Value
-			repoParams.WeightSet = true
-		}
-
-		if req.Value.Comment.Set {
-			repoParams.Comment = sql.NullString{String: req.Value.Comment.Value, Valid: true}
-			repoParams.CommentSet = true
-		}
+		TypeSet:    true,
+		WeightSet:  true,
+		CommentSet: true,
+		Type:       repoType,
+		Weight:     req.Value.Weight,
+		Comment:    sql.NullString{String: req.Value.Comment, Valid: true},
 	}
 
-	_, err := h.repo.UpdateReview(ctx, params.TicketId, params.NoteId, params.ReviewId, reviewer, repoParams)
+	_, err = h.repo.UpdateReview(ctx, params.TicketId, params.NoteId, params.ReviewId, reviewer, repoParams)
 	if err != nil {
 		switch err {
 		case repository.ErrReviewNotFound:
@@ -157,18 +138,15 @@ func convertRepositoryReview(review *repository.Review, role string) (*api.Revie
 	safeComment := ApplyCensorIfNeed(role, review.Comment.String)
 
 	return &api.Review{
-		ID:       review.ID,
-		NoteID:   review.NoteID,
-		Reviewer: review.Author,
-		Type:     reviewType,
-		Weight:   review.Weight,
-		Status:   reviewStatus,
-		Comment: api.OptString{
-			Value: safeComment, 
-			Set:   review.Comment.Valid,
-		},
-		CreatedAt: api.OptDateTime{Value: review.CreatedAt, Set: true},
-		UpdatedAt: api.OptDateTime{Value: review.UpdatedAt, Set: true},
+		ID:        review.ID,
+		NoteID:    review.NoteID,
+		Reviewer:  review.Author,
+		Type:      reviewType,
+		Weight:    review.Weight,
+		Status:    reviewStatus,
+		Comment:   safeComment,
+		CreatedAt: review.CreatedAt,
+		UpdatedAt: review.UpdatedAt,
 	}, nil
 }
 

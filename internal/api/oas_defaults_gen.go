@@ -6,6 +6,6 @@ package api
 func (s *TicketsTicketIdNotesNoteIdPutReq) setDefaults() {
 	{
 		val := bool(true)
-		s.ResetReviews.SetTo(val)
+		s.ResetReviews = val
 	}
 }

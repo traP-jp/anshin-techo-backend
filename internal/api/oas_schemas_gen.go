@@ -96,8 +96,8 @@ func (*CreateReviewNotFound) createReviewRes() {}
 type CreateReviewReq struct {
 	Type ReviewType `json:"type"`
 	// 承認の強さ.
-	Weight  OptInt    `json:"weight"`
-	Comment OptString `json:"comment"`
+	Weight  int    `json:"weight"`
+	Comment string `json:"comment"`
 }
 
 // GetType returns the value of Type.
@@ -106,12 +106,12 @@ func (s *CreateReviewReq) GetType() ReviewType {
 }
 
 // GetWeight returns the value of Weight.
-func (s *CreateReviewReq) GetWeight() OptInt {
+func (s *CreateReviewReq) GetWeight() int {
 	return s.Weight
 }
 
 // GetComment returns the value of Comment.
-func (s *CreateReviewReq) GetComment() OptString {
+func (s *CreateReviewReq) GetComment() string {
 	return s.Comment
 }
 
@@ -121,12 +121,12 @@ func (s *CreateReviewReq) SetType(val ReviewType) {
 }
 
 // SetWeight sets the value of Weight.
-func (s *CreateReviewReq) SetWeight(val OptInt) {
+func (s *CreateReviewReq) SetWeight(val int) {
 	s.Weight = val
 }
 
 // SetComment sets the value of Comment.
-func (s *CreateReviewReq) SetComment(val OptString) {
+func (s *CreateReviewReq) SetComment(val string) {
 	s.Comment = val
 }
 
@@ -345,7 +345,7 @@ type GetTicketByIDOK struct {
 	// 案件名.
 	Title string `json:"title"`
 	// 詳細.
-	Description OptString `json:"description"`
+	Description string `json:"description"`
 	// 主担当のtraQ ID.
 	Assignee string `json:"assignee"`
 	// 副担当リスト (traQ ID).
@@ -356,9 +356,9 @@ type GetTicketByIDOK struct {
 	// タグ (例: 協賛, 問い合わせ).
 	Tags []string `json:"tags"`
 	// 期日。未指定時は自動設定される。.
-	Due       OptNilDate  `json:"due"`
-	CreatedAt time.Time   `json:"created_at"`
-	UpdatedAt OptDateTime `json:"updated_at"`
+	Due       NilDate   `json:"due"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 	// このチケットに紐づくノート一覧.
 	Notes []Note `json:"notes"`
 }
@@ -374,7 +374,7 @@ func (s *GetTicketByIDOK) GetTitle() string {
 }
 
 // GetDescription returns the value of Description.
-func (s *GetTicketByIDOK) GetDescription() OptString {
+func (s *GetTicketByIDOK) GetDescription() string {
 	return s.Description
 }
 
@@ -404,7 +404,7 @@ func (s *GetTicketByIDOK) GetTags() []string {
 }
 
 // GetDue returns the value of Due.
-func (s *GetTicketByIDOK) GetDue() OptNilDate {
+func (s *GetTicketByIDOK) GetDue() NilDate {
 	return s.Due
 }
 
@@ -414,7 +414,7 @@ func (s *GetTicketByIDOK) GetCreatedAt() time.Time {
 }
 
 // GetUpdatedAt returns the value of UpdatedAt.
-func (s *GetTicketByIDOK) GetUpdatedAt() OptDateTime {
+func (s *GetTicketByIDOK) GetUpdatedAt() time.Time {
 	return s.UpdatedAt
 }
 
@@ -434,7 +434,7 @@ func (s *GetTicketByIDOK) SetTitle(val string) {
 }
 
 // SetDescription sets the value of Description.
-func (s *GetTicketByIDOK) SetDescription(val OptString) {
+func (s *GetTicketByIDOK) SetDescription(val string) {
 	s.Description = val
 }
 
@@ -464,7 +464,7 @@ func (s *GetTicketByIDOK) SetTags(val []string) {
 }
 
 // SetDue sets the value of Due.
-func (s *GetTicketByIDOK) SetDue(val OptNilDate) {
+func (s *GetTicketByIDOK) SetDue(val NilDate) {
 	s.Due = val
 }
 
@@ -474,7 +474,7 @@ func (s *GetTicketByIDOK) SetCreatedAt(val time.Time) {
 }
 
 // SetUpdatedAt sets the value of UpdatedAt.
-func (s *GetTicketByIDOK) SetUpdatedAt(val OptDateTime) {
+func (s *GetTicketByIDOK) SetUpdatedAt(val time.Time) {
 	s.UpdatedAt = val
 }
 
@@ -574,20 +574,65 @@ type MeGetUnauthorized struct{}
 
 func (*MeGetUnauthorized) meGetRes() {}
 
+// NewNilDate returns new NilDate with value set to v.
+func NewNilDate(v time.Time) NilDate {
+	return NilDate{
+		Value: v,
+	}
+}
+
+// NilDate is nullable time.Time.
+type NilDate struct {
+	Value time.Time
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilDate) SetTo(v time.Time) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilDate) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilDate) SetToNull() {
+	o.Null = true
+	var v time.Time
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilDate) Get() (v time.Time, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilDate) Or(d time.Time) time.Time {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // Ref: #/components/schemas/Note
 type Note struct {
 	// ノートID.
-	ID       int64         `json:"id"`
-	TicketID int64         `json:"ticket_id"`
-	Type     NoteType      `json:"type"`
-	Status   OptNoteStatus `json:"status"`
+	ID       int64      `json:"id"`
+	TicketID int64      `json:"ticket_id"`
+	Type     NoteType   `json:"type"`
+	Status   NoteStatus `json:"status"`
 	// 作成者.
 	Author string `json:"author"`
 	// メッセージ本文.
-	Content   string      `json:"content"`
-	Reviews   []Review    `json:"reviews"`
-	CreatedAt OptDateTime `json:"created_at"`
-	UpdatedAt OptDateTime `json:"updated_at"`
+	Content   string    `json:"content"`
+	Reviews   []Review  `json:"reviews"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // GetID returns the value of ID.
@@ -606,7 +651,7 @@ func (s *Note) GetType() NoteType {
 }
 
 // GetStatus returns the value of Status.
-func (s *Note) GetStatus() OptNoteStatus {
+func (s *Note) GetStatus() NoteStatus {
 	return s.Status
 }
 
@@ -626,12 +671,12 @@ func (s *Note) GetReviews() []Review {
 }
 
 // GetCreatedAt returns the value of CreatedAt.
-func (s *Note) GetCreatedAt() OptDateTime {
+func (s *Note) GetCreatedAt() time.Time {
 	return s.CreatedAt
 }
 
 // GetUpdatedAt returns the value of UpdatedAt.
-func (s *Note) GetUpdatedAt() OptDateTime {
+func (s *Note) GetUpdatedAt() time.Time {
 	return s.UpdatedAt
 }
 
@@ -651,7 +696,7 @@ func (s *Note) SetType(val NoteType) {
 }
 
 // SetStatus sets the value of Status.
-func (s *Note) SetStatus(val OptNoteStatus) {
+func (s *Note) SetStatus(val NoteStatus) {
 	s.Status = val
 }
 
@@ -671,12 +716,12 @@ func (s *Note) SetReviews(val []Review) {
 }
 
 // SetCreatedAt sets the value of CreatedAt.
-func (s *Note) SetCreatedAt(val OptDateTime) {
+func (s *Note) SetCreatedAt(val time.Time) {
 	s.CreatedAt = val
 }
 
 // SetUpdatedAt sets the value of UpdatedAt.
-func (s *Note) SetUpdatedAt(val OptDateTime) {
+func (s *Note) SetUpdatedAt(val time.Time) {
 	s.UpdatedAt = val
 }
 
@@ -801,52 +846,6 @@ func (s *NoteType) UnmarshalText(data []byte) error {
 	}
 }
 
-// NewOptBool returns new OptBool with value set to v.
-func NewOptBool(v bool) OptBool {
-	return OptBool{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptBool is optional bool.
-type OptBool struct {
-	Value bool
-	Set   bool
-}
-
-// IsSet returns true if OptBool was set.
-func (o OptBool) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptBool) Reset() {
-	var v bool
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptBool) SetTo(v bool) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptBool) Get() (v bool, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptBool) Or(d bool) bool {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptDate returns new OptDate with value set to v.
 func NewOptDate(v time.Time) OptDate {
 	return OptDate{
@@ -893,52 +892,6 @@ func (o OptDate) Or(d time.Time) time.Time {
 	return d
 }
 
-// NewOptDateTime returns new OptDateTime with value set to v.
-func NewOptDateTime(v time.Time) OptDateTime {
-	return OptDateTime{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptDateTime is optional time.Time.
-type OptDateTime struct {
-	Value time.Time
-	Set   bool
-}
-
-// IsSet returns true if OptDateTime was set.
-func (o OptDateTime) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptDateTime) Reset() {
-	var v time.Time
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptDateTime) SetTo(v time.Time) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptDateTime) Get() (v time.Time, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptDateTime) Or(d time.Time) time.Time {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptGetTicketsSort returns new OptGetTicketsSort with value set to v.
 func NewOptGetTicketsSort(v GetTicketsSort) OptGetTicketsSort {
 	return OptGetTicketsSort{
@@ -979,207 +932,6 @@ func (o OptGetTicketsSort) Get() (v GetTicketsSort, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptGetTicketsSort) Or(d GetTicketsSort) GetTicketsSort {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptInt returns new OptInt with value set to v.
-func NewOptInt(v int) OptInt {
-	return OptInt{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptInt is optional int.
-type OptInt struct {
-	Value int
-	Set   bool
-}
-
-// IsSet returns true if OptInt was set.
-func (o OptInt) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptInt) Reset() {
-	var v int
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptInt) SetTo(v int) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptInt) Get() (v int, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptInt) Or(d int) int {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilDate returns new OptNilDate with value set to v.
-func NewOptNilDate(v time.Time) OptNilDate {
-	return OptNilDate{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilDate is optional nullable time.Time.
-type OptNilDate struct {
-	Value time.Time
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilDate was set.
-func (o OptNilDate) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilDate) Reset() {
-	var v time.Time
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilDate) SetTo(v time.Time) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilDate) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilDate) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v time.Time
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilDate) Get() (v time.Time, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilDate) Or(d time.Time) time.Time {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNoteStatus returns new OptNoteStatus with value set to v.
-func NewOptNoteStatus(v NoteStatus) OptNoteStatus {
-	return OptNoteStatus{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNoteStatus is optional NoteStatus.
-type OptNoteStatus struct {
-	Value NoteStatus
-	Set   bool
-}
-
-// IsSet returns true if OptNoteStatus was set.
-func (o OptNoteStatus) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNoteStatus) Reset() {
-	var v NoteStatus
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptNoteStatus) SetTo(v NoteStatus) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNoteStatus) Get() (v NoteStatus, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNoteStatus) Or(d NoteStatus) NoteStatus {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptReviewType returns new OptReviewType with value set to v.
-func NewOptReviewType(v ReviewType) OptReviewType {
-	return OptReviewType{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptReviewType is optional ReviewType.
-type OptReviewType struct {
-	Value ReviewType
-	Set   bool
-}
-
-// IsSet returns true if OptReviewType was set.
-func (o OptReviewType) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptReviewType) Reset() {
-	var v ReviewType
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptReviewType) SetTo(v ReviewType) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptReviewType) Get() (v ReviewType, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptReviewType) Or(d ReviewType) ReviewType {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -1385,9 +1137,9 @@ type Review struct {
 	// レビュー状態 (active: 有効, stale: 修正により無効化済み).
 	Status ReviewStatus `json:"status"`
 	// コメント.
-	Comment   OptString   `json:"comment"`
-	CreatedAt OptDateTime `json:"created_at"`
-	UpdatedAt OptDateTime `json:"updated_at"`
+	Comment   string    `json:"comment"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // GetID returns the value of ID.
@@ -1421,17 +1173,17 @@ func (s *Review) GetStatus() ReviewStatus {
 }
 
 // GetComment returns the value of Comment.
-func (s *Review) GetComment() OptString {
+func (s *Review) GetComment() string {
 	return s.Comment
 }
 
 // GetCreatedAt returns the value of CreatedAt.
-func (s *Review) GetCreatedAt() OptDateTime {
+func (s *Review) GetCreatedAt() time.Time {
 	return s.CreatedAt
 }
 
 // GetUpdatedAt returns the value of UpdatedAt.
-func (s *Review) GetUpdatedAt() OptDateTime {
+func (s *Review) GetUpdatedAt() time.Time {
 	return s.UpdatedAt
 }
 
@@ -1466,17 +1218,17 @@ func (s *Review) SetStatus(val ReviewStatus) {
 }
 
 // SetComment sets the value of Comment.
-func (s *Review) SetComment(val OptString) {
+func (s *Review) SetComment(val string) {
 	s.Comment = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
-func (s *Review) SetCreatedAt(val OptDateTime) {
+func (s *Review) SetCreatedAt(val time.Time) {
 	s.CreatedAt = val
 }
 
 // SetUpdatedAt sets the value of UpdatedAt.
-func (s *Review) SetUpdatedAt(val OptDateTime) {
+func (s *Review) SetUpdatedAt(val time.Time) {
 	s.UpdatedAt = val
 }
 
@@ -1588,7 +1340,7 @@ type Ticket struct {
 	// 案件名.
 	Title string `json:"title"`
 	// 詳細.
-	Description OptString `json:"description"`
+	Description string `json:"description"`
 	// 主担当のtraQ ID.
 	Assignee string `json:"assignee"`
 	// 副担当リスト (traQ ID).
@@ -1599,9 +1351,9 @@ type Ticket struct {
 	// タグ (例: 協賛, 問い合わせ).
 	Tags []string `json:"tags"`
 	// 期日。未指定時は自動設定される。.
-	Due       OptNilDate  `json:"due"`
-	CreatedAt time.Time   `json:"created_at"`
-	UpdatedAt OptDateTime `json:"updated_at"`
+	Due       NilDate   `json:"due"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // GetID returns the value of ID.
@@ -1615,7 +1367,7 @@ func (s *Ticket) GetTitle() string {
 }
 
 // GetDescription returns the value of Description.
-func (s *Ticket) GetDescription() OptString {
+func (s *Ticket) GetDescription() string {
 	return s.Description
 }
 
@@ -1645,7 +1397,7 @@ func (s *Ticket) GetTags() []string {
 }
 
 // GetDue returns the value of Due.
-func (s *Ticket) GetDue() OptNilDate {
+func (s *Ticket) GetDue() NilDate {
 	return s.Due
 }
 
@@ -1655,7 +1407,7 @@ func (s *Ticket) GetCreatedAt() time.Time {
 }
 
 // GetUpdatedAt returns the value of UpdatedAt.
-func (s *Ticket) GetUpdatedAt() OptDateTime {
+func (s *Ticket) GetUpdatedAt() time.Time {
 	return s.UpdatedAt
 }
 
@@ -1670,7 +1422,7 @@ func (s *Ticket) SetTitle(val string) {
 }
 
 // SetDescription sets the value of Description.
-func (s *Ticket) SetDescription(val OptString) {
+func (s *Ticket) SetDescription(val string) {
 	s.Description = val
 }
 
@@ -1700,7 +1452,7 @@ func (s *Ticket) SetTags(val []string) {
 }
 
 // SetDue sets the value of Due.
-func (s *Ticket) SetDue(val OptNilDate) {
+func (s *Ticket) SetDue(val NilDate) {
 	s.Due = val
 }
 
@@ -1710,7 +1462,7 @@ func (s *Ticket) SetCreatedAt(val time.Time) {
 }
 
 // SetUpdatedAt sets the value of UpdatedAt.
-func (s *Ticket) SetUpdatedAt(val OptDateTime) {
+func (s *Ticket) SetUpdatedAt(val time.Time) {
 	s.UpdatedAt = val
 }
 
@@ -1893,39 +1645,39 @@ type TicketsTicketIdNotesNoteIdPutOK struct{}
 func (*TicketsTicketIdNotesNoteIdPutOK) ticketsTicketIdNotesNoteIdPutRes() {}
 
 type TicketsTicketIdNotesNoteIdPutReq struct {
-	Content OptString     `json:"content"`
-	Status  OptNoteStatus `json:"status"`
+	Content string     `json:"content"`
+	Status  NoteStatus `json:"status"`
 	// Trueの場合、承認状況(Weight)をリセットしてDraftに戻す.
-	ResetReviews OptBool `json:"reset_reviews"`
+	ResetReviews bool `json:"reset_reviews"`
 }
 
 // GetContent returns the value of Content.
-func (s *TicketsTicketIdNotesNoteIdPutReq) GetContent() OptString {
+func (s *TicketsTicketIdNotesNoteIdPutReq) GetContent() string {
 	return s.Content
 }
 
 // GetStatus returns the value of Status.
-func (s *TicketsTicketIdNotesNoteIdPutReq) GetStatus() OptNoteStatus {
+func (s *TicketsTicketIdNotesNoteIdPutReq) GetStatus() NoteStatus {
 	return s.Status
 }
 
 // GetResetReviews returns the value of ResetReviews.
-func (s *TicketsTicketIdNotesNoteIdPutReq) GetResetReviews() OptBool {
+func (s *TicketsTicketIdNotesNoteIdPutReq) GetResetReviews() bool {
 	return s.ResetReviews
 }
 
 // SetContent sets the value of Content.
-func (s *TicketsTicketIdNotesNoteIdPutReq) SetContent(val OptString) {
+func (s *TicketsTicketIdNotesNoteIdPutReq) SetContent(val string) {
 	s.Content = val
 }
 
 // SetStatus sets the value of Status.
-func (s *TicketsTicketIdNotesNoteIdPutReq) SetStatus(val OptNoteStatus) {
+func (s *TicketsTicketIdNotesNoteIdPutReq) SetStatus(val NoteStatus) {
 	s.Status = val
 }
 
 // SetResetReviews sets the value of ResetReviews.
-func (s *TicketsTicketIdNotesNoteIdPutReq) SetResetReviews(val OptBool) {
+func (s *TicketsTicketIdNotesNoteIdPutReq) SetResetReviews(val bool) {
 	s.ResetReviews = val
 }
 
@@ -2007,38 +1759,38 @@ type UpdateReviewOK struct{}
 func (*UpdateReviewOK) updateReviewRes() {}
 
 type UpdateReviewReq struct {
-	Type    OptReviewType `json:"type"`
-	Weight  OptInt        `json:"weight"`
-	Comment OptString     `json:"comment"`
+	Type    ReviewType `json:"type"`
+	Weight  int        `json:"weight"`
+	Comment string     `json:"comment"`
 }
 
 // GetType returns the value of Type.
-func (s *UpdateReviewReq) GetType() OptReviewType {
+func (s *UpdateReviewReq) GetType() ReviewType {
 	return s.Type
 }
 
 // GetWeight returns the value of Weight.
-func (s *UpdateReviewReq) GetWeight() OptInt {
+func (s *UpdateReviewReq) GetWeight() int {
 	return s.Weight
 }
 
 // GetComment returns the value of Comment.
-func (s *UpdateReviewReq) GetComment() OptString {
+func (s *UpdateReviewReq) GetComment() string {
 	return s.Comment
 }
 
 // SetType sets the value of Type.
-func (s *UpdateReviewReq) SetType(val OptReviewType) {
+func (s *UpdateReviewReq) SetType(val ReviewType) {
 	s.Type = val
 }
 
 // SetWeight sets the value of Weight.
-func (s *UpdateReviewReq) SetWeight(val OptInt) {
+func (s *UpdateReviewReq) SetWeight(val int) {
 	s.Weight = val
 }
 
 // SetComment sets the value of Comment.
-func (s *UpdateReviewReq) SetComment(val OptString) {
+func (s *UpdateReviewReq) SetComment(val string) {
 	s.Comment = val
 }
 

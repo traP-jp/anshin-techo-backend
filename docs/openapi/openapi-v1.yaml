@@ -136,7 +136,13 @@ components:
         - title
         - status
         - assignee
+        - description
+        - sub_assignees
+        - stakeholders
+        - tags
+        - due
         - created_at
+        - updated_at
 
     Note:
       type: object
@@ -174,6 +180,10 @@ components:
         - type
         - content
         - author
+        - status
+        - reviews
+        - created_at
+        - updated_at
 
     Review:
       type: object
@@ -218,6 +228,9 @@ components:
         - type
         - weight
         - status
+        - comment
+        - created_at
+        - updated_at
 
     Config:
       type: object
@@ -260,40 +273,6 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-
-    Config:
-      type: object
-      properties:
-        reminder_interval:
-          type: object
-          description: "リマインドのタイミング設定"
-          properties:
-            overdue_day:
-              type: array
-              items:
-                type: integer
-              description: "期限超過後にリマインドする日数のリスト"
-            notesent_hour:
-              type: integer
-              description: "送信予定からリマインドするまでの時間(時間単位)"
-          required:
-            - overdue_day
-            - notesent_hour
-        revise_prompt:
-          type: string
-          description: "レビュアーに渡すリビジョン指示テキスト"
-      required:
-        - reminder_interval
-        - revise_prompt
-
-    Error:
-      type: object
-      properties:
-        message:
-          type: string
-          description: "エラーメッセージ"
-      required:
-        - message
 
   securitySchemes:
     # 開発用簡易認証
@@ -689,6 +668,10 @@ paths:
                   type: boolean
                   default: true
                   description: "trueの場合、承認状況(Weight)をリセットしてDraftに戻す"
+              required:
+                - content
+                - status
+                - reset_reviews
       responses:
         "200":
           description: "成功"
@@ -738,7 +721,6 @@ paths:
           application/json:
             schema:
               type: object
-              required: [type]
               properties:
                 type:
                   $ref: "#/components/schemas/ReviewType"
@@ -747,6 +729,10 @@ paths:
                   description: "承認の強さ"
                 comment:
                   type: string
+              required:
+                - type
+                - weight
+                - comment
       responses:
         "201":
           description: "作成成功"
@@ -802,6 +788,10 @@ paths:
                   type: integer
                 comment:
                   type: string
+              required:
+                - type
+                - weight
+                - comment
       responses:
         "200":
           description: "成功"
