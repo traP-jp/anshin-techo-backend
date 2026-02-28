@@ -83,7 +83,7 @@ func TestTicket(t *testing.T) {
 		})
 		t.Run("get tickets with filter and sort", func(t *testing.T) {
 			body := `{"title":"フィルターテスト","description":"説明","status":"not_planned","assignee":"hoge2"}`
-			rec := doRequest(t, "POST", "/tickets", "Pugma", body)
+			_ = doRequest(t, "POST", "/tickets", "Pugma", body)
 			t.Run("get tickets filtered by status", func(t *testing.T) {
 				rec := doRequest(t, "GET", "/tickets?status=completed", "Pugma", ``)
 				expectedStatus := `200 OK`
