@@ -46,7 +46,7 @@ func (h *Handler) TicketsTicketIdNotesPost(ctx context.Context, req *api.Tickets
 //
 //nolint:revive
 func (h *Handler) TicketsTicketIdNotesNoteIdPut(ctx context.Context, req *api.TicketsTicketIdNotesNoteIdPutReq, params api.TicketsTicketIdNotesNoteIdPutParams) (api.TicketsTicketIdNotesNoteIdPutRes, error) {
-	if err := h.repo.UpdateNote(ctx, params.TicketId, params.NoteId, req.Content); err != nil {
+	if err := h.repo.UpdateNote(ctx, params.TicketId, params.NoteId, req.Content, string(req.Status)); err != nil {
 		return nil, fmt.Errorf("update note: %w", err)
 	}
 

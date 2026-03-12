@@ -12,6 +12,7 @@ import (
 func TestReview(t *testing.T) {
 	truncateAllTables(t)
 	t.Run("create reviews", func(t *testing.T) {
+		var ticketPath string
 		var reviewPath string
 		t.Run("prepare create reviews", func(t *testing.T) {
 			t.Run("prepare: create users", func(t *testing.T) {
@@ -42,39 +43,14 @@ func TestReview(t *testing.T) {
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 				noteID = int(unmarshalResponse(t, rec)["id"].(float64))
 			})
+
 			reviewPath = "/tickets/" + fmt.Sprintf("%v", ticketID) + "/notes/" + fmt.Sprintf("%v", noteID) + "/reviews"
-		})
-		t.Run("create reviews by manager", func(t *testing.T) {
-			t.Run("manager can create weight=5 review", func(t *testing.T) {
-				rec := doRequest(t, "POST", reviewPath, "Pugma", `{"type": "approve","weight": 5,"comment": "LGTM"}`)
+			ticketPath = "/tickets/" + fmt.Sprintf("%v", ticketID)
+			t.Run("prepare: make ticket ready", func(t *testing.T) {
+				rec := doRequest(t, "PUT", "/tickets/"+fmt.Sprintf("%v", ticketID)+"/notes/"+fmt.Sprintf("%v", noteID), "ramdos", `{"status": "waiting_review","content": "毎々お世話になっております。","reset_reviews": false}`)
 
-				expectedStatus := `201 Created`
-				expectedBody := `{"id":[ID],"note_id":[ID],"reviewer":"Pugma","type":"approve","weight":5,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
-				assert.Equal(t, rec.Result().Status, expectedStatus)
-				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
-			})
-
-			t.Run("manager cannot create weight=6 review", func(t *testing.T) {
-				rec := doRequest(t, "POST", reviewPath, "Pugma", `{"type": "approve","weight": 6,"comment": "very LGTM"}`)
-
-				expectedStatus := `400 Bad Request`
+				expectedStatus := `200 OK`
 				expectedBody := ``
-				assert.Equal(t, rec.Result().Status, expectedStatus)
-				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
-			})
-			t.Run("manager cannot create weight=-1 review", func(t *testing.T) {
-				rec := doRequest(t, "POST", reviewPath, "aruze_pino", `{"type": "approve","weight": -1,"comment": "very little LGTM"}`)
-
-				expectedStatus := `400 Bad Request`
-				expectedBody := ``
-				assert.Equal(t, rec.Result().Status, expectedStatus)
-				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
-			})
-			t.Run("manager can create weight=0 review", func(t *testing.T) {
-				rec := doRequest(t, "POST", reviewPath, "aruze_pino", `{"type": "approve","weight": 0,"comment": "little LGTM"}`)
-
-				expectedStatus := `201 Created`
-				expectedBody := `{"id":[ID],"note_id":[ID],"reviewer":"aruze_pino","type":"approve","weight":0,"status":"active","comment":"little LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
@@ -94,6 +70,15 @@ func TestReview(t *testing.T) {
 
 				expectedStatus := `201 Created`
 				expectedBody := `{"id":[ID],"note_id":[ID],"reviewer":"Hokaze","type":"approve","weight":4,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
+				assert.Equal(t, rec.Result().Status, expectedStatus)
+				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
+			})
+			t.Run("check ticket status", func(t *testing.T) {
+				rec := doRequest(t, "GET", ticketPath, "Hokaze", ``)
+				fmt.Println(ticketPath)
+
+				expectedStatus := `200 OK`
+				expectedBody := `{"id":[ID],"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]","notes":[{"id":[ID],"ticket_id":[ID],"type":"outgoing","status":"waiting_review","author":"ramdos","content":"毎々お世話になっております。","reviews":[{"id":[ID],"note_id":[ID],"reviewer":"Hokaze","type":"approve","weight":4,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"}],"created_at":"[TIME]","updated_at":"[TIME]"}]}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
@@ -137,6 +122,42 @@ func TestReview(t *testing.T) {
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
+		})
+		t.Run("create reviews by manager", func(t *testing.T) {
+			t.Run("manager can create weight=5 review", func(t *testing.T) {
+				rec := doRequest(t, "POST", reviewPath, "Pugma", `{"type": "approve","weight": 5,"comment": "LGTM"}`)
+
+				expectedStatus := `201 Created`
+				expectedBody := `{"id":[ID],"note_id":[ID],"reviewer":"Pugma","type":"approve","weight":5,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
+				assert.Equal(t, rec.Result().Status, expectedStatus)
+				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
+			})
+
+			t.Run("manager cannot create weight=6 review", func(t *testing.T) {
+				rec := doRequest(t, "POST", reviewPath, "aruze_pino", `{"type": "approve","weight": 6,"comment": "very LGTM"}`)
+
+				expectedStatus := `400 Bad Request`
+				expectedBody := ``
+				assert.Equal(t, rec.Result().Status, expectedStatus)
+				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
+			})
+			t.Run("manager cannot create weight=-1 review", func(t *testing.T) {
+				rec := doRequest(t, "POST", reviewPath, "aruze_pino", `{"type": "approve","weight": -1,"comment": "very little LGTM"}`)
+
+				expectedStatus := `400 Bad Request`
+				expectedBody := ``
+				assert.Equal(t, rec.Result().Status, expectedStatus)
+				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
+			})
+			t.Run("manager can create weight=0 review", func(t *testing.T) {
+				rec := doRequest(t, "POST", reviewPath, "aruze_pino", `{"type": "approve","weight": 0,"comment": "little LGTM"}`)
+
+				expectedStatus := `201 Created`
+				expectedBody := `{"id":[ID],"note_id":[ID],"reviewer":"aruze_pino","type":"approve","weight":0,"status":"active","comment":"little LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
+				assert.Equal(t, rec.Result().Status, expectedStatus)
+				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
+			})
+
 		})
 		t.Run("create reviews by normal users", func(t *testing.T) {
 
