@@ -82,6 +82,7 @@ func TestReview(t *testing.T) {
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
+			var reviewID int
 			t.Run("assistant can create weight=1 review", func(t *testing.T) {
 				rec := doRequest(t, "POST", reviewPath, "jupiter_68", `{"type": "approve","weight": 1,"comment": "LGTM"}`)
 
@@ -89,6 +90,7 @@ func TestReview(t *testing.T) {
 				expectedBody := `{"id":[ID],"note_id":[ID],"reviewer":"jupiter_68","type":"approve","weight":1,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
+				reviewID = int(unmarshalResponse(t, rec)["id"].(float64))
 			})
 			t.Run("check note status updated", func(t *testing.T) {
 				rec := doRequest(t, "GET", ticketPath, "Hokaze", ``)
@@ -96,6 +98,22 @@ func TestReview(t *testing.T) {
 
 				expectedStatus := `200 OK`
 				expectedBody := `{"id":[ID],"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]","notes":[{"id":[ID],"ticket_id":[ID],"type":"outgoing","status":"waiting_sent","author":"ramdos","content":"毎々お世話になっております。","reviews":[{"id":[ID],"note_id":[ID],"reviewer":"Hokaze","type":"approve","weight":4,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"},{"id":[ID],"note_id":[ID],"reviewer":"jupiter_68","type":"approve","weight":1,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"}],"created_at":"[TIME]","updated_at":"[TIME]"}]}`
+				assert.Equal(t, rec.Result().Status, expectedStatus)
+				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
+			})
+			t.Run("authors can edit their reviews", func(t *testing.T) {
+				rec := doRequest(t, "PUT", fmt.Sprintf("%s/%d", reviewPath, reviewID), "jupiter_68", `{"type": "approve","weight": 3,"comment": "updated comment"}`)
+
+				expectedStatus := `200 OK`
+				expectedBody := ``
+				assert.Equal(t, rec.Result().Status, expectedStatus)
+				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
+			})
+			t.Run("non-authors cannot edit their reviews", func(t *testing.T) {
+				rec := doRequest(t, "PUT", fmt.Sprintf("%s/%d", reviewPath, reviewID), "Synori", `{"type": "approve","weight": 3,"comment": "updated comment"}`)
+
+				expectedStatus := `403 Forbidden`
+				expectedBody := ``
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
@@ -136,7 +154,7 @@ func TestReview(t *testing.T) {
 				fmt.Println(ticketPath)
 
 				expectedStatus := `200 OK`
-				expectedBody := `{"id":[ID],"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]","notes":[{"id":[ID],"ticket_id":[ID],"type":"outgoing","status":"draft","author":"ramdos","content":"毎々お世話になっております。","reviews":[{"id":[ID],"note_id":[ID],"reviewer":"Hokaze","type":"approve","weight":4,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"},{"id":[ID],"note_id":[ID],"reviewer":"jupiter_68","type":"approve","weight":1,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"},{"id":[ID],"note_id":[ID],"reviewer":"gUuUnya","type":"approve","weight":0,"status":"active","comment":"little LGTM","created_at":"[TIME]","updated_at":"[TIME]"},{"id":[ID],"note_id":[ID],"reviewer":"Akira_256","type":"comment","weight":0,"status":"active","comment":"comment","created_at":"[TIME]","updated_at":"[TIME]"},{"id":[ID],"note_id":[ID],"reviewer":"Synori","type":"change_request","weight":0,"status":"active","comment":"not LGTM","created_at":"[TIME]","updated_at":"[TIME]"}],"created_at":"[TIME]","updated_at":"[TIME]"}]}`
+				expectedBody := `{"id":[ID],"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]","notes":[{"id":[ID],"ticket_id":[ID],"type":"outgoing","status":"draft","author":"ramdos","content":"毎々お世話になっております。","reviews":[{"id":[ID],"note_id":[ID],"reviewer":"Hokaze","type":"approve","weight":4,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"},{"id":[ID],"note_id":[ID],"reviewer":"jupiter_68","type":"approve","weight":3,"status":"active","comment":"updated comment","created_at":"[TIME]","updated_at":"[TIME]"},{"id":[ID],"note_id":[ID],"reviewer":"gUuUnya","type":"approve","weight":0,"status":"active","comment":"little LGTM","created_at":"[TIME]","updated_at":"[TIME]"},{"id":[ID],"note_id":[ID],"reviewer":"Akira_256","type":"comment","weight":0,"status":"active","comment":"comment","created_at":"[TIME]","updated_at":"[TIME]"},{"id":[ID],"note_id":[ID],"reviewer":"Synori","type":"change_request","weight":0,"status":"active","comment":"not LGTM","created_at":"[TIME]","updated_at":"[TIME]"}],"created_at":"[TIME]","updated_at":"[TIME]"}]}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
