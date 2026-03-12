@@ -92,10 +92,10 @@ func (r *Repository) GetReviewsByNoteIDs(ctx context.Context, ticketID int64, no
 	return reviews, nil
 }
 
-func (r *Repository) UpdateNote(ctx context.Context, ticketID, noteID int64, content string) error {
-	query := `UPDATE notes SET content = ?, updated_at = NOW() WHERE id = ? AND ticket_id = ?`
+func (r *Repository) UpdateNote(ctx context.Context, ticketID, noteID int64, content string, status string) error {
+	query := `UPDATE notes SET content = ?, status = ?, updated_at = NOW() WHERE id = ? AND ticket_id = ?`
 
-	result, err := r.db.ExecContext(ctx, query, content, noteID, ticketID)
+	result, err := r.db.ExecContext(ctx, query, content, status, noteID, ticketID)
 	if err != nil {
 		return err
 	}
