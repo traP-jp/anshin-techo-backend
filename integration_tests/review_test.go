@@ -140,7 +140,7 @@ func TestReview(t *testing.T) {
 		})
 		t.Run("create reviews by normal users", func(t *testing.T) {
 
-			t.Run("assistant cannot create weight=1 review", func(t *testing.T) {
+			t.Run("normal user cannot create weight=1 review", func(t *testing.T) {
 				rec := doRequest(t, "POST", reviewPath, "cp20", `{"type": "approve","weight": 1,"comment": "very LGTM"}`)
 
 				expectedStatus := `400 Bad Request`
@@ -148,7 +148,7 @@ func TestReview(t *testing.T) {
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
-			t.Run("assistant can create weight=0 review", func(t *testing.T) {
+			t.Run("normal user can create weight=0 review", func(t *testing.T) {
 				rec := doRequest(t, "POST", reviewPath, "kenken", `{"type": "approve","weight": 0,"comment": "LGTM"}`)
 
 				expectedStatus := `201 Created`
