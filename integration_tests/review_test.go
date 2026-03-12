@@ -16,7 +16,7 @@ func TestReview(t *testing.T) {
 		var reviewPath string
 		t.Run("prepare create reviews", func(t *testing.T) {
 			t.Run("prepare: create users", func(t *testing.T) {
-				rec := doRequest(t, "PUT", "/users", "Pugma", `[{"traq_id":"Pugma","role":"manager"},{"traq_id":"aruze_pino","role":"manager"},{"traq_id":"ramdos","role":"assistant"},{"traq_id":"Hokaze","role":"assistant"},{"traq_id":"gUuUnya","role":"assistant"},{"traq_id":"Akira_256","role":"assistant"},{"traq_id":"Synori","role":"assistant"}]`)
+				rec := doRequest(t, "PUT", "/users", "Pugma", `[{"traq_id":"Pugma","role":"manager"},{"traq_id":"aruze_pino","role":"manager"},{"traq_id":"ramdos","role":"assistant"},{"traq_id":"Hokaze","role":"assistant"},{"traq_id":"jupiter_68","role":"assistant"},{"traq_id":"gUuUnya","role":"assistant"},{"traq_id":"Akira_256","role":"assistant"},{"traq_id":"Synori","role":"assistant"}]`)
 
 				expectedStatus := `200 OK`
 				expectedBody := ``
@@ -82,6 +82,23 @@ func TestReview(t *testing.T) {
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})
+			t.Run("assistant can create weight=1 review", func(t *testing.T) {
+				rec := doRequest(t, "POST", reviewPath, "jupiter_68", `{"type": "approve","weight": 1,"comment": "LGTM"}`)
+
+				expectedStatus := `201 Created`
+				expectedBody := `{"id":[ID],"note_id":[ID],"reviewer":"jupiter_68","type":"approve","weight":1,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
+				assert.Equal(t, rec.Result().Status, expectedStatus)
+				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
+			})
+			t.Run("check note status updated", func(t *testing.T) {
+				rec := doRequest(t, "GET", ticketPath, "Hokaze", ``)
+				fmt.Println(ticketPath)
+
+				expectedStatus := `200 OK`
+				expectedBody := `{"id":[ID],"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]","notes":[{"id":[ID],"ticket_id":[ID],"type":"outgoing","status":"waiting_sent","author":"ramdos","content":"毎々お世話になっております。","reviews":[{"id":[ID],"note_id":[ID],"reviewer":"Hokaze","type":"approve","weight":4,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"},{"id":[ID],"note_id":[ID],"reviewer":"jupiter_68","type":"approve","weight":1,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"}],"created_at":"[TIME]","updated_at":"[TIME]"}]}`
+				assert.Equal(t, rec.Result().Status, expectedStatus)
+				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
+			})
 			t.Run("assistant cannot create weight=-1 review", func(t *testing.T) {
 				rec := doRequest(t, "POST", reviewPath, "gUuUnya", `{"type": "approve","weight": -1,"comment": "very little LGTM"}`)
 
@@ -111,6 +128,15 @@ func TestReview(t *testing.T) {
 
 				expectedStatus := `201 Created`
 				expectedBody := `{"id":[ID],"note_id":[ID],"reviewer":"Synori","type":"change_request","weight":0,"status":"active","comment":"not LGTM","created_at":"[TIME]","updated_at":"[TIME]"}`
+				assert.Equal(t, rec.Result().Status, expectedStatus)
+				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
+			})
+			t.Run("check note status updated", func(t *testing.T) {
+				rec := doRequest(t, "GET", ticketPath, "Hokaze", ``)
+				fmt.Println(ticketPath)
+
+				expectedStatus := `200 OK`
+				expectedBody := `{"id":[ID],"title":"タイトル","description":"説明","assignee":"hoge","sub_assignees":["fuga"],"stakeholders":["piyo"],"status":"completed","tags":["タグ"],"due":"2025-12-17","created_at":"[TIME]","updated_at":"[TIME]","notes":[{"id":[ID],"ticket_id":[ID],"type":"outgoing","status":"draft","author":"ramdos","content":"毎々お世話になっております。","reviews":[{"id":[ID],"note_id":[ID],"reviewer":"Hokaze","type":"approve","weight":4,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"},{"id":[ID],"note_id":[ID],"reviewer":"jupiter_68","type":"approve","weight":1,"status":"active","comment":"LGTM","created_at":"[TIME]","updated_at":"[TIME]"},{"id":[ID],"note_id":[ID],"reviewer":"gUuUnya","type":"approve","weight":0,"status":"active","comment":"little LGTM","created_at":"[TIME]","updated_at":"[TIME]"},{"id":[ID],"note_id":[ID],"reviewer":"Akira_256","type":"comment","weight":0,"status":"active","comment":"comment","created_at":"[TIME]","updated_at":"[TIME]"},{"id":[ID],"note_id":[ID],"reviewer":"Synori","type":"change_request","weight":0,"status":"active","comment":"not LGTM","created_at":"[TIME]","updated_at":"[TIME]"}],"created_at":"[TIME]","updated_at":"[TIME]"}]}`
 				assert.Equal(t, rec.Result().Status, expectedStatus)
 				assert.Equal(t, escapeSnapshot(t, rec.Body.String()), expectedBody)
 			})

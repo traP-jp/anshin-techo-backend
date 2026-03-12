@@ -105,6 +105,14 @@ func (r *Repository) CreateReview(ctx context.Context, ticketID, noteID int64, r
 		return nil, fmt.Errorf("last insert id: %w", err)
 	}
 
+	if params.Type == "cr" {
+		if _, err := tx.ExecContext(ctx, `
+			UPDATE notes SET status = 'draft' WHERE id = ?
+		`, noteID); err != nil {
+			return nil, fmt.Errorf("update note status for CR: %w", err)
+		}
+	}
+
 	if err := maybeUpdateNoteStatus(ctx, tx, noteID, noteStatus); err != nil {
 		return nil, err
 	}
