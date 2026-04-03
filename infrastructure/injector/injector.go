@@ -14,8 +14,15 @@ type Dependencies struct {
 }
 
 func InjectServer(deps Dependencies) (*api.Server, error) {
-	repo := repository.New(deps.DB, deps.Bot)
-	h := handler.New(repo)
+	repo := repository.New(deps.DB) //, deps.Bot)
+
+	// botService, ok := deps.Bot.(*bot.Service)
+	// if !ok {
+	// 	return nil, fmt.Errorf("failed to cast bot client to service")
+	// }
+
+	// h := handler.New(repo, botService)
+	h := handler.New(repo, deps.Bot)
 	s, err := api.NewServer(h, h)
 	if err != nil {
 		return nil, err
