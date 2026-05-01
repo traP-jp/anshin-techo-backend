@@ -8,7 +8,7 @@ require (
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/labstack/echo/v4 v4.15.0
-	github.com/ogen-go/ogen v1.20.2
+	github.com/ogen-go/ogen v1.20.3
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/ras0q/goalie v0.6.0
 	github.com/sashabaranov/go-openai v1.41.2
