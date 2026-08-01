@@ -61,6 +61,25 @@ func (h *Handler) CreateTicket(ctx context.Context, req *api.CreateTicketReq) (a
 		return nil, fmt.Errorf("get created ticket from repository: %w", err)
 	}
 
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("[PANIC] Recovered in NotifyTicketCreated: %v\n", r)
+			}
+		}()
+
+		if h.bot == nil {
+			fmt.Printf("[Error] h.bot is nil! Notification skipped.\n")
+
+			return
+		}
+
+		bgCtx := context.Background()
+		if err := h.bot.NotifyTicketCreated(bgCtx, ticket); err != nil {
+			fmt.Printf("failed to notify ticket creation: %v\n", err)
+		}
+	}()
+
 	res := &api.Ticket{
 		ID:           ticket.ID,
 		Title:        ApplyCensorIfNeed(role, ticket.Title),
@@ -337,6 +356,29 @@ func (h *Handler) UpdateTicketByID(ctx context.Context, req api.OptUpdateTicketB
 		}
 
 		return nil, fmt.Errorf("update ticket in repository: %w", err)
+	}
+
+	updatedTicket, err := h.repo.GetTicketByID(ctx, id)
+	if err != nil {
+
+		fmt.Printf("[ERROR] failed to fetch updated ticket for notification: %v\n", err)
+	} else {
+
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					fmt.Printf("Recovered in NotifyTicketUpdated: %v\n", r)
+				}
+			}()
+
+			if h.bot == nil {
+				return
+			}
+
+			if err := h.bot.NotifyTicketUpdated(context.Background(), updatedTicket); err != nil {
+				fmt.Printf("failed to notify ticket update: %v\n", err)
+			}
+		}()
 	}
 
 	return &api.UpdateTicketByIDOK{}, nil
