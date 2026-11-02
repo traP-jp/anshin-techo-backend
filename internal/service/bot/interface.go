@@ -3,6 +3,7 @@ package bot
 import (
 	"context"
 
+	"github.com/traP-jp/anshin-techo-backend/internal/repository" // 追加
 	"github.com/traPtitech/go-traq"
 	"github.com/traPtitech/traq-ws-bot/payload"
 )
@@ -20,6 +21,14 @@ type Client interface {
 
 	// EventHandler インターフェースを埋め込み
 	EventHandler
+
+	NotifyTicketCreated(ctx context.Context, ticket *repository.Ticket) error
+	NotifyTicketUpdated(ctx context.Context, ticket *repository.Ticket) error
+	NotifyNoteCreated(ctx context.Context, noteType string, contentPreview string, authorID string, shouldMention bool) error
+	NotifyReviewCreated(ctx context.Context, noteTitle string, noteAuthorID string, reviewerID string, comment string) error
+	SendDeadlineReminder(ctx context.Context, ticket *repository.Ticket, daysOverdue int) error
+	SendWaitingSentReminder(ctx context.Context, ticket *repository.Ticket) error
+	GetUserIDByName(ctx context.Context, name string) (string, error)
 }
 
 // MessageSender はメッセージ送信機能を抽象化したインターフェース

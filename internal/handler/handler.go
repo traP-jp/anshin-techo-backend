@@ -10,18 +10,22 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/traP-jp/anshin-techo-backend/internal/api"
 	"github.com/traP-jp/anshin-techo-backend/internal/repository"
+	"github.com/traP-jp/anshin-techo-backend/internal/service/bot"
 )
 
 type Handler struct {
 	repo *repository.Repository
+	bot  bot.Client
 }
 
 func New(
 	repo *repository.Repository,
+	bot bot.Client,
 ) *Handler {
 	return &Handler{
 		//photo,
 		repo: repo,
+		bot:  bot,
 	}
 }
 

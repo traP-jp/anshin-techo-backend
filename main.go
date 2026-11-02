@@ -9,6 +9,7 @@ import (
 	"github.com/traP-jp/anshin-techo-backend/infrastructure/config"
 	"github.com/traP-jp/anshin-techo-backend/infrastructure/database"
 	"github.com/traP-jp/anshin-techo-backend/infrastructure/injector"
+	"github.com/traP-jp/anshin-techo-backend/internal/repository" // 追加
 	"github.com/traP-jp/anshin-techo-backend/internal/service/bot"
 )
 
@@ -32,23 +33,37 @@ func run() (err error) {
 	}
 	defer g.Guard(db.Close)
 
-	// Bot サービスの初期化
+	// Repository の初期化 (Schedulerで使うために必要)
+	repo := repository.New(db)
+
+	// Bot サービスの初期化 
 	botService, err := bot.NewService(bot.Config{
-		Origin:      os.Getenv("TRAQ_ORIGIN"),
-		AccessToken: os.Getenv("TRAQ_BOT_TOKEN"),
+		Origin:                os.Getenv("TRAQ_ORIGIN"),
+		AccessToken:           os.Getenv("TRAQ_BOT_TOKEN"),
+		TicketCreateChannelID: os.Getenv("TRAQ_CHANNEL_TICKET_CREATE"),
+		TicketUpdateChannelID: os.Getenv("TRAQ_CHANNEL_TICKET_UPDATE"),
+		NoteIncomingChannelID: os.Getenv("TRAQ_CHANNEL_NOTE_INCOMING"),
+		NoteOutgoingChannelID: os.Getenv("TRAQ_CHANNEL_NOTE_OUTGOING"),
+		NoteOtherChannelID:    os.Getenv("TRAQ_CHANNEL_NOTE_OTHER"),
+		ReviewNotifyChannelID: os.Getenv("TRAQ_CHANNEL_REVIEW_NOTIFY"),
+		ManagerID:             os.Getenv("TRAQ_USER_MANAGER_ID"),
 	})
 	if err != nil {
 		return err
 	}
 
-	// Bot のイベントハンドラを登録
+	//  Scheduler (リマインダー) の初期化と起動
+	scheduler := bot.NewScheduler(repo, botService)
+	scheduler.Start()
+
+	//  Bot のイベントハンドラを登録 (Handler側)
 	botHandlerService := injector.InjectBotHandlerService(injector.Dependencies{
 		DB:  db,
 		Bot: botService,
 	})
 	botHandlerService.RegisterHandlers(botService)
 
-	// サーバーの初期化
+	//  サーバーの初期化
 	server, err := injector.InjectServer(injector.Dependencies{
 		DB:  db,
 		Bot: botService,
